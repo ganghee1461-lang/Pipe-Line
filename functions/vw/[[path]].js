@@ -28,7 +28,13 @@ export async function onRequest(context) {
     try {
       resp = await fetch(target, {
         method: 'GET',
-        headers: { Accept: 'application/json,image/png,*/*', Referer: `${origin}/` },
+        headers: {
+          Accept: 'application/json,image/png,*/*',
+          Referer: `${origin}/`,
+          // Workers 기본 UA를 VWorld가 봇으로 차단(502)하므로 브라우저 UA로 위장
+          'User-Agent':
+            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        },
         redirect: 'follow',
         signal: ctl.signal,
       });

@@ -16,6 +16,7 @@ function makeWms({ url, layers, ned }) {
   // 자동 주입한다. 여기서는 레이어·키·포맷 등 고유 파라미터만 넘긴다(중복 금지).
   const params = {
     LAYERS: layers,
+    STYLES: layers, // VWorld WMS는 STYLES에 레이어명을 요구(빈값이면 백엔드 502)
     FORMAT: 'image/png',
     TRANSPARENT: true,
     VERSION: '1.3.0',
