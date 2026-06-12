@@ -80,6 +80,16 @@ export async function getParcelsInBox(minLon, minLat, maxLon, maxLat) {
   return out;
 }
 
+// 소유구분 일괄조회 mock — 격자 필지에 공유/사유를 바로 박아 반환(빠른 경로 데모)
+export async function getOwnershipParcels(minLon, minLat, maxLon, maxLat) {
+  await wait(220);
+  const parcels = await getParcelsInBox(minLon, minLat, maxLon, maxLat);
+  return parcels.map((p) => ({
+    geometry: p.geometry,
+    pub: hash(p.pnu) % 100 < 35,
+  }));
+}
+
 // 간단 문자열 해시
 function hash(s) {
   let h = 0;

@@ -9,7 +9,7 @@ import GeoJSON from 'ol/format/GeoJSON.js';
 import { Style, Fill, Stroke } from 'ol/style.js';
 import { toLonLat } from 'ol/proj.js';
 import { map } from './map.js';
-import { getParcelsInBox, getPossession, isPublicLand } from '../api/vworld.js';
+import { getOwnershipParcels, getParcelsInBox, getPossession, isPublicLand } from '../api/vworld.js';
 
 const MIN_ZOOM = 16;      // 이 줌 미만에선 필지가 너무 많아 비활성
 const MAX_PARCELS = 160;  // 1회 스캔 상한 (API 호출량 보호)
@@ -61,6 +61,21 @@ export async function scanOwnership(onStatus) {
   const [minLon, minLat] = toLonLat([ext[0], ext[1]]);
   const [maxLon, maxLat] = toLonLat([ext[2], ext[3]]);
 
+  // ① 빠른 경로: 소유구분 데이터 일괄조회 (1회 호출, 상한 없음)
+  try {
+    const bulk = await getOwnershipParcels(minLon, minLat, maxLon, maxLat);
+    if (bulk && bulk.length) {
+      src.clear();
+      const tally = renderParcels(bulk.map((b) => ({ geometry: b.geometry, pub: b.pub })));
+      scanning = false;
+      onStatus({ state: 'done', ...tally, capped: false });
+      return;
+    }
+  } catch {
+    /* 폴백으로 진행 */
+  }
+
+  // ② 폴백: 필지 경계 일괄 + 필지별 소유구분 조회 (N+1, 상한 적용)
   let parcels;
   try {
     parcels = await getParcelsInBox(minLon, minLat, maxLon, maxLat);
@@ -80,7 +95,8 @@ export async function scanOwnership(onStatus) {
   }
 
   src.clear();
-  let pub = 0, priv = 0, unknown = 0, done = 0;
+  const classified = [];
+  let done = 0;
 
   await pool(parcels, CONCURRENCY, async (p) => {
     let isPub = cache.get(p.pnu);
@@ -89,21 +105,32 @@ export async function scanOwnership(onStatus) {
       isPub = poss ? isPublicLand(poss.code, poss.name) : null;
       cache.set(p.pnu, isPub);
     }
-    const feat = geojson.readFeature(
-      { type: 'Feature', geometry: p.geometry, properties: {} },
-      { dataProjection: 'EPSG:4326', featureProjection: 'EPSG:3857' }
-    );
-    feat.set('pub', isPub);
-    src.addFeature(feat);
-    if (isPub === true) pub++;
-    else if (isPub === false) priv++;
-    else unknown++;
+    classified.push({ geometry: p.geometry, pub: isPub });
     done++;
     onStatus({ state: 'loading', msg: `${done}/${parcels.length} 분류 중…` });
   });
 
+  const tally = renderParcels(classified);
   scanning = false;
-  onStatus({ state: 'done', pub, priv, unknown, capped });
+  onStatus({ state: 'done', ...tally, capped });
+}
+
+// 분류된 필지들을 벡터로 그리고 집계 반환
+function renderParcels(items) {
+  let pub = 0, priv = 0, unknown = 0;
+  for (const it of items) {
+    if (!it.geometry) continue;
+    const feat = geojson.readFeature(
+      { type: 'Feature', geometry: it.geometry, properties: {} },
+      { dataProjection: 'EPSG:4326', featureProjection: 'EPSG:3857' }
+    );
+    feat.set('pub', it.pub);
+    src.addFeature(feat);
+    if (it.pub === true) pub++;
+    else if (it.pub === false) priv++;
+    else unknown++;
+  }
+  return { pub, priv, unknown };
 }
 
 export function clearOwnership() {
