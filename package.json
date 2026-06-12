@@ -1,0 +1,18 @@
+{
+  "name": "pipe-line",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "배관 공급 영업용 웹 GIS 툴 (VWorld + OpenLayers)",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "ol": "^9.2.4"
+  },
+  "devDependencies": {
+    "vite": "^5.4.10"
+  }
+}

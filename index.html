@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>배관 영업 GIS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet" />
+</head>
+<body>
+  <div id="app">
+    <aside id="sidebar">
+      <header id="sidebar-header">
+        <h1>배관 영업 GIS</h1>
+        <p>수요처 · 지적/도시계획 · 배관 작도</p>
+      </header>
+
+      <!-- 수요처 검색 -->
+      <section class="panel">
+        <div class="panel-label">수요처 검색</div>
+        <textarea id="search-input" rows="3"
+          placeholder="한 줄에 하나씩 주소/장소 입력&#10;예) 서울특별시 종로구 세종대로 172"></textarea>
+        <div class="row">
+          <button id="search-btn" class="btn-primary">검색</button>
+          <button id="search-clear" class="btn-ghost">지우기</button>
+        </div>
+        <label class="check-row">
+          <input type="checkbox" id="filter-memo" /> 메모 있는 수요처만
+        </label>
+      </section>
+
+      <!-- 수요처 리스트 -->
+      <section class="panel grow">
+        <div class="panel-label">수요처 <span id="demand-count">0</span></div>
+        <ul id="demand-list"></ul>
+      </section>
+
+      <!-- 레이어 -->
+      <section class="panel">
+        <div class="panel-label">레이어</div>
+        <div class="layer-row">
+          <label class="switch-row">
+            <input type="checkbox" id="poss-toggle" /> 소유구분지적도
+          </label>
+          <input type="range" id="poss-opacity" min="10" max="100" value="75" />
+        </div>
+        <div class="layer-row">
+          <label class="switch-row">
+            <input type="checkbox" id="road-toggle" /> 도시계획도로
+          </label>
+          <input type="range" id="road-opacity" min="10" max="100" value="80" />
+        </div>
+      </section>
+
+      <footer id="env-note"></footer>
+    </aside>
+
+    <main id="map-wrap">
+      <div id="map"></div>
+      <div id="basemap-switch">
+        <button data-base="Base" class="active">기본</button>
+        <button data-base="Satellite">위성</button>
+      </div>
+      <div id="parcel-popup" class="hidden"></div>
+    </main>
+  </div>
+
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>
