@@ -9,14 +9,12 @@ import { initMarkers } from './demands/markers.js';
 import { initSearch } from './demands/search.js';
 import { initList } from './demands/list.js';
 import { initLayerPanel } from './layers/panel.js';
-import { initOwnershipPanel } from './layers/ownershipPanel.js';
 
 // 기능 모듈 초기화
 initMarkers();
 initSearch();
 initList();
 initLayerPanel();
-initOwnershipPanel();
 initParcelClick();
 
 // 환경 안내 (키 유무)

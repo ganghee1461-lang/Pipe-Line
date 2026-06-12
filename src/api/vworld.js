@@ -103,64 +103,6 @@ export async function getParcel(lon, lat) {
   };
 }
 
-// ── 3-b. 영역 내 필지 일괄 조회 (BBOX → 여러 필지 geometry+pnu) ──
-// 공유지/사유지 색칠 스캔용. 소유구분은 별도로 getPossession(pnu)로 분류한다.
-export async function getParcelsInBox(minLon, minLat, maxLon, maxLat, size = 200) {
-  if (IS_MOCK) return mock.getParcelsInBox(minLon, minLat, maxLon, maxLat);
-  const qs = withKey({
-    service: 'data', request: 'GetFeature', data: VWORLD.layers.parcel,
-    geomfilter: `BOX(${minLon},${minLat},${maxLon},${maxLat})`,
-    size: String(size), page: '1',
-    columns: 'pnu,jibun', geometry: 'true', attribute: 'true',
-  });
-  const gf = await call(`${base().data}?${qs}`);
-  if (gf?.response?.status !== 'OK') return [];
-  const feats = gf.response.result?.featureCollection?.features || [];
-  return feats
-    .map((f) => ({
-      pnu: String(f.properties?.pnu || ''),
-      jibun: String(f.properties?.jibun || ''),
-      geometry: f.geometry || null,
-    }))
-    .filter((p) => p.pnu && p.geometry);
-}
-
-// ── 3-c. 소유구분 데이터 영역 일괄 조회 (BBOX → geometry+공유/사유 한 번에) ──
-// dt_d160(소유구분도)을 데이터로 GetFeature 시도. 성공하면 N+1 호출 없이 1회로 끝난다.
-// VWorld가 이 레이어를 데이터로 지원하지 않으면 null 반환 → 호출측이 기존 방식으로 폴백.
-export async function getOwnershipParcels(minLon, minLat, maxLon, maxLat, size = 500) {
-  if (IS_MOCK) return mock.getOwnershipParcels(minLon, minLat, maxLon, maxLat);
-  const qs = withKey({
-    service: 'data', request: 'GetFeature', data: VWORLD.layers.possessionData,
-    geomfilter: `BOX(${minLon},${minLat},${maxLon},${maxLat})`,
-    size: String(size), page: '1', geometry: 'true', attribute: 'true',
-  });
-  const gf = await call(`${base().data}?${qs}`);
-  if (gf?.response?.status !== 'OK') return null; // 미지원/에러 → 폴백
-  const feats = gf.response.result?.featureCollection?.features || [];
-  const out = [];
-  let classified = 0;
-  for (const f of feats) {
-    if (!f.geometry) continue;
-    const pub = ownershipFromProps(f.properties);
-    if (pub !== null) classified++;
-    out.push({ geometry: f.geometry, pub });
-  }
-  // 분류 가능한 속성이 하나도 없으면 이 레이어엔 소유구분이 없음 → 폴백
-  return classified > 0 ? out : null;
-}
-
-// 피처 속성값들 중 소유구분명으로 보이는 값을 찾아 공유/사유 판별
-function ownershipFromProps(props) {
-  if (!props) return null;
-  for (const v of Object.values(props)) {
-    if (typeof v !== 'string') continue;
-    const r = isPublicLand('', v);
-    if (r !== null) return r;
-  }
-  return null;
-}
-
 // ── 4. 소유 속성 (PNU → 소유구분/지목/면적) ──
 export async function getPossession(pnu) {
   if (IS_MOCK) return mock.getPossession(pnu);

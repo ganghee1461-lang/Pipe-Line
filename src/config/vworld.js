@@ -35,8 +35,7 @@ export const VWORLD = {
 
   // WMS 레이어 식별자
   layers: {
-    possession: 'dt_d160',      // 소유구분지적도 (WMS)
-    possessionData: 'dt_d160',  // 소유구분 데이터(GetFeature 일괄조회 시도용; 미지원이면 폴백)
+    possession: 'dt_d160',      // 소유구분지적도
     cityRoad: 'lt_c_upisuq151', // 도시계획도로
     parcel: 'LP_PA_CBND_BUBUN', // 필지 GetFeature
   },
