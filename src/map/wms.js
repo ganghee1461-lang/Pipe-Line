@@ -1,32 +1,35 @@
 // ── WMS 레이어 (소유구분지적도 / 도시계획도로) ──
-// VWorld WMS는 EPSG:3857 GetMap 이미지. OpenLayers ImageWMS 로 처리하고
-// 키/도메인은 customParams 로 주입. 줌 임계값 미만에서는 자동 비표시.
+// VWorld WMS(GetMap 이미지)는 CORS 헤더를 주지 않아 직접 호출 시 캔버스 렌더가 막힌다.
+// (배경 WMTS 타일은 CORS 허용 → 직접, WMS만 프록시 경유) 그래서 WMS URL은 항상
+// /vw 프록시(운영=functions/vw, 로컬=vite proxy)로 보내 프록시가 CORS 헤더를 붙이게 한다.
 import ImageLayer from 'ol/layer/Image.js';
 import ImageWMS from 'ol/source/ImageWMS.js';
-import { VWORLD, base, IS_MOCK } from '../config/vworld.js';
+import { VWORLD, IS_MOCK } from '../config/vworld.js';
 import { map } from './map.js';
 
+// WMS는 이미지라 JSONP 불가 → 무조건 프록시 경로 사용
+const POSS_WMS = '/vw/ned/wms/getPossessionWMS';
+const ROAD_WMS = '/vw/req/wms';
+
 function makeWms({ url, layers, ned }) {
-  // ned/wms(소유지적)는 파라미터가 조금 다르다(레거시 기준):
-  //   layers=dt_d160, transparent=false, bgcolor=0xFFFFFF, exceptions=blank
-  const params = ned
-    ? {
-        layers, crs: 'EPSG:3857', format: 'image/png',
-        transparent: false, bgcolor: '0xFFFFFF', exceptions: 'blank',
-        key: VWORLD.key, domain: VWORLD.domain,
-      }
-    : {
-        SERVICE: 'WMS', VERSION: '1.3.0', REQUEST: 'GetMap',
-        LAYERS: layers, FORMAT: 'image/png', TRANSPARENT: true,
-        CRS: 'EPSG:3857', key: VWORLD.key,
-      };
+  // OpenLayers ImageWMS가 SERVICE/VERSION/REQUEST/BBOX/WIDTH/HEIGHT/CRS/STYLES를
+  // 자동 주입한다. 여기서는 레이어·키·포맷 등 고유 파라미터만 넘긴다(중복 금지).
+  const params = {
+    LAYERS: layers,
+    FORMAT: 'image/png',
+    TRANSPARENT: true,
+    VERSION: '1.3.0',
+    key: VWORLD.key,
+    domain: VWORLD.domain,
+    // 소유지적(ned)은 빈 영역을 흰색 대신 비워두도록 exceptions=blank
+    ...(ned ? { exceptions: 'blank' } : {}),
+  };
   return new ImageLayer({
     source: new ImageWMS({
       url,
       params,
       crossOrigin: 'anonymous',
       ratio: 1,
-      // ned WMS는 표준 GetMap이 아니라 직접 URL 조립이 필요할 수 있음 → serverType 미지정
     }),
     visible: false,
     opacity: 0.75,
@@ -35,10 +38,10 @@ function makeWms({ url, layers, ned }) {
 }
 
 export const possLayer = makeWms({
-  url: base().possWms, layers: VWORLD.layers.possession, ned: true,
+  url: POSS_WMS, layers: VWORLD.layers.possession, ned: true,
 });
 export const roadLayer = makeWms({
-  url: base().roadWms, layers: VWORLD.layers.cityRoad, ned: false,
+  url: ROAD_WMS, layers: VWORLD.layers.cityRoad, ned: false,
 });
 possLayer.setZIndex(4);
 roadLayer.setZIndex(5);
