@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>V-World 지적 도구 (legacy reference)</title>
+  <!--
+    ============================================================
+    LEGACY REFERENCE FILE — DO NOT BUILD ON THIS DIRECTLY
+    ============================================================
+    이전에 로컬 기반으로 제작한 단일 HTML 프로토타입.
+    스파게티 구조라 신규 프로젝트는 Vite + 모듈 분리로 새로 작성하되,
+    아래의 검증된 로직을 참고용으로 보존한다.
+
+    [재사용 가치 높은 부분]
+    - VWorld JSONP CORS 우회 (jsonp 함수)
+    - WMS 레이어 식별자:
+        소유지적도   = dt_d160        (getPossessionWMS)
+        도시계획도로 = lt_c_upisuq151 (req/wms)
+    - 엔드포인트 묶음 (GEO/DATA/POSS_ATTR/POSS_WMS/ROAD_WMS)
+    - 필지 GetFeature + getPossessionAttr 파싱 (국공유/사유 판별)
+    - 배관 스타일 매핑 (PIPE_COLORS / DASH_STYLES / pipeStyle)
+    - 좌표 변환 (ol.proj.fromLonLat / toLonLat), Haversine 연장 계산
+    - 연장 집계 (updatePipeTab), 범례 (updateLegend)
+    - 선택/직접선택/측정 모드 전환 (V / A / P)
+
+    원본 인증키는 도메인 등록 기반이라 신규 프로젝트에서는
+    환경변수(.env)로 분리한다. 아래 _DEFAULT_KEY는 참고용.
+    ============================================================
+    원본 전체 소스는 git 히스토리/사용자 제공본 참조.
+    (용량 절약을 위해 이 파일에는 핵심 설정 블록만 발췌 보존)
+  -->
+</head>
+<body>
+<script>
+/* ============================================================
+   VWorld 설정 / 엔드포인트 (발췌 — 신규 프로젝트 api 레이어 참고용)
+   ============================================================ */
+const _DEFAULT_KEY  = 'B1583C8F-3511-30DD-BAD0-C5278FF4351E'; // 도메인 등록 기반 키
+const GEO_BASE      = 'https://api.vworld.kr/req/address';        // 지오코딩/역지오코딩
+const DATA_BASE     = 'https://api.vworld.kr/req/data';           // GetFeature (필지)
+const POSS_ATTR_URL = 'https://api.vworld.kr/ned/data/getPossessionAttr'; // 소유 속성
+const POSS_WMS_URL  = 'https://api.vworld.kr/ned/wms/getPossessionWMS';    // 소유지적 WMS
+const ROAD_WMS_URL  = 'https://api.vworld.kr/req/wms';            // 도시계획도로 WMS
+const POSS_MIN_ZOOM = 16;
+const ROAD_MIN_ZOOM = 13;
+
+/* WMS 레이어 식별자 */
+//   소유지적도   : layers=dt_d160          (CRS=EPSG:3857)
+//   도시계획도로 : LAYERS=lt_c_upisuq151   (VERSION=1.3.0, CRS=EPSG:3857)
+//   배경지도     : wmts/1.0.0/{KEY}/Base/{z}/{y}/{x}.png
+//                  wmts/1.0.0/{KEY}/Satellite/{z}/{y}/{x}.jpeg
+//   필지 GetFeature data=LP_PA_CBND_BUBUN, columns=pnu,jibun,addr
+
+/* ============================================================
+   CORS 우회: JSONP (검색/역지오코딩/소유속성/GetFeature 모두 JSONP로 처리)
+   → 신규 프로젝트에서는 1차로 이 방식, 막히면 Cloudflare Functions 프록시
+   ============================================================ */
+function jsonp(url, timeout=10000) {
+  return new Promise(resolve => {
+    const cb = '_vw_' + Math.random().toString(36).slice(2,10);
+    const s = document.createElement('script');
+    s.src = url + (url.includes('?')?'&':'?') + 'callback=' + cb;
+    const t = setTimeout(() => { cleanup(); resolve(null); }, timeout);
+    window[cb] = d => { clearTimeout(t); cleanup(); resolve(d); };
+    s.onerror = () => { clearTimeout(t); cleanup(); resolve(null); };
+    document.head.appendChild(s);
+    function cleanup() { delete window[cb]; if (s.parentNode) s.parentNode.removeChild(s); }
+  });
+}
+
+/* ============================================================
+   배관 스타일 매핑 (신규 프로젝트 config/pipeStyles 로 이전)
+   ============================================================ */
+const PIPE_DIAM_PLP = ['50A','80A','100A','150A','200A','300A','400A','500A'];
+const PIPE_DIAM_PE  = ['63A','90A','110A','160A','225A','280A','315A','355A'];
+const DASH_STYLES = {
+  solid:[], dashed:[8,5], dotted:[2,5],
+  long_dash:[16,6], dash_dot:[10,4,2,4], dash_dot_dot:[10,4,2,4,2,4]
+};
+/* 관경 → 색상 (적록색약 친화 8색). 재질(PLP/PE)은 색상 공유, 대시로 구분. */
+const PIPE_COLOR_BY_DIAM_INDEX = [
+  '#1565C0', // 1: 진파랑
+  '#00ACC1', // 2: 청록
+  '#2E7D32', // 3: 진초록
+  '#F9A825', // 4: 진노랑
+  '#E65100', // 5: 진오렌지
+  '#AD1457', // 6: 진자홍
+  '#6A1B9A', // 7: 진보라
+  '#4E342E', // 8: 진갈색
+];
+/* pipeStyle(info): info={type,pressure,material,diameter}
+   - existing(기존관)      → 회색 solid
+   - supply 중압           → solid
+   - supply 저압           → dashed
+   - inlet                 → solid + 화살표(말단)
+*/
+</script>
+</body>
+</html>
