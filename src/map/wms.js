@@ -1,19 +1,20 @@
 // ── WMS 레이어 (소유구분지적도 / 도시계획도로) ──
-// VWorld WMS(GetMap 이미지)는 CORS 헤더를 주지 않아 직접 호출 시 캔버스 렌더가 막힌다.
-// (배경 WMTS 타일은 CORS 허용 → 직접, WMS만 프록시 경유) 그래서 WMS URL은 항상
-// /vw 프록시(운영=functions/vw, 로컬=vite proxy)로 보내 프록시가 CORS 헤더를 붙이게 한다.
+// VWorld WMS는 CORS 헤더를 주지 않고, 서버사이드(Cloudflare) 프록시 호출은 IP 차단으로 502가 난다.
+// 해결: 브라우저에서 VWorld를 '직접' 호출하되 crossOrigin을 지정하지 않는다.
+//   - crossOrigin 미지정 → 평범한 <img> 로드라 CORS 검사 자체가 없음(프록시 불필요)
+//   - 브라우저가 실제 Referer(등록 도메인)를 붙여줘서 VWorld 인증 통과
+//   - 단, 지도 캔버스가 tainted 되어 '지도 PNG 내보내기'만 제한됨(표시·클릭조회는 정상)
 import ImageLayer from 'ol/layer/Image.js';
 import ImageWMS from 'ol/source/ImageWMS.js';
 import { VWORLD, IS_MOCK } from '../config/vworld.js';
 import { map } from './map.js';
 
-// WMS는 이미지라 JSONP 불가 → 무조건 프록시 경로 사용
-const POSS_WMS = '/vw/ned/wms/getPossessionWMS';
-const ROAD_WMS = '/vw/req/wms';
+// 브라우저 직접 호출 (CORS 헤더가 필요 없는 경로)
+const POSS_WMS = 'https://api.vworld.kr/ned/wms/getPossessionWMS';
+const ROAD_WMS = 'https://api.vworld.kr/req/wms';
 
 function makeWms({ url, layers, ned }) {
-  // OpenLayers ImageWMS가 SERVICE/VERSION/REQUEST/BBOX/WIDTH/HEIGHT/CRS/STYLES를
-  // 자동 주입한다. 여기서는 레이어·키·포맷 등 고유 파라미터만 넘긴다(중복 금지).
+  // OpenLayers ImageWMS가 SERVICE/VERSION/REQUEST/BBOX/WIDTH/HEIGHT/CRS를 자동 주입.
   const params = {
     LAYERS: layers,
     STYLES: layers, // VWorld WMS는 STYLES에 레이어명을 요구(빈값이면 백엔드 502)
@@ -29,7 +30,7 @@ function makeWms({ url, layers, ned }) {
     source: new ImageWMS({
       url,
       params,
-      crossOrigin: 'anonymous',
+      // crossOrigin 미지정이 핵심 — CORS 검사를 피해 직접 로드한다.
       ratio: 1,
     }),
     visible: false,
