@@ -103,6 +103,28 @@ export async function getParcel(lon, lat) {
   };
 }
 
+// ── 3-b. 영역 내 필지 일괄 조회 (BBOX → 여러 필지 geometry+pnu) ──
+// 공유지/사유지 색칠 스캔용. 소유구분은 별도로 getPossession(pnu)로 분류한다.
+export async function getParcelsInBox(minLon, minLat, maxLon, maxLat, size = 200) {
+  if (IS_MOCK) return mock.getParcelsInBox(minLon, minLat, maxLon, maxLat);
+  const qs = withKey({
+    service: 'data', request: 'GetFeature', data: VWORLD.layers.parcel,
+    geomfilter: `BOX(${minLon},${minLat},${maxLon},${maxLat})`,
+    size: String(size), page: '1',
+    columns: 'pnu,jibun', geometry: 'true', attribute: 'true',
+  });
+  const gf = await call(`${base().data}?${qs}`);
+  if (gf?.response?.status !== 'OK') return [];
+  const feats = gf.response.result?.featureCollection?.features || [];
+  return feats
+    .map((f) => ({
+      pnu: String(f.properties?.pnu || ''),
+      jibun: String(f.properties?.jibun || ''),
+      geometry: f.geometry || null,
+    }))
+    .filter((p) => p.pnu && p.geometry);
+}
+
 // ── 4. 소유 속성 (PNU → 소유구분/지목/면적) ──
 export async function getPossession(pnu) {
   if (IS_MOCK) return mock.getPossession(pnu);
