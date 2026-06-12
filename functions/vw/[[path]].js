@@ -16,11 +16,19 @@ export async function onRequest(context) {
   const rest = Array.isArray(params.path) ? params.path.join('/') : params.path || '';
   const target = `${VWORLD_ORIGIN}/${rest}${url.search}`;
 
+  // VWorld 키는 등록 도메인의 Referer로 인증한다. 서버사이드 fetch는 Referer가 없어
+  // 키가 거부되므로, 들어온 요청의 출처(=pipe-line.pages.dev)를 Referer로 위조해 붙인다.
+  const origin = url.origin;
+
   let resp;
   try {
     resp = await fetch(target, {
       method: request.method,
-      headers: { Accept: 'application/json,image/png,*/*' },
+      headers: {
+        Accept: 'application/json,image/png,*/*',
+        Referer: `${origin}/`,
+        Origin: origin,
+      },
     });
   } catch (e) {
     return new Response(`proxy fetch failed: ${e}`, {
