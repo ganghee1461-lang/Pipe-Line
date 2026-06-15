@@ -14,6 +14,7 @@ import { initPipeTools } from './pipes/tools.js';
 import { initPipeToolbar } from './pipes/toolbar.js';
 import { initAttrPanel } from './pipes/attrPanel.js';
 import { initTotals } from './pipes/totals.js';
+import { initModePanel } from './pipes/modePanel.js';
 
 // 기능 모듈 초기화
 initMarkers();
@@ -28,6 +29,7 @@ initPipeTools();
 initPipeToolbar();
 initAttrPanel();
 initTotals();
+initModePanel();
 
 // 환경 안내 (키 유무)
 const note = document.getElementById('env-note');

@@ -26,26 +26,37 @@ export const DASH = {
   dotted: [2, 6],
 };
 
-const EXISTING_COLOR = '#868e96';
+const EXISTING_COLOR = '#868e96'; // 기존관 회색 (영업 모드)
+const EXISTING_BLUE = '#0d47a1';  // 기존관 파랑 (굴착심의/배관망)
+const REVIEW_RED = '#d32f2f';     // 굴착심의 예정관 빨강
 
 // info = { use, pressure, material, diameter, status, review }
-export function pipeStyle(info) {
+// mode = 'sales' | 'excavation' | 'network' — 모드별로 색/대시가 달라진다.
+export function pipeStyle(info, mode = 'sales') {
   if (!info) return { color: EXISTING_COLOR, dash: 'solid' };
+  const arrow = info.use === 'inlet';
 
-  // 기존관: 회색 실선 (신설관과 구분)
-  if (info.status === 'existing') {
-    return { color: EXISTING_COLOR, dash: 'solid', arrow: info.use === 'inlet' };
+  // ── 굴착심의: 기존=파란점선 / 예정·심의대상=빨간실선 / 예정·미대상=빨간점선 ──
+  if (mode === 'excavation') {
+    if (info.status === 'existing') return { color: EXISTING_BLUE, dash: 'dotted', arrow };
+    if (info.review === 'target') return { color: REVIEW_RED, dash: 'solid', arrow };
+    return { color: REVIEW_RED, dash: 'dotted', arrow };
   }
 
+  // ── 기존관: 배관망=파란실선 / 그 외 모드=회색실선 ──
+  if (info.status === 'existing') {
+    return mode === 'network'
+      ? { color: EXISTING_BLUE, dash: 'solid', arrow }
+      : { color: EXISTING_COLOR, dash: 'solid', arrow };
+  }
+
+  // ── 신설관(영업·배관망 공통): 관경색, 공급관 저압=파선 ──
   const diams = DIAMETERS[info.material] || DIAMETERS.PLP;
   const idx = Math.max(0, diams.indexOf(info.diameter));
   const color = DIAM_COLORS[idx] || '#888888';
-
-  // 대시: 공급관 저압=파선 / 공급관 중압=실선 / 인입관=실선(+화살표)
   let dash = 'solid';
   if (info.use === 'supply') dash = info.pressure === '저압' ? 'dashed' : 'solid';
-
-  return { color, dash, arrow: info.use === 'inlet' };
+  return { color, dash, arrow };
 }
 
 // 배관 라벨(범례·연장 집계 키)

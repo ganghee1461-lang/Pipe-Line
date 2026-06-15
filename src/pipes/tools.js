@@ -6,6 +6,7 @@ import Draw from 'ol/interaction/Draw.js';
 import Modify from 'ol/interaction/Modify.js';
 import Snap from 'ol/interaction/Snap.js';
 import DragBox from 'ol/interaction/DragBox.js';
+import DragPan from 'ol/interaction/DragPan.js';
 import { platformModifierKeyOnly, shiftKeyOnly, altKeyOnly, singleClick } from 'ol/events/condition.js';
 import { toLonLat } from 'ol/proj.js';
 import { map } from '../map/map.js';
@@ -15,7 +16,7 @@ import {
   selectPipe, togglePipe, addToSelection, clearPipeSelection, setTool, undo, redo,
 } from '../state/store.js';
 
-let draw, modify, snap, dragBox;
+let draw, modify, snap, dragBox, dragPan;
 let activeTool = null;
 let ctrlDown = false;
 
@@ -130,16 +131,21 @@ export function initPipeTools() {
     if (ids.length) addToSelection(ids);
   });
 
+  // 기본 DragPan 참조 (Shift 드래그 시 패닝을 꺼서 박스선택이 동작하도록)
+  map.getInteractions().forEach((i) => { if (i instanceof DragPan) dragPan = i; });
+
   applyTool();
   subscribe('ui:changed', applyTool);
   map.on('singleclick', onClick);
   window.addEventListener('keydown', onKey);
 
-  // Ctrl 키 시각 피드백 (꼭짓점 추가 가능 상태)
+  // 보조키 시각/동작 피드백
   window.addEventListener('keydown', (e) => {
     if ((e.key === 'Control' || e.key === 'Meta') && !ctrlDown) { ctrlDown = true; updateCursor(); }
+    if (e.key === 'Shift' && dragPan && getState().ui.tool === 'select') dragPan.setActive(false);
   });
   window.addEventListener('keyup', (e) => {
     if (e.key === 'Control' || e.key === 'Meta') { ctrlDown = false; updateCursor(); }
+    if (e.key === 'Shift' && dragPan) dragPan.setActive(true);
   });
 }

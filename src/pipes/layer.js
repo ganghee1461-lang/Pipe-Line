@@ -8,8 +8,8 @@ import Point from 'ol/geom/Point.js';
 import { Style, Stroke, RegularShape, Fill } from 'ol/style.js';
 import { map } from '../map/map.js';
 import { getState, subscribe } from '../state/store.js';
-import { pipeStyle, modeEmphasis, DASH } from '../config/pipeStyles.js';
-import { toLine, withAlpha } from './util.js';
+import { pipeStyle, DASH } from '../config/pipeStyles.js';
+import { toLine } from './util.js';
 
 export const pipeSource = new VectorSource();
 const layer = new VectorLayer({ source: pipeSource, zIndex: 8, style: styleFor });
@@ -17,18 +17,17 @@ const layer = new VectorLayer({ source: pipeSource, zIndex: 8, style: styleFor }
 function styleFor(feature) {
   const p = feature.get('pipe');
   const { mode, selectedPipeIds } = getState().ui;
-  const s = pipeStyle(p.attr);
-  const emph = modeEmphasis(mode, p.attr);
+  const s = pipeStyle(p.attr, mode);
   const selected = selectedPipeIds.includes(p.id);
 
-  let width = emph.emphasize ? 6 : 4;
-  const color = emph.dim ? withAlpha(s.color, 0.25) : s.color;
+  const width = 4;
+  const color = s.color;
   const styles = [];
 
   // 선택 후광
   if (selected) {
     styles.push(new Style({
-      stroke: new Stroke({ color: 'rgba(29,78,216,0.35)', width: width + 7, lineCap: 'round' }),
+      stroke: new Stroke({ color: 'rgba(29,78,216,0.4)', width: width + 7, lineCap: 'round' }),
     }));
   }
 
@@ -55,7 +54,7 @@ function styleFor(feature) {
         geometry: new Point(end),
         image: new RegularShape({
           points: 3,
-          radius: emph.dim ? 5 : 7,
+          radius: 7,
           fill: new Fill({ color }),
           rotateWithView: true,
           rotation: -rot + Math.PI / 2,
