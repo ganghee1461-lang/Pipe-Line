@@ -1,11 +1,11 @@
-// ── 배관 속성 패널 ──
-// 단일 선택: 해당 배관 편집. 다중 선택: 속성 일괄 지정 + 선택 개소 연장 합계.
-import { getState, subscribe, updatePipes, removePipes, clearPipeSelection } from '../state/store.js';
+// ── 배관 속성 패널 (세그먼트 모델) ──
+// 선택된 세그먼트(들)의 속성 편집. 다중 선택 시 일괄 지정 + 선택 구간 연장 합계.
+import { getState, subscribe, updateSegs, removeSegs, clearSegSelection, parseSeg } from '../state/store.js';
 import { DIAMETERS } from '../config/pipeStyles.js';
-import { pipeLength, fmtLength } from './util.js';
+import { segLength, fmtLength } from './util.js';
 
-const MIX = '__mix__';                 // 값이 섞여 있을 때
-const FIXED = ['use', 'pressure', 'status', 'review', 'pavement']; // 옵션 고정 셀렉트
+const MIX = '__mix__';
+const FIXED = ['use', 'pressure', 'status', 'review', 'pavement'];
 let els = {};
 let panel, titleEl, lenEl, delBtn;
 
@@ -20,16 +20,16 @@ export function initAttrPanel() {
     const m = els.material.value;
     if (m === MIX) return;
     fillDiameters(m, els.diameter.value);
-    updatePipes(getState().ui.selectedPipeIds, { material: m, diameter: els.diameter.value });
+    updateSegs(getState().ui.selectedSegs, { material: m, diameter: els.diameter.value });
   });
   els.diameter.addEventListener('change', () => applyField('diameter'));
   FIXED.forEach((f) => els[f].addEventListener('change', () => applyField(f)));
 
   delBtn.addEventListener('click', () => {
-    const ids = getState().ui.selectedPipeIds;
-    if (ids.length) removePipes(ids);
+    const keys = getState().ui.selectedSegs;
+    if (keys.length) removeSegs(keys);
   });
-  document.getElementById('pa-close').addEventListener('click', clearPipeSelection);
+  document.getElementById('pa-close').addEventListener('click', clearSegSelection);
 
   subscribe('ui:changed', render);
   subscribe('pipes:changed', render);
@@ -39,10 +39,9 @@ export function initAttrPanel() {
 function applyField(field) {
   const v = els[field].value;
   if (v === MIX) return;
-  updatePipes(getState().ui.selectedPipeIds, { [field]: v });
+  updateSegs(getState().ui.selectedSegs, { [field]: v });
 }
 
-// 셀렉트에 값 반영. 섞여 있으면 '— 혼합 —' 옵션을 임시로 넣어 선택.
 function setSelect(el, value) {
   const ex = el.querySelector(`option[value="${MIX}"]`);
   if (ex) ex.remove();
@@ -67,7 +66,15 @@ function fillDiameters(material, keep) {
 
 function render() {
   const { pipes, ui } = getState();
-  const items = pipes.filter((p) => ui.selectedPipeIds.includes(p.id));
+  // 선택된 세그먼트 → {attr, pipe, i}
+  const items = ui.selectedSegs
+    .map((k) => {
+      const { pipeId, i } = parseSeg(k);
+      const p = pipes.find((x) => x.id === pipeId);
+      return p && p.segs[i] ? { attr: p.segs[i], pipe: p, i } : null;
+    })
+    .filter(Boolean);
+
   if (!items.length) {
     panel.classList.add('hidden');
     return;
@@ -76,7 +83,7 @@ function render() {
   const multi = items.length > 1;
 
   const common = (f) => {
-    const set = new Set(items.map((p) => p.attr[f]));
+    const set = new Set(items.map((it) => it.attr[f]));
     return set.size === 1 ? [...set][0] : MIX;
   };
 
@@ -85,22 +92,20 @@ function render() {
   fillDiameters(matV === MIX ? null : matV, common('diameter'));
   setSelect(els.diameter, common('diameter'));
   FIXED.forEach((f) => setSelect(els[f], common(f)));
-
-  // 압력은 공급관에서만 의미
   els.pressure.disabled = common('use') !== 'supply';
 
-  // 선택 개소 연장 (기존관 제외)
+  // 선택 구간 연장 (기존관 제외)
   const len = items
-    .filter((p) => p.attr.status !== 'existing')
-    .reduce((s, p) => s + pipeLength(p.coords), 0);
+    .filter((it) => it.attr.status !== 'existing')
+    .reduce((s, it) => s + segLength(it.pipe.coords, it.i), 0);
 
   if (multi) {
-    titleEl.textContent = '배관 일괄 지정';
-    lenEl.textContent = `${items.length}개 선택 · 연장 ${fmtLength(len)}`;
-    delBtn.textContent = `선택 ${items.length}개 삭제`;
+    titleEl.textContent = '구간 일괄 지정';
+    lenEl.textContent = `${items.length}개 구간 · 연장 ${fmtLength(len)}`;
+    delBtn.textContent = `선택 ${items.length}구간 삭제`;
   } else {
-    titleEl.textContent = '배관 속성';
-    lenEl.textContent = `#${items[0].id} · ${fmtLength(pipeLength(items[0].coords))}`;
-    delBtn.textContent = '이 배관 삭제';
+    titleEl.textContent = '배관 구간 속성';
+    lenEl.textContent = `#${items[0].pipe.id}-${items[0].i + 1} · ${fmtLength(segLength(items[0].pipe.coords, items[0].i))}`;
+    delBtn.textContent = '이 구간 삭제';
   }
 }

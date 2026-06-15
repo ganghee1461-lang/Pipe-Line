@@ -1,7 +1,7 @@
-// ── 배관 연장 집계 (종류별 합계) ──
+// ── 배관 연장 집계 (세그먼트 단위, 기존관 제외) ──
 import { getState, subscribe } from '../state/store.js';
 import { pipeKey } from '../config/pipeStyles.js';
-import { pipeLength, fmtLength } from './util.js';
+import { segLength, fmtLength } from './util.js';
 
 let listEl, sumEl;
 
@@ -18,21 +18,23 @@ function render() {
   let total = 0;
   let counted = 0;
 
-  // 기존관은 연장 집계에서 제외 (신설 물량만 관리)
   for (const p of pipes) {
-    if (p.attr.status === 'existing') continue;
-    const len = pipeLength(p.coords);
-    total += len;
-    counted++;
-    const k = pipeKey(p.attr);
-    const g = groups.get(k) || { count: 0, len: 0 };
-    g.count++;
-    g.len += len;
-    groups.set(k, g);
+    for (let i = 0; i < p.segs.length; i++) {
+      const a = p.segs[i];
+      if (a.status === 'existing') continue; // 기존관은 연장 집계 제외
+      const len = segLength(p.coords, i);
+      total += len;
+      counted++;
+      const k = pipeKey(a);
+      const g = groups.get(k) || { count: 0, len: 0 };
+      g.count++;
+      g.len += len;
+      groups.set(k, g);
+    }
   }
 
   if (!counted) {
-    listEl.innerHTML = '<li class="pt-empty">작도된 신설 배관이 없습니다 (P키로 작도)</li>';
+    listEl.innerHTML = '<li class="pt-empty">작도된 신설 구간이 없습니다 (P키로 작도)</li>';
     sumEl.textContent = '';
     return;
   }
@@ -42,10 +44,10 @@ function render() {
     .map(([k, g]) => `
       <li class="pt-row">
         <span class="pt-key">${esc(k)}</span>
-        <span class="pt-val">${g.count}개 · ${fmtLength(g.len)}</span>
+        <span class="pt-val">${g.count}구간 · ${fmtLength(g.len)}</span>
       </li>`)
     .join('');
-  sumEl.textContent = `신설 ${counted}개 · ${fmtLength(total)}`;
+  sumEl.textContent = `신설 ${counted}구간 · ${fmtLength(total)}`;
 }
 
 function esc(s) {
