@@ -220,6 +220,35 @@ export function setTool(tool) {
   setUI({ tool });
 }
 
+// ── 저장 / 불러오기 ──
+export function exportProject() {
+  return {
+    version: 1,
+    savedAt: new Date().toISOString(),
+    demands: state.demands.map((d) => ({ ...d })),
+    pipes: clonePipes(state.pipes),
+  };
+}
+export function importProject(data) {
+  state.demands = Array.isArray(data?.demands) ? data.demands.map((d) => ({ ...d })) : [];
+  state.pipes = Array.isArray(data?.pipes)
+    ? data.pipes.map((p) => ({
+        id: p.id,
+        coords: (p.coords || []).map((c) => [...c]),
+        segs: (p.segs || []).map((a) => ({ ...DEFAULT_ATTR, ...a })),
+      }))
+    : [];
+  demandSeq = state.demands.reduce((m, d) => Math.max(m, d.id || 0), 0);
+  pipeSeq = state.pipes.reduce((m, p) => Math.max(m, p.id || 0), 0);
+  state.ui.selectedSegs = [];
+  state.ui.selectedDemandId = null;
+  history = [clonePipes(state.pipes)];
+  histIdx = 0;
+  emit('demands:changed', state.demands);
+  emit('pipes:changed', state.pipes);
+  emit('ui:changed', state.ui);
+}
+
 // ── UI ──
 export function setUI(patch) {
   Object.assign(state.ui, patch);

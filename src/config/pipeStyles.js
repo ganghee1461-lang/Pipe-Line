@@ -62,10 +62,11 @@ export function pipeStyle(info, mode = 'sales') {
 // 배관 라벨(범례·연장 집계 키)
 export function pipeKey(info) {
   if (!info) return '미지정';
-  const st = info.status === 'existing' ? '기존' : '예정';
+  const tail = `${info.material} ${info.diameter}`;
+  if (info.status === 'existing') return `기존관 ${tail}`;
   const useK = info.use === 'supply' ? '공급관' : '인입관';
   const press = info.use === 'supply' && info.pressure ? ` ${info.pressure}` : '';
-  return `${st} ${useK}${press} ${info.material} ${info.diameter}`;
+  return `${useK}${press} ${tail}`;
 }
 
 // ── 모드별 강조 규칙 ── (시각표현만, 원본 데이터 불변)

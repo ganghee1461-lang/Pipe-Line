@@ -69,6 +69,21 @@
         <div id="pipe-total-sum"></div>
       </section>
 
+      <!-- 저장 / 불러오기 -->
+      <section class="panel">
+        <div class="panel-label">저장 / 불러오기</div>
+        <div class="row">
+          <input type="text" id="save-name" placeholder="파일 이름" />
+          <button id="save-btn" class="btn-ghost">저장</button>
+        </div>
+        <ul id="save-list"></ul>
+        <div class="row">
+          <button id="export-btn" class="btn-ghost">파일로 내보내기</button>
+          <button id="import-btn" class="btn-ghost">파일 불러오기</button>
+        </div>
+        <input type="file" id="import-file" accept="application/json" class="hidden" />
+      </section>
+
       <footer id="env-note"></footer>
     </aside>
 
@@ -153,6 +168,7 @@
       </div>
 
       <div id="parcel-popup" class="hidden"></div>
+      <div id="marker-popup" class="hidden"></div>
     </main>
   </div>
 

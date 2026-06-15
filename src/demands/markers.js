@@ -7,7 +7,7 @@ import Point from 'ol/geom/Point.js';
 import { fromLonLat } from 'ol/proj.js';
 import { Style, Circle, RegularShape, Fill, Stroke, Text } from 'ol/style.js';
 import { map } from '../map/map.js';
-import { getState, subscribe } from '../state/store.js';
+import { getState, subscribe, updateDemand, setUI } from '../state/store.js';
 
 // 마커 색상 팔레트 (리스트 색칠 선택과 공유)
 export const MARKER_COLORS = ['#b91c1c', '#b45309', '#0f766e', '#1d4ed8', '#6A1B9A', '#2E7D32', '#475569'];
@@ -74,10 +74,74 @@ function applyFilter() {
   });
 }
 
+// ── 마커 클릭 팝업 (선택 + 메모 + 스타일) ──
+const popup = document.getElementById('marker-popup');
+
+function esc(s) {
+  return String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+}
+function hidePopup() { popup.classList.add('hidden'); popup.innerHTML = ''; }
+
+function showPopup(pixel, d) {
+  const shape = d.shape || 'circle';
+  const icon = { circle: '●', triangle: '▲', square: '■' };
+  popup.innerHTML = `
+    <div class="mp-bar">
+      <b>#${d.id}</b>
+      <span class="mp-q" title="${esc(d.query)}">${esc(d.query)}</span>
+      <button class="mp-close">✕</button>
+    </div>
+    <div class="mp-body">
+      <div class="mp-addr">${esc(d.address)}</div>
+      <textarea class="mp-memo" placeholder="메모…">${esc(d.memo || '')}</textarea>
+      <div class="di-colors">
+        ${MARKER_COLORS.map((c) => `<button class="ci ${d.color === c ? 'on' : ''}" data-color="${c}" style="background:${c}"></button>`).join('')}
+      </div>
+      <div class="di-shapes">
+        ${MARKER_SHAPES.map((sh) => `<button class="si ${shape === sh ? 'on' : ''}" data-shape="${sh}">${icon[sh]}</button>`).join('')}
+      </div>
+    </div>`;
+  popup.classList.remove('hidden');
+  popup.style.left = `${pixel[0] + 14}px`;
+  popup.style.top = `${pixel[1]}px`;
+
+  popup.querySelector('.mp-close').onclick = hidePopup;
+  const memo = popup.querySelector('.mp-memo');
+  const save = () => updateDemand(d.id, { memo: memo.value });
+  memo.addEventListener('change', save);
+  memo.addEventListener('blur', save);
+  popup.querySelectorAll('.ci').forEach((b) => {
+    b.onclick = () => { updateDemand(d.id, { color: b.dataset.color }); showPopup(pixel, getState().demands.find((x) => x.id === d.id)); };
+  });
+  popup.querySelectorAll('.si').forEach((b) => {
+    b.onclick = () => { updateDemand(d.id, { shape: b.dataset.shape }); showPopup(pixel, getState().demands.find((x) => x.id === d.id)); };
+  });
+}
+
+function markerAtPixel(pixel) {
+  let hit = null;
+  map.forEachFeatureAtPixel(
+    pixel,
+    (f, lyr) => { if (lyr === markerLayer) { hit = f; return true; } },
+    { hitTolerance: 7 }
+  );
+  return hit;
+}
+
 export function initMarkers() {
   subscribe('demands:changed', rebuild);
   subscribe('ui:changed', applyFilter);
-  // 마커 클릭 → 선택 + 팝업은 list 모듈과 연동 (간단히 선택만)
+
+  // 마커 클릭 → 선택 + 메모/스타일 팝업
+  map.on('singleclick', (evt) => {
+    const f = markerAtPixel(evt.pixel);
+    if (!f) { hidePopup(); return; }
+    const d = f.get('demand');
+    setUI({ selectedDemandId: d.id });
+    showPopup(evt.pixel, d);
+  });
 }
+
+export function isMarkerAt(pixel) { return !!markerAtPixel(pixel); }
 
 export { src as markerSource };

@@ -16,6 +16,7 @@ import { initAttrPanel } from './pipes/attrPanel.js';
 import { initTotals } from './pipes/totals.js';
 import { initModePanel } from './pipes/modePanel.js';
 import { initLegend } from './pipes/legend.js';
+import { initSavePanel } from './io/savePanel.js';
 
 // 기능 모듈 초기화
 initMarkers();
@@ -32,6 +33,7 @@ initAttrPanel();
 initTotals();
 initModePanel();
 initLegend();
+initSavePanel();
 
 // 환경 안내 (키 유무)
 const note = document.getElementById('env-note');
