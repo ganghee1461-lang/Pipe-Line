@@ -92,23 +92,27 @@
         <!-- 저장 탭 -->
         <div class="tab-pane hidden" data-tab="io">
           <section class="panel">
-            <div class="panel-label">저장 / 불러오기</div>
+            <div class="panel-label">GitHub 저장</div>
             <div class="row">
               <input type="text" id="save-name" placeholder="파일 이름" />
               <button id="save-btn" class="btn-primary">저장</button>
             </div>
-            <ul id="save-list"></ul>
+            <div id="save-status"></div>
+          </section>
+
+          <section class="panel">
+            <div class="panel-label">불러오기 (GitHub save/)</div>
+            <button id="gh-list-btn" class="btn-ghost" style="width:100%">목록 새로고침</button>
+            <ul id="gh-list"></ul>
+          </section>
+
+          <section class="panel">
+            <div class="panel-label">로컬 파일</div>
             <div class="row">
               <button id="export-btn" class="btn-ghost">내보내기</button>
               <button id="import-btn" class="btn-ghost">파일 열기</button>
             </div>
             <input type="file" id="import-file" accept="application/json" class="hidden" />
-          </section>
-
-          <section class="panel">
-            <div class="panel-label">GitHub save/ 폴더</div>
-            <button id="gh-list-btn" class="btn-ghost" style="width:100%">목록 불러오기</button>
-            <ul id="gh-list"></ul>
           </section>
         </div>
       </div>

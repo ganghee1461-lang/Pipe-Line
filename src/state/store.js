@@ -61,13 +61,13 @@ export function clearDemands() {
 // 선택은 세그먼트 키 'pipeId:i' (i = 세그먼트 인덱스 0..N-2).
 let pipeSeq = 0;
 const DEFAULT_ATTR = {
-  material: 'PLP',    // 'PLP' | 'PE'
-  diameter: '100A',
+  material: 'PE',     // 'PLP' | 'PE'
+  diameter: '63A',
   use: 'supply',      // 'supply'(공급) | 'inlet'(인입)
-  pressure: '중압',   // '저압' | '중압'
+  pressure: '저압',   // '저압' | '중압'
   status: 'planned',  // 'planned'(예정) | 'existing'(기존)
-  review: 'none',     // 'target'(심의대상) | 'none'
-  pavement: 'none',   // 'none' | 'asphalt'(아스팔트) | 'concrete'(콘크리트) | 'block'(보도블럭)
+  review: 'target',   // 'target'(심의대상) | 'none'
+  pavement: 'asphalt', // 'none' | 'asphalt' | 'concrete' | 'block'
   section: 1,         // N번 구간 (배관망 분석에서 구간별 색상)
 };
 const newAttr = () => ({ ...DEFAULT_ATTR });

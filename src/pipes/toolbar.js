@@ -4,7 +4,7 @@ import { getState, subscribe, setTool, undo, redo, canUndo, canRedo } from '../s
 const HINTS = {
   select: '클릭 선택 · Shift+드래그 박스선택 · Ctrl+클릭 추가선택 · Del 삭제',
   draw: '클릭으로 점 찍기 · 우클릭(또는 더블클릭) 완료 · Esc 취소',
-  vertex: '꼭짓점 드래그=이동 · Ctrl+클릭=점 추가 · Alt+클릭=점 삭제',
+  vertex: '꼭짓점 드래그=이동 · Ctrl+클릭=점 추가 · 우클릭=점 삭제',
 };
 
 export function initPipeToolbar() {

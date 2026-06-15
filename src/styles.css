@@ -119,6 +119,12 @@ button { font-family: inherit; cursor: pointer; border: none; border-radius: 6px
 .di-style { margin-top: 6px; display: flex; flex-direction: column; gap: 5px; }
 .di-colors { display: flex; gap: 4px; flex-wrap: wrap; }
 .ci { width: 17px; height: 17px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; padding: 0; }
+
+/* 전체 마커 스타일 패널 */
+#ms-colors { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
+#ms-colors .ci { width: 22px; height: 22px; }
+#ms-shapes { display: flex; gap: 8px; }
+#ms-shapes .si { flex: 1; height: 30px; font-size: 14px; }
 .ci.on { border-color: var(--text); }
 .di-shapes { display: flex; gap: 4px; }
 .si { width: 24px; height: 22px; background: var(--surface-2); border: 1px solid var(--border); border-radius: 5px; font-size: 11px; color: var(--text-2); }
@@ -208,8 +214,9 @@ button { font-family: inherit; cursor: pointer; border: none; border-radius: 6px
 .pa-close { background: transparent; opacity: 0.6; font-size: 13px; }
 .pa-close:hover { opacity: 1; }
 .pa-grid { padding: 11px 12px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px 10px; }
-.pa-grid label { display: flex; flex-direction: column; gap: 3px; font-size: 10.5px; color: var(--muted); }
-.pa-grid select {
+.pa-grid label { display: flex; flex-direction: column; gap: 3px; font-size: 10.5px; color: var(--muted); min-width: 0; }
+.pa-grid select, .pa-grid input {
+  width: 100%; box-sizing: border-box; min-width: 0;
   font-family: inherit; font-size: 12px; padding: 5px 6px;
   border: 1px solid var(--border); border-radius: 5px; background: var(--surface-2); color: var(--text);
 }
@@ -269,3 +276,5 @@ button { font-family: inherit; cursor: pointer; border: none; border-radius: 6px
 .sv-row button { background: var(--surface-2); border: 1px solid var(--border-soft); border-radius: 5px; padding: 2px 6px; font-size: 11px; color: var(--text-2); }
 .sv-row button:hover { background: var(--surface-3); }
 .sv-empty { font-size: 11px; color: var(--muted); }
+#save-status { margin-top: 7px; font-size: 11px; color: var(--muted); line-height: 1.4; }
+#save-status.err { color: var(--error); }

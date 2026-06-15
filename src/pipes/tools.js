@@ -58,6 +58,32 @@ function nearestVertex(pixel) {
   return best;
 }
 
+// A모드: 픽셀 근처의 꼭짓점 1개 삭제 (우클릭). 2점이면 선분 자체를 삭제.
+function deleteVertexAt(pixel) {
+  let target = null;
+  let bestD = 14;
+  pipeSource.forEachFeature((f) => {
+    f.getGeometry().getCoordinates().forEach((c, idx) => {
+      const px = map.getPixelFromCoordinate(c);
+      if (!px) return;
+      const d = Math.hypot(px[0] - pixel[0], px[1] - pixel[1]);
+      if (d < bestD) { bestD = d; target = { id: f.getId(), idx }; }
+    });
+  });
+  if (!target) return;
+  const pipe = getState().pipes.find((p) => p.id === target.id);
+  if (!pipe) return;
+  hoverSrc.clear();
+  if (pipe.coords.length <= 2) {
+    removeSegs([segKey(pipe.id, 0)]); // 점 하나만 남으면 선분 소멸 → 배관 삭제
+    return;
+  }
+  const old3857 = pipe.coords.map((c) => fromLonLat(c));
+  const new3857 = old3857.filter((_, i) => i !== target.idx);
+  const segs = reconcileSegs(old3857, pipe.segs, new3857);
+  setPipeGeometry(target.id, new3857.map((c) => toLonLat(c)), segs);
+}
+
 function lineToLonLat(geom) {
   return geom.getCoordinates().map((c) => toLonLat(c));
 }
@@ -246,11 +272,14 @@ export function initPipeTools() {
   });
   window.addEventListener('keydown', onKey);
 
-  // 우클릭으로 작도 종료
+  // 우클릭: 작도 모드=종료 / 꼭짓점 모드=점 삭제
   map.getViewport().addEventListener('contextmenu', (e) => {
     if (activeTool === 'draw') {
       e.preventDefault();
       try { draw.finishDrawing(); } catch { /* 점 부족 시 무시 */ }
+    } else if (activeTool === 'vertex') {
+      e.preventDefault();
+      deleteVertexAt(map.getEventPixel(e));
     }
   });
 
