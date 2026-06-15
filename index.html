@@ -29,7 +29,7 @@
       <nav id="tabs">
         <button data-tab="demands" class="active">수요처</button>
         <button data-tab="pipes">배관</button>
-        <button data-tab="layers">레이어</button>
+        <button data-tab="layers">디자인</button>
         <button data-tab="io">저장</button>
       </nav>
 
@@ -49,12 +49,6 @@
             </label>
           </section>
 
-          <section class="panel">
-            <div class="panel-label">마커 스타일 (전체)</div>
-            <div class="di-colors" id="ms-colors"></div>
-            <div class="di-shapes" id="ms-shapes"></div>
-          </section>
-
           <section class="panel grow">
             <div class="panel-label">수요처 <span id="demand-count">0</span></div>
             <ul id="demand-list"></ul>
@@ -70,7 +64,7 @@
           </section>
         </div>
 
-        <!-- 레이어 탭 -->
+        <!-- 디자인 탭 (레이어 + 마커 스타일) -->
         <div class="tab-pane hidden" data-tab="layers">
           <section class="panel">
             <div class="panel-label">레이어</div>
@@ -85,6 +79,31 @@
                 <input type="checkbox" id="road-toggle" /> 도시계획도로
               </label>
               <input type="range" id="road-opacity" min="10" max="100" value="80" />
+            </div>
+          </section>
+
+          <section class="panel">
+            <div class="panel-label">마커 스타일 (전체)</div>
+            <div class="di-colors" id="ms-colors"></div>
+            <div class="ms-grid">
+              <div class="ms-field">
+                <span class="ms-lab">모양</span>
+                <div class="di-shapes" id="ms-shapes"></div>
+              </div>
+              <div class="ms-field">
+                <span class="ms-lab">채움</span>
+                <div class="seg sm" id="ms-fill">
+                  <button data-fill="filled">채움</button>
+                  <button data-fill="hollow">투명</button>
+                </div>
+              </div>
+              <div class="ms-field">
+                <span class="ms-lab">테두리</span>
+                <div class="seg sm" id="ms-border">
+                  <button data-border="solid">실선</button>
+                  <button data-border="dashed">점선</button>
+                </div>
+              </div>
             </div>
           </section>
         </div>

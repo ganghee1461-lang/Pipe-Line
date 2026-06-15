@@ -121,10 +121,16 @@ button { font-family: inherit; cursor: pointer; border: none; border-radius: 6px
 .ci { width: 17px; height: 17px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; padding: 0; }
 
 /* 전체 마커 스타일 패널 */
-#ms-colors { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
-#ms-colors .ci { width: 22px; height: 22px; }
-#ms-shapes { display: flex; gap: 8px; }
-#ms-shapes .si { flex: 1; height: 30px; font-size: 14px; }
+#ms-colors { display: flex; flex-wrap: nowrap; gap: 5px; margin-bottom: 11px; }
+#ms-colors .ci { width: 20px; height: 20px; flex-shrink: 0; }
+.ms-grid { display: flex; flex-direction: column; gap: 9px; }
+.ms-field { display: flex; align-items: center; gap: 10px; }
+.ms-lab { width: 34px; flex-shrink: 0; font-size: 11px; color: var(--muted); }
+#ms-shapes { display: flex; gap: 6px; flex: 1; }
+#ms-shapes .si { flex: 1; height: 28px; font-size: 13px; }
+.seg.sm { flex: 1; }
+.seg.sm button { padding: 5px 4px; font-size: 11.5px; }
+.seg.sm button.active { background: var(--accent); color: #fff; }
 .ci.on { border-color: var(--text); }
 .di-shapes { display: flex; gap: 4px; }
 .si { width: 24px; height: 22px; background: var(--surface-2); border: 1px solid var(--border); border-radius: 5px; font-size: 11px; color: var(--text-2); }

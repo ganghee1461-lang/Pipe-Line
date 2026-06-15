@@ -9,50 +9,66 @@ import { Style, Circle, RegularShape, Fill, Stroke, Text } from 'ol/style.js';
 import { map } from '../map/map.js';
 import { getState, subscribe, updateDemand, setUI } from '../state/store.js';
 
-// 마커 색상 팔레트 (리스트 색칠 선택과 공유)
-export const MARKER_COLORS = ['#b91c1c', '#b45309', '#0f766e', '#1d4ed8', '#6A1B9A', '#2E7D32', '#475569'];
+// 마커 색상 팔레트 (한 줄에 들어오는 10색)
+export const MARKER_COLORS = [
+  '#b91c1c', '#ea580c', '#ca8a04', '#2E7D32', '#0891b2',
+  '#1d4ed8', '#6A1B9A', '#db2777', '#0f766e', '#475569',
+];
 export const MARKER_SHAPES = ['circle', 'triangle', 'square'];
 
 const src = new VectorSource();
 export const markerLayer = new VectorLayer({ source: src, zIndex: 7, style: styleFor });
 map.addLayer(markerLayer);
 
-// 스타일 캐시 (색/모양/메모/선택/번호 조합으로 키) — 불필요한 Style 재생성 방지
 const styleCache = new Map();
+
+function makeImage(shape, radius, fill, stroke) {
+  if (shape === 'triangle') return new RegularShape({ points: 3, radius: radius + 2, fill, stroke });
+  if (shape === 'square') return new RegularShape({ points: 4, radius, angle: Math.PI / 4, fill, stroke });
+  return new Circle({ radius, fill, stroke });
+}
 
 function styleFor(feature) {
   const d = feature.get('demand');
   const hasMemo = !!(d.memo && d.memo.trim());
   const selected = getState().ui.selectedDemandId === d.id;
-  const ms = getState().ui.markerStyle; // 전체 공통 스타일
-  const color = ms.color;
-  const shape = ms.shape;
-  const key = `${color}-${shape}-${hasMemo ? 'm' : ''}-${selected ? 's' : ''}-${d.id}`;
+  const ms = getState().ui.markerStyle; // 전체 공통: { color, shape, fill, border }
+  const { color, shape } = ms;
+  const hollow = ms.fill === 'hollow';
+  const dashed = ms.border === 'dashed';
+  const key = `${color}-${shape}-${ms.fill}-${ms.border}-${hasMemo ? 'm' : ''}-${selected ? 's' : ''}-${d.id}`;
   if (styleCache.has(key)) return styleCache.get(key);
 
-  const radius = selected ? 13 : 10;
-  const fill = new Fill({ color });
-  // 선택=파랑 / 메모=황색 / 기본=흰색 테두리 (스타일은 전체 공통이라 테두리로 구분)
+  const radius = 10;
+  const fill = new Fill({ color: hollow ? 'rgba(255,255,255,0.0)' : color });
   const stroke = new Stroke({
-    color: selected ? '#1d4ed8' : hasMemo ? '#fde68a' : '#ffffff',
-    width: selected ? 3 : hasMemo ? 3 : 2,
+    color: hollow ? color : '#ffffff',
+    width: 2.4,
+    lineDash: dashed ? [4, 3] : undefined,
   });
-  let image;
-  if (shape === 'triangle') image = new RegularShape({ points: 3, radius: radius + 2, fill, stroke });
-  else if (shape === 'square') image = new RegularShape({ points: 4, radius, angle: Math.PI / 4, fill, stroke });
-  else image = new Circle({ radius, fill, stroke });
 
-  const style = new Style({
-    image,
+  const styles = [];
+  // 상태 표시 링: 선택=파랑 / 메모=황색 (전체 스타일과 별개로 외곽 링)
+  if (selected || hasMemo) {
+    styles.push(new Style({
+      image: new Circle({
+        radius: radius + 5,
+        stroke: new Stroke({ color: selected ? '#1d4ed8' : '#f59e0b', width: 2.5 }),
+        fill: new Fill({ color: 'rgba(0,0,0,0)' }),
+      }),
+    }));
+  }
+  styles.push(new Style({
+    image: makeImage(shape, radius, fill, stroke),
     text: new Text({
       text: String(d.id),
       font: 'bold 11px "Noto Sans KR", sans-serif',
-      fill: new Fill({ color: '#ffffff' }),
+      fill: new Fill({ color: hollow ? color : '#ffffff' }),
       offsetY: shape === 'triangle' ? 2 : 0,
     }),
-  });
-  styleCache.set(key, style);
-  return style;
+  }));
+  styleCache.set(key, styles);
+  return styles;
 }
 
 function rebuild(demands) {

@@ -25,10 +25,14 @@ function dashCss(d) {
   return d === 'dashed' ? 'dashed' : d === 'dotted' ? 'dotted' : 'solid';
 }
 
-// 배관망 모드에선 구간 번호로 묶고, 그 외엔 배관 종류로 묶는다.
+// 모드별 범례 그룹핑 (스타일 분기와 동일 기준으로 묶어야 색이 맞는다)
 function legendKey(a, mode) {
   if (mode === 'network') {
     return a.status === 'existing' ? '기존관' : `${a.section || 1}번 구간`;
+  }
+  if (mode === 'excavation') {
+    if (a.status === 'existing') return '기존관';
+    return a.review === 'target' ? '심의대상' : '심의 미대상';
   }
   return pipeKey(a);
 }
