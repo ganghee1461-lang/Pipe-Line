@@ -17,6 +17,14 @@ export function initSavePanel() {
   document.getElementById('import-btn').addEventListener('click', () => importFile.click());
   importFile.addEventListener('change', importFromFile);
 
+  // Ctrl+S / Cmd+S → GitHub 저장
+  window.addEventListener('keydown', (e) => {
+    if ((e.ctrlKey || e.metaKey) && (e.key === 's' || e.key === 'S')) {
+      e.preventDefault();
+      saveToGithub();
+    }
+  });
+
   listGithub();
 }
 
@@ -53,9 +61,14 @@ async function listGithub() {
     const files = j.files || [];
     if (!files.length) { ghListEl.innerHTML = '<li class="sv-empty">save/ 폴더에 저장 파일 없음</li>'; return; }
     ghListEl.innerHTML = files
-      .map((f) => `<li class="sv-row"><span class="sv-name" title="${esc(f)}">${esc(f)}</span><button class="gh-load" data-f="${esc(f)}">열기</button></li>`)
+      .map((f) => `<li class="sv-row">
+        <span class="sv-name" title="${esc(f)}">${esc(f)}</span>
+        <button class="gh-load" data-f="${esc(f)}">열기</button>
+        <button class="gh-del" data-f="${esc(f)}" title="삭제">🗑</button>
+      </li>`)
       .join('');
     ghListEl.querySelectorAll('.gh-load').forEach((b) => { b.onclick = () => loadGithub(b.dataset.f); });
+    ghListEl.querySelectorAll('.gh-del').forEach((b) => { b.onclick = () => deleteGithub(b.dataset.f); });
   } catch (err) {
     ghListEl.innerHTML = `<li class="sv-empty">목록 실패 (${esc(String(err.message || err))})</li>`;
   }
@@ -71,6 +84,19 @@ async function loadGithub(file) {
     nameInput.value = file.replace(/\.json$/i, '');
   } catch (err) {
     status(`불러오기 실패: ${err.message}`, true);
+  }
+}
+
+async function deleteGithub(file) {
+  if (!confirm(`'${file}' 을(를) 삭제할까요?`)) return;
+  try {
+    const r = await fetch(`/api/save?file=${encodeURIComponent(file)}`, { method: 'DELETE' });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(j.error || `HTTP ${r.status}`);
+    status(`삭제됨: ${file}`);
+    listGithub();
+  } catch (err) {
+    status(`삭제 실패: ${err.message}`, true);
   }
 }
 

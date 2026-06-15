@@ -84,6 +84,19 @@ export function pipeKey(info) {
   return `${useK}${press} ${tail}`;
 }
 
+// 모드별 집계·범례 그룹 키 (스타일 분기와 동일 기준으로 묶어 색이 맞도록)
+export function legendGroup(info, mode) {
+  if (!info) return '미지정';
+  if (mode === 'network') {
+    return info.status === 'existing' ? '기존관' : `${info.section || 1}번 구간`;
+  }
+  if (mode === 'excavation') {
+    if (info.status === 'existing') return '기존관';
+    return info.review === 'target' ? '심의대상' : '심의 미대상';
+  }
+  return pipeKey(info);
+}
+
 // ── 모드별 강조 규칙 ── (시각표현만, 원본 데이터 불변)
 // 반환: { dim:bool, emphasize:bool } → 렌더 시 투명도/두께 조절
 export function modeEmphasis(mode, info) {

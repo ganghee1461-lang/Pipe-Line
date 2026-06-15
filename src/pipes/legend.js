@@ -1,6 +1,6 @@
 // ── 배관 범례 (현재 레이어에 있는 종류만, 모드별 색상 반영, 접기/펴기) ──
 import { getState, subscribe } from '../state/store.js';
-import { pipeStyle, pipeKey } from '../config/pipeStyles.js';
+import { pipeStyle, legendGroup } from '../config/pipeStyles.js';
 
 let box, listEl, toggleBtn;
 let open = true;
@@ -25,24 +25,12 @@ function dashCss(d) {
   return d === 'dashed' ? 'dashed' : d === 'dotted' ? 'dotted' : 'solid';
 }
 
-// 모드별 범례 그룹핑 (스타일 분기와 동일 기준으로 묶어야 색이 맞는다)
-function legendKey(a, mode) {
-  if (mode === 'network') {
-    return a.status === 'existing' ? '기존관' : `${a.section || 1}번 구간`;
-  }
-  if (mode === 'excavation') {
-    if (a.status === 'existing') return '기존관';
-    return a.review === 'target' ? '심의대상' : '심의 미대상';
-  }
-  return pipeKey(a);
-}
-
 function render() {
   const { pipes, ui } = getState();
   const types = new Map(); // 라벨 -> 대표 attr
   for (const p of pipes) {
     for (const a of p.segs) {
-      const k = legendKey(a, ui.mode);
+      const k = legendGroup(a, ui.mode);
       if (!types.has(k)) types.set(k, a);
     }
   }

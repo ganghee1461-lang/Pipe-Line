@@ -4,6 +4,7 @@ import View from 'ol/View.js';
 import TileLayer from 'ol/layer/Tile.js';
 import XYZ from 'ol/source/XYZ.js';
 import { fromLonLat } from 'ol/proj.js';
+import { boundingExtent } from 'ol/extent.js';
 import { tileUrl } from '../config/vworld.js';
 import { getState, setUI } from '../state/store.js';
 
@@ -42,6 +43,15 @@ export function flyTo(lon, lat, zoom = 17) {
   const view = map.getView();
   const target = Math.max(view.getZoom(), zoom);
   view.animate({ center: fromLonLat([lon, lat]), zoom: target, duration: 500 });
+}
+
+// 여러 좌표가 모두 보이도록 시점 맞춤 (검색 결과 포커스용)
+export function fitToLonLats(lonlats, { maxZoom = 17, padding = 90 } = {}) {
+  const pts = lonlats.filter((c) => Number.isFinite(c[0]) && Number.isFinite(c[1]));
+  if (!pts.length) return;
+  if (pts.length === 1) { flyTo(pts[0][0], pts[0][1], maxZoom); return; }
+  const ext = boundingExtent(pts.map(([lon, lat]) => fromLonLat([lon, lat])));
+  map.getView().fit(ext, { duration: 500, maxZoom, padding: [padding, padding, padding, padding] });
 }
 
 export function currentZoom() {

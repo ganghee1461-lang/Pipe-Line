@@ -9,11 +9,13 @@ import { Style, Circle, RegularShape, Fill, Stroke, Text } from 'ol/style.js';
 import { map } from '../map/map.js';
 import { getState, subscribe, updateDemand, setUI } from '../state/store.js';
 
-// 마커 색상 팔레트 (한 줄에 들어오는 10색)
+// 마커 채움 색상 (흰색 포함)
 export const MARKER_COLORS = [
   '#b91c1c', '#ea580c', '#ca8a04', '#2E7D32', '#0891b2',
-  '#1d4ed8', '#6A1B9A', '#db2777', '#0f766e', '#475569',
+  '#1d4ed8', '#6A1B9A', '#db2777', '#475569', '#ffffff',
 ];
+// 마커 테두리 색상
+export const BORDER_COLORS = ['#ffffff', '#1c1c1e', '#b91c1c', '#1d4ed8', '#2E7D32', '#ca8a04'];
 export const MARKER_SHAPES = ['circle', 'triangle', 'square'];
 
 const src = new VectorSource();
@@ -36,13 +38,14 @@ function styleFor(feature) {
   const { color, shape } = ms;
   const hollow = ms.fill === 'hollow';
   const dashed = ms.border === 'dashed';
-  const key = `${color}-${shape}-${ms.fill}-${ms.border}-${hasMemo ? 'm' : ''}-${selected ? 's' : ''}-${d.id}`;
+  const borderColor = ms.borderColor || '#ffffff';
+  const key = `${color}-${borderColor}-${shape}-${ms.fill}-${ms.border}-${hasMemo ? 'm' : ''}-${selected ? 's' : ''}-${d.id}`;
   if (styleCache.has(key)) return styleCache.get(key);
 
   const radius = 10;
   const fill = new Fill({ color: hollow ? 'rgba(255,255,255,0.0)' : color });
   const stroke = new Stroke({
-    color: hollow ? color : '#ffffff',
+    color: hollow ? color : borderColor, // 채움일 땐 지정 테두리색, 투명일 땐 채움색이 외곽선
     width: 2.4,
     lineDash: dashed ? [4, 3] : undefined,
   });

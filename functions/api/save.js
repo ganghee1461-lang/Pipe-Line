@@ -74,6 +74,23 @@ export async function onRequest(context) {
       return json({ ok: true, path });
     }
 
+    if (request.method === 'DELETE') {
+      if (!token) return json({ error: 'GITHUB_TOKEN 미설정' }, 500);
+      const file = url.searchParams.get('file');
+      if (!file) return json({ error: 'file 파라미터 필요' }, 400);
+      const apiUrl = `${base}/save/${encodeURIComponent(file)}`;
+      const g = await fetch(`${apiUrl}?ref=${BRANCH}`, { headers });
+      if (!g.ok) return json({ error: `파일 없음 HTTP ${g.status}` }, g.status);
+      const sha = (await g.json()).sha;
+      const del = await fetch(apiUrl, {
+        method: 'DELETE',
+        headers: { ...headers, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: `delete: ${file}`, sha, branch: BRANCH }),
+      });
+      if (!del.ok) return json({ error: `삭제 실패 HTTP ${del.status}` }, 502);
+      return json({ ok: true });
+    }
+
     return json({ error: 'method not allowed' }, 405);
   } catch (e) {
     return json({ error: `서버 오류: ${e}` }, 500);
