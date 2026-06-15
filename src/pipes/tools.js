@@ -14,7 +14,7 @@ import {
 } from 'ol/events/condition.js';
 import { fromLonLat, toLonLat } from 'ol/proj.js';
 import { map } from '../map/map.js';
-import { pipeSource } from './layer.js';
+import { pipeSource, setHoveredSeg } from './layer.js';
 import { reconcileSegs } from './util.js';
 import {
   getState, subscribe, addPipe, setPipeGeometry, removeSegs,
@@ -190,6 +190,14 @@ export function initPipeTools() {
   applyTool();
   subscribe('ui:changed', applyTool);
   map.on('singleclick', onClick);
+  // V모드: 마우스 올린 선분을 미리 강조 + 포인터 커서
+  map.on('pointermove', (evt) => {
+    if (evt.dragging || getState().ui.tool !== 'select') { setHoveredSeg(null); return; }
+    const key = segAtPixel(evt.pixel, evt.coordinate);
+    setHoveredSeg(key);
+    const el = map.getTargetElement();
+    if (el) el.style.cursor = key ? 'pointer' : '';
+  });
   window.addEventListener('keydown', onKey);
 
   // 우클릭으로 작도 종료

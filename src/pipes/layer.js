@@ -16,6 +16,12 @@ import { toLine } from './util.js';
 export const pipeSource = new VectorSource();
 const layer = new VectorLayer({ source: pipeSource, zIndex: 8, style: styleFor });
 
+// V모드 hover 미리보기 (어떤 선분이 선택될지)
+let hoveredSeg = null;
+export function setHoveredSeg(key) {
+  if (key !== hoveredSeg) { hoveredSeg = key; layer.changed(); }
+}
+
 function styleFor(feature) {
   const p = feature.get('pipe');
   const { mode, selectedSegs, tool } = getState().ui;
@@ -27,12 +33,19 @@ function styleFor(feature) {
     const a = p.segs[i];
     const s = pipeStyle(a, mode);
     const seg = new LineString([cs[i], cs[i + 1]]);
-    const selected = selSet.has(segKey(p.id, i));
+    const key = segKey(p.id, i);
+    const selected = selSet.has(key);
+    const hovered = !selected && tool === 'select' && hoveredSeg === key;
 
     if (selected) {
       styles.push(new Style({
         geometry: seg,
         stroke: new Stroke({ color: 'rgba(29,78,216,0.4)', width: 11, lineCap: 'round' }),
+      }));
+    } else if (hovered) {
+      styles.push(new Style({
+        geometry: seg,
+        stroke: new Stroke({ color: 'rgba(15,118,110,0.32)', width: 10, lineCap: 'round' }),
       }));
     }
     styles.push(new Style({
@@ -56,13 +69,13 @@ function styleFor(feature) {
     }
   }
 
-  // 꼭짓점 편집(A) 모드: 기존 점을 dot으로 표시
-  if (tool === 'vertex') {
+  // 선택(V)·꼭짓점(A) 모드: 점을 dot으로 표시
+  if (tool === 'vertex' || tool === 'select') {
     styles.push(new Style({
       geometry: new MultiPoint(cs),
       image: new Circle({
-        radius: 4.5, fill: new Fill({ color: '#ffffff' }),
-        stroke: new Stroke({ color: '#0f766e', width: 1.6 }),
+        radius: 4, fill: new Fill({ color: '#ffffff' }),
+        stroke: new Stroke({ color: '#0f766e', width: 1.5 }),
       }),
     }));
   }

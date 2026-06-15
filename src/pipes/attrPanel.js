@@ -100,12 +100,12 @@ function render() {
     .reduce((s, it) => s + segLength(it.pipe.coords, it.i), 0);
 
   if (multi) {
-    titleEl.textContent = '구간 일괄 지정';
-    lenEl.textContent = `${items.length}개 구간 · 연장 ${fmtLength(len)}`;
-    delBtn.textContent = `선택 ${items.length}구간 삭제`;
+    titleEl.textContent = '선분 일괄 지정';
+    lenEl.textContent = `${items.length}개 선분 · 연장 ${fmtLength(len)}`;
+    delBtn.textContent = `선택 ${items.length}개 삭제`;
   } else {
-    titleEl.textContent = '배관 구간 속성';
+    titleEl.textContent = '배관 선분 속성';
     lenEl.textContent = `#${items[0].pipe.id}-${items[0].i + 1} · ${fmtLength(segLength(items[0].pipe.coords, items[0].i))}`;
-    delBtn.textContent = '이 구간 삭제';
+    delBtn.textContent = '이 선분 삭제';
   }
 }

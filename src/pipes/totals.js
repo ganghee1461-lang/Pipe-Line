@@ -34,7 +34,7 @@ function render() {
   }
 
   if (!counted) {
-    listEl.innerHTML = '<li class="pt-empty">작도된 신설 구간이 없습니다 (P키로 작도)</li>';
+    listEl.innerHTML = '<li class="pt-empty">작도된 신설 배관이 없습니다 (P키로 작도)</li>';
     sumEl.textContent = '';
     return;
   }
@@ -44,10 +44,10 @@ function render() {
     .map(([k, g]) => `
       <li class="pt-row">
         <span class="pt-key">${esc(k)}</span>
-        <span class="pt-val">${g.count}구간 · ${fmtLength(g.len)}</span>
+        <span class="pt-val">${g.count}개 · ${fmtLength(g.len)}</span>
       </li>`)
     .join('');
-  sumEl.textContent = `신설 ${counted}구간 · ${fmtLength(total)}`;
+  sumEl.textContent = `신설 ${counted}개 · ${fmtLength(total)}`;
 }
 
 function esc(s) {
