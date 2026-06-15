@@ -1,79 +1,106 @@
-// ── 배관 속성 패널 (선택된 배관 편집) ──
-import { getState, subscribe, updatePipe, removePipe, selectPipe } from '../state/store.js';
+// ── 배관 속성 패널 ──
+// 단일 선택: 해당 배관 편집. 다중 선택: 속성 일괄 지정 + 선택 개소 연장 합계.
+import { getState, subscribe, updatePipes, removePipes, clearPipeSelection } from '../state/store.js';
 import { DIAMETERS } from '../config/pipeStyles.js';
 import { pipeLength, fmtLength } from './util.js';
 
-const FIELDS = ['material', 'diameter', 'use', 'pressure', 'status', 'review'];
+const MIX = '__mix__';                 // 값이 섞여 있을 때
+const FIXED = ['use', 'pressure', 'status', 'review', 'pavement']; // 옵션 고정 셀렉트
 let els = {};
-let panel, lenEl;
-let current = null; // 편집 중 배관 id
+let panel, titleEl, lenEl, delBtn;
 
 export function initAttrPanel() {
   panel = document.getElementById('pipe-attr');
+  titleEl = document.getElementById('pa-title');
   lenEl = document.getElementById('pa-len');
-  FIELDS.forEach((f) => { els[f] = document.getElementById(`pa-${f}`); });
+  delBtn = document.getElementById('pa-del');
+  ['material', 'diameter', ...FIXED].forEach((f) => { els[f] = document.getElementById(`pa-${f}`); });
 
-  // 재질 변경 시 관경 옵션 갱신
   els.material.addEventListener('change', () => {
-    fillDiameters(els.material.value, els.diameter.value);
-    commit();
+    const m = els.material.value;
+    if (m === MIX) return;
+    fillDiameters(m, els.diameter.value);
+    updatePipes(getState().ui.selectedPipeIds, { material: m, diameter: els.diameter.value });
   });
-  FIELDS.filter((f) => f !== 'material').forEach((f) => {
-    els[f].addEventListener('change', commit);
-  });
+  els.diameter.addEventListener('change', () => applyField('diameter'));
+  FIXED.forEach((f) => els[f].addEventListener('change', () => applyField(f)));
 
-  document.getElementById('pa-del').addEventListener('click', () => {
-    if (current != null) removePipe(current);
+  delBtn.addEventListener('click', () => {
+    const ids = getState().ui.selectedPipeIds;
+    if (ids.length) removePipes(ids);
   });
-  document.getElementById('pa-close').addEventListener('click', () => {
-    selectPipe(null); // 선택만 해제 (배관은 유지)
-  });
+  document.getElementById('pa-close').addEventListener('click', clearPipeSelection);
 
   subscribe('ui:changed', render);
   subscribe('pipes:changed', render);
   render();
 }
 
-function fillDiameters(material, keep) {
-  const list = DIAMETERS[material] || DIAMETERS.PLP;
-  els.diameter.innerHTML = list.map((d) => `<option value="${d}">${d}</option>`).join('');
-  els.diameter.value = list.includes(keep) ? keep : list[0];
+function applyField(field) {
+  const v = els[field].value;
+  if (v === MIX) return;
+  updatePipes(getState().ui.selectedPipeIds, { [field]: v });
 }
 
-function commit() {
-  if (current == null) return;
-  updatePipe(current, {
-    attr: {
-      material: els.material.value,
-      diameter: els.diameter.value,
-      use: els.use.value,
-      pressure: els.pressure.value,
-      status: els.status.value,
-      review: els.review.value,
-    },
-  });
+// 셀렉트에 값 반영. 섞여 있으면 '— 혼합 —' 옵션을 임시로 넣어 선택.
+function setSelect(el, value) {
+  const ex = el.querySelector(`option[value="${MIX}"]`);
+  if (ex) ex.remove();
+  if (value === MIX) {
+    const opt = document.createElement('option');
+    opt.value = MIX;
+    opt.textContent = '— 혼합 —';
+    el.insertBefore(opt, el.firstChild);
+    el.value = MIX;
+  } else {
+    el.value = value;
+  }
+}
+
+function fillDiameters(material, keep) {
+  const list = material && DIAMETERS[material]
+    ? DIAMETERS[material]
+    : [...new Set([...DIAMETERS.PLP, ...DIAMETERS.PE])];
+  els.diameter.innerHTML = list.map((d) => `<option value="${d}">${d}</option>`).join('');
+  els.diameter.value = keep && keep !== MIX && list.includes(keep) ? keep : list[0];
 }
 
 function render() {
   const { pipes, ui } = getState();
-  const p = pipes.find((x) => x.id === ui.selectedPipeId);
-  if (!p) {
-    current = null;
+  const items = pipes.filter((p) => ui.selectedPipeIds.includes(p.id));
+  if (!items.length) {
     panel.classList.add('hidden');
     return;
   }
-  current = p.id;
   panel.classList.remove('hidden');
+  const multi = items.length > 1;
 
-  els.material.value = p.attr.material;
-  fillDiameters(p.attr.material, p.attr.diameter);
-  els.use.value = p.attr.use;
-  els.pressure.value = p.attr.pressure;
-  els.status.value = p.attr.status;
-  els.review.value = p.attr.review;
+  const common = (f) => {
+    const set = new Set(items.map((p) => p.attr[f]));
+    return set.size === 1 ? [...set][0] : MIX;
+  };
 
-  // 압력은 공급관에서만 의미 → 인입관이면 비활성
-  els.pressure.disabled = p.attr.use !== 'supply';
+  const matV = common('material');
+  setSelect(els.material, matV);
+  fillDiameters(matV === MIX ? null : matV, common('diameter'));
+  setSelect(els.diameter, common('diameter'));
+  FIXED.forEach((f) => setSelect(els[f], common(f)));
 
-  lenEl.textContent = `#${p.id} · ${fmtLength(pipeLength(p.coords))}`;
+  // 압력은 공급관에서만 의미
+  els.pressure.disabled = common('use') !== 'supply';
+
+  // 선택 개소 연장 (기존관 제외)
+  const len = items
+    .filter((p) => p.attr.status !== 'existing')
+    .reduce((s, p) => s + pipeLength(p.coords), 0);
+
+  if (multi) {
+    titleEl.textContent = '배관 일괄 지정';
+    lenEl.textContent = `${items.length}개 선택 · 연장 ${fmtLength(len)}`;
+    delBtn.textContent = `선택 ${items.length}개 삭제`;
+  } else {
+    titleEl.textContent = '배관 속성';
+    lenEl.textContent = `#${items[0].id} · ${fmtLength(pipeLength(items[0].coords))}`;
+    delBtn.textContent = '이 배관 삭제';
+  }
 }

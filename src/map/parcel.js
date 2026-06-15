@@ -7,6 +7,7 @@ import { Style, Fill, Stroke } from 'ol/style.js';
 import { toLonLat } from 'ol/proj.js';
 import { map } from './map.js';
 import { possLayer } from './wms.js';
+import { pipeSource } from '../pipes/layer.js';
 import { VWORLD } from '../config/vworld.js';
 import { getState } from '../state/store.js';
 import { getParcel, getPossession, reverseGeocode, isPublicLand } from '../api/vworld.js';
@@ -34,6 +35,14 @@ export function initParcelClick() {
   map.on('singleclick', async (evt) => {
     // 마커 등 다른 피처 클릭은 demands 모듈이 처리 → 여기선 소유지적 ON일 때만
     if (getState().ui.tool !== 'select') return; // 작도/꼭짓점 편집 중엔 필지조회 안 함
+    // 배관 위를 클릭하면 지적조회 대신 배관 선택만 (배관 오버레이 우선)
+    let onPipe = false;
+    map.forEachFeatureAtPixel(
+      evt.pixel,
+      (f, lyr) => { if (lyr && lyr.getSource() === pipeSource) { onPipe = true; return true; } },
+      { hitTolerance: 6 }
+    );
+    if (onPipe) return;
     if (!possLayer.getVisible()) return;
     if (map.getView().getZoom() < VWORLD.minZoom.possession) {
       flash('필지 조회는 줌 16 이상에서 가능합니다');

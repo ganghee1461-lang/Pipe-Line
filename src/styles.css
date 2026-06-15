@@ -127,6 +127,19 @@ button { font-family: inherit; cursor: pointer; border: none; border-radius: 6px
 #pipe-tools #tb-undo, #pipe-tools #tb-redo { font-size: 15px; padding: 4px 9px; }
 .tb-sep { width: 1px; height: 18px; background: var(--border); margin: 0 2px; }
 
+#pipe-hint {
+  position: absolute; top: 54px; left: 14px; z-index: 17;
+  padding: 4px 9px; font-size: 11px; color: var(--text-2);
+  background: rgba(255, 255, 255, 0.9); border: 1px solid var(--border-soft);
+  border-radius: 6px; box-shadow: var(--shadow-md); pointer-events: none;
+}
+
+/* Shift+드래그 박스선택 고무줄 */
+.ol-dragbox {
+  background: rgba(15, 118, 110, 0.12);
+  border: 1.5px dashed var(--accent);
+}
+
 /* ── 배관 속성 패널 ── */
 #pipe-attr {
   position: absolute; bottom: 28px; left: 14px; z-index: 22; width: 250px;

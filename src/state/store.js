@@ -10,7 +10,7 @@ const state = {
     basemap: 'Base',
     filterMemoOnly: false,
     selectedDemandId: null,
-    selectedPipeId: null,
+    selectedPipeIds: [], // 다중 선택 (첫 요소 = 주 선택)
   },
 };
 
@@ -64,6 +64,7 @@ const DEFAULT_ATTR = {
   pressure: '중압',   // '저압' | '중압'
   status: 'planned',  // 'planned'(예정) | 'existing'(기존)
   review: 'none',     // 'target'(심의대상) | 'none'
+  pavement: 'none',   // 'none' | 'asphalt'(아스팔트) | 'concrete'(콘크리트) | 'block'(보도블럭)
 };
 
 // ── Undo/Redo 히스토리 (배관 스냅샷) ──
@@ -78,9 +79,8 @@ function commit() {
   histIdx++;
 }
 function fixSelection() {
-  if (!state.pipes.some((p) => p.id === state.ui.selectedPipeId)) {
-    state.ui.selectedPipeId = null;
-  }
+  const ids = new Set(state.pipes.map((p) => p.id));
+  state.ui.selectedPipeIds = state.ui.selectedPipeIds.filter((id) => ids.has(id));
 }
 export function undo() {
   if (histIdx <= 0) return;
@@ -116,17 +116,48 @@ export function updatePipe(id, patch) {
   commit();
   emit('pipes:changed', state.pipes);
 }
+// 여러 배관에 같은 속성 일괄 적용
+export function updatePipes(ids, attrPatch) {
+  const set = new Set(ids);
+  let changed = false;
+  for (const p of state.pipes) {
+    if (set.has(p.id)) { p.attr = { ...p.attr, ...attrPatch }; changed = true; }
+  }
+  if (!changed) return;
+  commit();
+  emit('pipes:changed', state.pipes);
+}
 export function removePipe(id) {
-  const i = state.pipes.findIndex((x) => x.id === id);
-  if (i < 0) return;
-  state.pipes.splice(i, 1);
-  if (state.ui.selectedPipeId === id) state.ui.selectedPipeId = null;
+  removePipes([id]);
+}
+export function removePipes(ids) {
+  const del = new Set(ids);
+  const before = state.pipes.length;
+  state.pipes = state.pipes.filter((p) => !del.has(p.id));
+  if (state.pipes.length === before) return;
+  state.ui.selectedPipeIds = state.ui.selectedPipeIds.filter((id) => !del.has(id));
   commit();
   emit('pipes:changed', state.pipes);
   emit('ui:changed', state.ui);
 }
+
+// ── 배관 선택 (다중) ──
+export function selectPipes(ids) {
+  setUI({ selectedPipeIds: [...new Set(ids)] });
+}
 export function selectPipe(id) {
-  setUI({ selectedPipeId: id });
+  setUI({ selectedPipeIds: id == null ? [] : [id] });
+}
+export function togglePipe(id) {
+  const cur = state.ui.selectedPipeIds;
+  const next = cur.includes(id) ? cur.filter((x) => x !== id) : [...cur, id];
+  setUI({ selectedPipeIds: next });
+}
+export function addToSelection(ids) {
+  setUI({ selectedPipeIds: [...new Set([...state.ui.selectedPipeIds, ...ids])] });
+}
+export function clearPipeSelection() {
+  setUI({ selectedPipeIds: [] });
 }
 export function setTool(tool) {
   setUI({ tool });

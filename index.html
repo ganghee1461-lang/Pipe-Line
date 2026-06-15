@@ -74,6 +74,7 @@
         <button id="tb-undo" title="실행취소 (Ctrl+Z)">↶</button>
         <button id="tb-redo" title="다시실행 (Ctrl+Y)">↷</button>
       </div>
+      <div id="pipe-hint"></div>
 
       <div id="basemap-switch">
         <button data-base="Base" class="active">기본</button>
@@ -83,7 +84,7 @@
       <!-- 배관 속성 패널 -->
       <div id="pipe-attr" class="hidden">
         <div class="pa-head">
-          <strong>배관 속성</strong>
+          <strong id="pa-title">배관 속성</strong>
           <span id="pa-len" class="pa-len"></span>
           <button id="pa-close" class="pa-close">✕</button>
         </div>
@@ -119,6 +120,14 @@
             <select id="pa-review">
               <option value="none">비대상</option>
               <option value="target">굴착심의 대상</option>
+            </select>
+          </label>
+          <label>포장
+            <select id="pa-pavement">
+              <option value="none">없음</option>
+              <option value="asphalt">아스팔트</option>
+              <option value="concrete">콘크리트</option>
+              <option value="block">보도블럭</option>
             </select>
           </label>
         </div>

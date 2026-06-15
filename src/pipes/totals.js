@@ -16,10 +16,14 @@ function render() {
   const { pipes } = getState();
   const groups = new Map(); // key -> { count, len }
   let total = 0;
+  let counted = 0;
 
+  // 기존관은 연장 집계에서 제외 (신설 물량만 관리)
   for (const p of pipes) {
+    if (p.attr.status === 'existing') continue;
     const len = pipeLength(p.coords);
     total += len;
+    counted++;
     const k = pipeKey(p.attr);
     const g = groups.get(k) || { count: 0, len: 0 };
     g.count++;
@@ -27,8 +31,8 @@ function render() {
     groups.set(k, g);
   }
 
-  if (!pipes.length) {
-    listEl.innerHTML = '<li class="pt-empty">작도된 배관이 없습니다 (P키로 작도)</li>';
+  if (!counted) {
+    listEl.innerHTML = '<li class="pt-empty">작도된 신설 배관이 없습니다 (P키로 작도)</li>';
     sumEl.textContent = '';
     return;
   }
@@ -41,7 +45,7 @@ function render() {
         <span class="pt-val">${g.count}개 · ${fmtLength(g.len)}</span>
       </li>`)
     .join('');
-  sumEl.textContent = `총 ${pipes.length}개 · ${fmtLength(total)}`;
+  sumEl.textContent = `신설 ${counted}개 · ${fmtLength(total)}`;
 }
 
 function esc(s) {

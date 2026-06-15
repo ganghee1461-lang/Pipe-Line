@@ -16,10 +16,10 @@ const layer = new VectorLayer({ source: pipeSource, zIndex: 8, style: styleFor }
 
 function styleFor(feature) {
   const p = feature.get('pipe');
-  const { mode, selectedPipeId } = getState().ui;
+  const { mode, selectedPipeIds } = getState().ui;
   const s = pipeStyle(p.attr);
   const emph = modeEmphasis(mode, p.attr);
-  const selected = selectedPipeId === p.id;
+  const selected = selectedPipeIds.includes(p.id);
 
   let width = emph.emphasize ? 6 : 4;
   const color = emph.dim ? withAlpha(s.color, 0.25) : s.color;
