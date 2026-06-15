@@ -14,7 +14,7 @@ export function initAttrPanel() {
   titleEl = document.getElementById('pa-title');
   lenEl = document.getElementById('pa-len');
   delBtn = document.getElementById('pa-del');
-  ['material', 'diameter', ...FIXED].forEach((f) => { els[f] = document.getElementById(`pa-${f}`); });
+  ['material', 'diameter', 'section', ...FIXED].forEach((f) => { els[f] = document.getElementById(`pa-${f}`); });
 
   els.material.addEventListener('change', () => {
     const m = els.material.value;
@@ -24,6 +24,11 @@ export function initAttrPanel() {
   });
   els.diameter.addEventListener('change', () => applyField('diameter'));
   FIXED.forEach((f) => els[f].addEventListener('change', () => applyField(f)));
+  // 구간 번호 (숫자 입력)
+  els.section.addEventListener('change', () => {
+    const v = parseInt(els.section.value, 10);
+    if (Number.isFinite(v) && v >= 1) updateSegs(getState().ui.selectedSegs, { section: v });
+  });
 
   delBtn.addEventListener('click', () => {
     const keys = getState().ui.selectedSegs;
@@ -93,6 +98,11 @@ function render() {
   setSelect(els.diameter, common('diameter'));
   FIXED.forEach((f) => setSelect(els[f], common(f)));
   els.pressure.disabled = common('use') !== 'supply';
+
+  // 구간 번호: 단일이면 값, 혼합이면 빈칸 + placeholder
+  const sec = common('section');
+  if (sec === MIX) { els.section.value = ''; els.section.placeholder = '혼합'; }
+  else { els.section.value = sec; els.section.placeholder = ''; }
 
   // 선택 구간 연장 (기존관 제외)
   const len = items

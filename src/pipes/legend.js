@@ -25,12 +25,20 @@ function dashCss(d) {
   return d === 'dashed' ? 'dashed' : d === 'dotted' ? 'dotted' : 'solid';
 }
 
+// 배관망 모드에선 구간 번호로 묶고, 그 외엔 배관 종류로 묶는다.
+function legendKey(a, mode) {
+  if (mode === 'network') {
+    return a.status === 'existing' ? '기존관' : `${a.section || 1}번 구간`;
+  }
+  return pipeKey(a);
+}
+
 function render() {
   const { pipes, ui } = getState();
-  const types = new Map(); // pipeKey -> 대표 attr
+  const types = new Map(); // 라벨 -> 대표 attr
   for (const p of pipes) {
     for (const a of p.segs) {
-      const k = pipeKey(a);
+      const k = legendKey(a, ui.mode);
       if (!types.has(k)) types.set(k, a);
     }
   }

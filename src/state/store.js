@@ -68,6 +68,7 @@ const DEFAULT_ATTR = {
   status: 'planned',  // 'planned'(예정) | 'existing'(기존)
   review: 'none',     // 'target'(심의대상) | 'none'
   pavement: 'none',   // 'none' | 'asphalt'(아스팔트) | 'concrete'(콘크리트) | 'block'(보도블럭)
+  section: 1,         // N번 구간 (배관망 분석에서 구간별 색상)
 };
 const newAttr = () => ({ ...DEFAULT_ATTR });
 
