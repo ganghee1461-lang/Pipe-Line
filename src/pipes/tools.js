@@ -7,7 +7,10 @@ import Modify from 'ol/interaction/Modify.js';
 import Snap from 'ol/interaction/Snap.js';
 import DragBox from 'ol/interaction/DragBox.js';
 import DragPan from 'ol/interaction/DragPan.js';
-import { platformModifierKeyOnly, shiftKeyOnly, altKeyOnly, singleClick } from 'ol/events/condition.js';
+import { Style, Stroke, RegularShape } from 'ol/style.js';
+import {
+  platformModifierKeyOnly, shiftKeyOnly, altKeyOnly, singleClick, noModifierKeys,
+} from 'ol/events/condition.js';
 import { toLonLat } from 'ol/proj.js';
 import { map } from '../map/map.js';
 import { pipeSource } from './layer.js';
@@ -16,7 +19,7 @@ import {
   selectPipe, togglePipe, addToSelection, clearPipeSelection, setTool, undo, redo,
 } from '../state/store.js';
 
-let draw, modify, snap, dragBox, dragPan;
+let draw, modify, snap, dragBox;
 let activeTool = null;
 let ctrlDown = false;
 
@@ -30,6 +33,18 @@ function updateCursor() {
   if (activeTool === 'draw') el.style.cursor = 'crosshair';
   else if (activeTool === 'vertex') el.style.cursor = ctrlDown ? 'copy' : '';
   else el.style.cursor = '';
+}
+
+// 꼭짓점 편집 오버레이: 평소엔 숨기고(기존 점은 레이어 dot으로 표시),
+// Ctrl 누를 때만 '여기에 점이 추가됨' 미리보기(초록 +)를 보여준다.
+function modifyOverlayStyle() {
+  if (!ctrlDown) return [];
+  return new Style({
+    image: new RegularShape({
+      points: 4, radius: 8, radius2: 0, angle: 0,
+      stroke: new Stroke({ color: '#0f766e', width: 2.5 }),
+    }),
+  });
 }
 
 function applyTool() {
@@ -115,6 +130,7 @@ export function initPipeTools() {
     source: pipeSource,
     insertVertexCondition: platformModifierKeyOnly,
     deleteCondition: (e) => altKeyOnly(e) && singleClick(e),
+    style: modifyOverlayStyle,
   });
   modify.on('modifyend', (e) => {
     e.features.forEach((f) => updatePipe(f.getId(), { coords: lineToLonLat(f.getGeometry()) }));
@@ -131,21 +147,30 @@ export function initPipeTools() {
     if (ids.length) addToSelection(ids);
   });
 
-  // 기본 DragPan 참조 (Shift 드래그 시 패닝을 꺼서 박스선택이 동작하도록)
-  map.getInteractions().forEach((i) => { if (i instanceof DragPan) dragPan = i; });
+  // 기본 DragPan을 '보조키 없을 때만' 패닝하도록 교체 → Shift 드래그가 박스선택으로 동작
+  map.getInteractions().getArray().slice().forEach((i) => {
+    if (i instanceof DragPan) map.removeInteraction(i);
+  });
+  map.addInteraction(new DragPan({ condition: noModifierKeys }));
 
   applyTool();
   subscribe('ui:changed', applyTool);
   map.on('singleclick', onClick);
   window.addEventListener('keydown', onKey);
 
-  // 보조키 시각/동작 피드백
+  // 우클릭으로 작도 종료
+  map.getViewport().addEventListener('contextmenu', (e) => {
+    if (activeTool === 'draw') {
+      e.preventDefault();
+      try { draw.finishDrawing(); } catch { /* 점이 부족하면 무시 */ }
+    }
+  });
+
+  // Ctrl 시각 피드백 (꼭짓점 추가 가능 상태 + 미리보기 갱신)
   window.addEventListener('keydown', (e) => {
-    if ((e.key === 'Control' || e.key === 'Meta') && !ctrlDown) { ctrlDown = true; updateCursor(); }
-    if (e.key === 'Shift' && dragPan && getState().ui.tool === 'select') dragPan.setActive(false);
+    if ((e.key === 'Control' || e.key === 'Meta') && !ctrlDown) { ctrlDown = true; updateCursor(); map.render(); }
   });
   window.addEventListener('keyup', (e) => {
-    if (e.key === 'Control' || e.key === 'Meta') { ctrlDown = false; updateCursor(); }
-    if (e.key === 'Shift' && dragPan) dragPan.setActive(true);
+    if (e.key === 'Control' || e.key === 'Meta') { ctrlDown = false; updateCursor(); map.render(); }
   });
 }

@@ -5,7 +5,8 @@ import VectorLayer from 'ol/layer/Vector.js';
 import VectorSource from 'ol/source/Vector.js';
 import Feature from 'ol/Feature.js';
 import Point from 'ol/geom/Point.js';
-import { Style, Stroke, RegularShape, Fill } from 'ol/style.js';
+import MultiPoint from 'ol/geom/MultiPoint.js';
+import { Style, Stroke, RegularShape, Fill, Circle } from 'ol/style.js';
 import { map } from '../map/map.js';
 import { getState, subscribe } from '../state/store.js';
 import { pipeStyle, DASH } from '../config/pipeStyles.js';
@@ -62,6 +63,18 @@ function styleFor(feature) {
         }),
       }));
     }
+  }
+
+  // 꼭짓점 편집(A) 모드: 기존 점을 dot으로 표시 (추가 위치 미리보기는 Ctrl일 때만 Modify가 표시)
+  if (getState().ui.tool === 'vertex') {
+    styles.push(new Style({
+      geometry: new MultiPoint(feature.getGeometry().getCoordinates()),
+      image: new Circle({
+        radius: 4.5,
+        fill: new Fill({ color: '#ffffff' }),
+        stroke: new Stroke({ color: '#0f766e', width: 1.6 }),
+      }),
+    }));
   }
   return styles;
 }
