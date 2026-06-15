@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "savedAt": "2026-06-15T23:28:11.210Z",
+  "savedAt": "2026-06-15T23:28:43.330Z",
   "demands": [],
   "pipes": [
     {
@@ -130,6 +130,101 @@
         ]
       ],
       "segs": [
+        {
+          "material": "PE",
+          "diameter": "63A",
+          "use": "supply",
+          "pressure": "저압",
+          "status": "planned",
+          "review": "target",
+          "pavement": "asphalt",
+          "section": 1
+        },
+        {
+          "material": "PE",
+          "diameter": "63A",
+          "use": "supply",
+          "pressure": "저압",
+          "status": "planned",
+          "review": "target",
+          "pavement": "asphalt",
+          "section": 1
+        },
+        {
+          "material": "PE",
+          "diameter": "63A",
+          "use": "supply",
+          "pressure": "저압",
+          "status": "planned",
+          "review": "target",
+          "pavement": "asphalt",
+          "section": 1
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "coords": [
+        [
+          126.89808550988633,
+          37.55466163008197
+        ],
+        [
+          126.90076322135765,
+          37.55883716736464
+        ],
+        [
+          126.90993147829683,
+          37.55957535873246
+        ],
+        [
+          126.90926204843046,
+          37.55740690011764
+        ],
+        [
+          126.90652612670915,
+          37.555030748419156
+        ],
+        [
+          126.900734117565,
+          37.557845209547594
+        ],
+        [
+          126.90393572928055,
+          37.55636878521695
+        ]
+      ],
+      "segs": [
+        {
+          "material": "PE",
+          "diameter": "63A",
+          "use": "supply",
+          "pressure": "저압",
+          "status": "planned",
+          "review": "target",
+          "pavement": "asphalt",
+          "section": 1
+        },
+        {
+          "material": "PE",
+          "diameter": "63A",
+          "use": "supply",
+          "pressure": "저압",
+          "status": "planned",
+          "review": "target",
+          "pavement": "asphalt",
+          "section": 1
+        },
+        {
+          "material": "PE",
+          "diameter": "63A",
+          "use": "supply",
+          "pressure": "저압",
+          "status": "planned",
+          "review": "target",
+          "pavement": "asphalt",
+          "section": 1
+        },
         {
           "material": "PE",
           "diameter": "63A",
