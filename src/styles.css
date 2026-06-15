@@ -34,6 +34,19 @@ body {
   border-right: 1px solid var(--border);
   display: flex; flex-direction: column; overflow: hidden;
 }
+
+/* ── 탭 ── */
+#tabs { display: flex; border-bottom: 1px solid var(--border); background: var(--surface-2); }
+#tabs button {
+  flex: 1; padding: 10px 4px; background: transparent; color: var(--muted);
+  font-size: 12.5px; font-weight: 600; border-radius: 0;
+  border-bottom: 2px solid transparent;
+}
+#tabs button:hover { color: var(--text-2); background: var(--surface-3); }
+#tabs button.active { color: var(--accent); border-bottom-color: var(--accent); background: var(--surface); }
+#tab-body { flex: 1; display: flex; flex-direction: column; overflow-y: auto; min-height: 0; }
+.tab-pane { display: flex; flex-direction: column; min-height: 0; }
+.tab-pane.grow, .tab-pane { flex: 1; }
 #sidebar-header {
   padding: 16px 18px 12px;
   border-bottom: 1px solid var(--border-soft);

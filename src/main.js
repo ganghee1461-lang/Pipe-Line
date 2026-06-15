@@ -17,9 +17,13 @@ import { initTotals } from './pipes/totals.js';
 import { initModePanel } from './pipes/modePanel.js';
 import { initLegend } from './pipes/legend.js';
 import { initSavePanel } from './io/savePanel.js';
+import { initTabs } from './ui/tabs.js';
+import { initMarkerStyle } from './demands/markerStyle.js';
 
 // 기능 모듈 초기화
+initTabs();
 initMarkers();
+initMarkerStyle();
 initSearch();
 initList();
 initLayerPanel();

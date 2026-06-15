@@ -24,14 +24,19 @@ function styleFor(feature) {
   const d = feature.get('demand');
   const hasMemo = !!(d.memo && d.memo.trim());
   const selected = getState().ui.selectedDemandId === d.id;
-  const color = d.color || (hasMemo ? '#b45309' : '#b91c1c');
-  const shape = d.shape || 'circle';
+  const ms = getState().ui.markerStyle; // 전체 공통 스타일
+  const color = ms.color;
+  const shape = ms.shape;
   const key = `${color}-${shape}-${hasMemo ? 'm' : ''}-${selected ? 's' : ''}-${d.id}`;
   if (styleCache.has(key)) return styleCache.get(key);
 
   const radius = selected ? 13 : 10;
   const fill = new Fill({ color });
-  const stroke = new Stroke({ color: selected ? '#1d4ed8' : '#ffffff', width: selected ? 3 : 2 });
+  // 선택=파랑 / 메모=황색 / 기본=흰색 테두리 (스타일은 전체 공통이라 테두리로 구분)
+  const stroke = new Stroke({
+    color: selected ? '#1d4ed8' : hasMemo ? '#fde68a' : '#ffffff',
+    width: selected ? 3 : hasMemo ? 3 : 2,
+  });
   let image;
   if (shape === 'triangle') image = new RegularShape({ points: 3, radius: radius + 2, fill, stroke });
   else if (shape === 'square') image = new RegularShape({ points: 4, radius, angle: Math.PI / 4, fill, stroke });
@@ -83,8 +88,6 @@ function esc(s) {
 function hidePopup() { popup.classList.add('hidden'); popup.innerHTML = ''; }
 
 function showPopup(pixel, d) {
-  const shape = d.shape || 'circle';
-  const icon = { circle: '●', triangle: '▲', square: '■' };
   popup.innerHTML = `
     <div class="mp-bar">
       <b>#${d.id}</b>
@@ -94,12 +97,6 @@ function showPopup(pixel, d) {
     <div class="mp-body">
       <div class="mp-addr">${esc(d.address)}</div>
       <textarea class="mp-memo" placeholder="메모…">${esc(d.memo || '')}</textarea>
-      <div class="di-colors">
-        ${MARKER_COLORS.map((c) => `<button class="ci ${d.color === c ? 'on' : ''}" data-color="${c}" style="background:${c}"></button>`).join('')}
-      </div>
-      <div class="di-shapes">
-        ${MARKER_SHAPES.map((sh) => `<button class="si ${shape === sh ? 'on' : ''}" data-shape="${sh}">${icon[sh]}</button>`).join('')}
-      </div>
     </div>`;
   popup.classList.remove('hidden');
   popup.style.left = `${pixel[0] + 14}px`;
@@ -110,12 +107,6 @@ function showPopup(pixel, d) {
   const save = () => updateDemand(d.id, { memo: memo.value });
   memo.addEventListener('change', save);
   memo.addEventListener('blur', save);
-  popup.querySelectorAll('.ci').forEach((b) => {
-    b.onclick = () => { updateDemand(d.id, { color: b.dataset.color }); showPopup(pixel, getState().demands.find((x) => x.id === d.id)); };
-  });
-  popup.querySelectorAll('.si').forEach((b) => {
-    b.onclick = () => { updateDemand(d.id, { shape: b.dataset.shape }); showPopup(pixel, getState().demands.find((x) => x.id === d.id)); };
-  });
 }
 
 function markerAtPixel(pixel) {

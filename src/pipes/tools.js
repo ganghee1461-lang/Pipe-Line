@@ -7,8 +7,12 @@ import Modify from 'ol/interaction/Modify.js';
 import Snap from 'ol/interaction/Snap.js';
 import DragBox from 'ol/interaction/DragBox.js';
 import DragPan from 'ol/interaction/DragPan.js';
+import VectorLayer from 'ol/layer/Vector.js';
+import VectorSource from 'ol/source/Vector.js';
+import Feature from 'ol/Feature.js';
+import Point from 'ol/geom/Point.js';
 import LineString from 'ol/geom/LineString.js';
-import { Style, Stroke, RegularShape } from 'ol/style.js';
+import { Style, Stroke, RegularShape, Circle, Fill } from 'ol/style.js';
 import {
   platformModifierKeyOnly, shiftKeyOnly, altKeyOnly, singleClick, noModifierKeys,
 } from 'ol/events/condition.js';
@@ -25,6 +29,34 @@ import {
 let draw, modify, snap, dragBox;
 let activeTool = null;
 let ctrlDown = false;
+
+// A모드: 마우스 근처의 대상 꼭짓점 하이라이트 오버레이
+const hoverSrc = new VectorSource();
+const hoverLayer = new VectorLayer({
+  source: hoverSrc,
+  zIndex: 9,
+  style: new Style({
+    image: new Circle({
+      radius: 9,
+      fill: new Fill({ color: 'rgba(15,118,110,0.18)' }),
+      stroke: new Stroke({ color: '#0f766e', width: 3 }),
+    }),
+  }),
+});
+
+function nearestVertex(pixel) {
+  let best = null;
+  let bestD = 14; // px
+  pipeSource.forEachFeature((f) => {
+    for (const c of f.getGeometry().getCoordinates()) {
+      const px = map.getPixelFromCoordinate(c);
+      if (!px) continue;
+      const d = Math.hypot(px[0] - pixel[0], px[1] - pixel[1]);
+      if (d < bestD) { bestD = d; best = c; }
+    }
+  });
+  return best;
+}
 
 function lineToLonLat(geom) {
   return geom.getCoordinates().map((c) => toLonLat(c));
@@ -187,16 +219,30 @@ export function initPipeTools() {
   });
   map.addInteraction(new DragPan({ condition: noModifierKeys }));
 
+  map.addLayer(hoverLayer);
+
   applyTool();
   subscribe('ui:changed', applyTool);
   map.on('singleclick', onClick);
-  // V모드: 마우스 올린 선분을 미리 강조 + 포인터 커서
+  // V모드=선분 미리 강조 / A모드=근처 대상 꼭짓점 하이라이트
   map.on('pointermove', (evt) => {
-    if (evt.dragging || getState().ui.tool !== 'select') { setHoveredSeg(null); return; }
-    const key = segAtPixel(evt.pixel, evt.coordinate);
-    setHoveredSeg(key);
+    if (evt.dragging) return;
+    const tool = getState().ui.tool;
     const el = map.getTargetElement();
-    if (el) el.style.cursor = key ? 'pointer' : '';
+    if (tool === 'select') {
+      hoverSrc.clear();
+      const key = segAtPixel(evt.pixel, evt.coordinate);
+      setHoveredSeg(key);
+      if (el) el.style.cursor = key ? 'pointer' : '';
+    } else if (tool === 'vertex') {
+      setHoveredSeg(null);
+      const v = nearestVertex(evt.pixel);
+      hoverSrc.clear();
+      if (v) hoverSrc.addFeature(new Feature(new Point(v)));
+    } else {
+      setHoveredSeg(null);
+      hoverSrc.clear();
+    }
   });
   window.addEventListener('keydown', onKey);
 

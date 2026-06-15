@@ -15,7 +15,7 @@
         <p>수요처 · 지적/도시계획 · 배관 작도</p>
       </header>
 
-      <!-- 모드 전환 -->
+      <!-- 모드 전환 (항상 표시) -->
       <section class="panel mode-panel">
         <div class="seg" id="mode-switch">
           <button data-mode="sales" class="active">영업</button>
@@ -25,64 +25,93 @@
         <div id="mode-legend"></div>
       </section>
 
-      <!-- 수요처 검색 -->
-      <section class="panel">
-        <div class="panel-label">수요처 검색</div>
-        <textarea id="search-input" rows="3"
-          placeholder="한 줄에 하나씩 주소/장소 입력&#10;예) 서울특별시 종로구 세종대로 172"></textarea>
-        <div class="row">
-          <button id="search-btn" class="btn-primary">검색</button>
-          <button id="search-clear" class="btn-ghost">지우기</button>
-        </div>
-        <label class="check-row">
-          <input type="checkbox" id="filter-memo" /> 메모 있는 수요처만
-        </label>
-      </section>
+      <!-- 탭 -->
+      <nav id="tabs">
+        <button data-tab="demands" class="active">수요처</button>
+        <button data-tab="pipes">배관</button>
+        <button data-tab="layers">레이어</button>
+        <button data-tab="io">저장</button>
+      </nav>
 
-      <!-- 수요처 리스트 -->
-      <section class="panel grow">
-        <div class="panel-label">수요처 <span id="demand-count">0</span></div>
-        <ul id="demand-list"></ul>
-      </section>
+      <div id="tab-body">
+        <!-- 수요처 탭 -->
+        <div class="tab-pane" data-tab="demands">
+          <section class="panel">
+            <div class="panel-label">수요처 검색</div>
+            <textarea id="search-input" rows="3"
+              placeholder="한 줄에 하나씩 주소/장소 입력&#10;예) 서울특별시 종로구 세종대로 172"></textarea>
+            <div class="row">
+              <button id="search-btn" class="btn-primary">검색</button>
+              <button id="search-clear" class="btn-ghost">지우기</button>
+            </div>
+            <label class="check-row">
+              <input type="checkbox" id="filter-memo" /> 메모 있는 수요처만
+            </label>
+          </section>
 
-      <!-- 레이어 -->
-      <section class="panel">
-        <div class="panel-label">레이어</div>
-        <div class="layer-row">
-          <label class="switch-row">
-            <input type="checkbox" id="poss-toggle" /> 소유구분지적도
-          </label>
-          <input type="range" id="poss-opacity" min="10" max="100" value="75" />
-        </div>
-        <div class="layer-row">
-          <label class="switch-row">
-            <input type="checkbox" id="road-toggle" /> 도시계획도로
-          </label>
-          <input type="range" id="road-opacity" min="10" max="100" value="80" />
-        </div>
-      </section>
+          <section class="panel">
+            <div class="panel-label">마커 스타일 (전체)</div>
+            <div class="di-colors" id="ms-colors"></div>
+            <div class="di-shapes" id="ms-shapes"></div>
+          </section>
 
-      <!-- 배관 연장 집계 -->
-      <section class="panel">
-        <div class="panel-label">배관 연장 집계</div>
-        <ul id="pipe-totals"></ul>
-        <div id="pipe-total-sum"></div>
-      </section>
+          <section class="panel grow">
+            <div class="panel-label">수요처 <span id="demand-count">0</span></div>
+            <ul id="demand-list"></ul>
+          </section>
+        </div>
 
-      <!-- 저장 / 불러오기 -->
-      <section class="panel">
-        <div class="panel-label">저장 / 불러오기</div>
-        <div class="row">
-          <input type="text" id="save-name" placeholder="파일 이름" />
-          <button id="save-btn" class="btn-ghost">저장</button>
+        <!-- 배관 탭 -->
+        <div class="tab-pane hidden" data-tab="pipes">
+          <section class="panel">
+            <div class="panel-label">배관 연장 집계</div>
+            <ul id="pipe-totals"></ul>
+            <div id="pipe-total-sum"></div>
+          </section>
         </div>
-        <ul id="save-list"></ul>
-        <div class="row">
-          <button id="export-btn" class="btn-ghost">파일로 내보내기</button>
-          <button id="import-btn" class="btn-ghost">파일 불러오기</button>
+
+        <!-- 레이어 탭 -->
+        <div class="tab-pane hidden" data-tab="layers">
+          <section class="panel">
+            <div class="panel-label">레이어</div>
+            <div class="layer-row">
+              <label class="switch-row">
+                <input type="checkbox" id="poss-toggle" /> 소유구분지적도
+              </label>
+              <input type="range" id="poss-opacity" min="10" max="100" value="75" />
+            </div>
+            <div class="layer-row">
+              <label class="switch-row">
+                <input type="checkbox" id="road-toggle" /> 도시계획도로
+              </label>
+              <input type="range" id="road-opacity" min="10" max="100" value="80" />
+            </div>
+          </section>
         </div>
-        <input type="file" id="import-file" accept="application/json" class="hidden" />
-      </section>
+
+        <!-- 저장 탭 -->
+        <div class="tab-pane hidden" data-tab="io">
+          <section class="panel">
+            <div class="panel-label">저장 / 불러오기</div>
+            <div class="row">
+              <input type="text" id="save-name" placeholder="파일 이름" />
+              <button id="save-btn" class="btn-primary">저장</button>
+            </div>
+            <ul id="save-list"></ul>
+            <div class="row">
+              <button id="export-btn" class="btn-ghost">내보내기</button>
+              <button id="import-btn" class="btn-ghost">파일 열기</button>
+            </div>
+            <input type="file" id="import-file" accept="application/json" class="hidden" />
+          </section>
+
+          <section class="panel">
+            <div class="panel-label">GitHub save/ 폴더</div>
+            <button id="gh-list-btn" class="btn-ghost" style="width:100%">목록 불러오기</button>
+            <ul id="gh-list"></ul>
+          </section>
+        </div>
+      </div>
 
       <footer id="env-note"></footer>
     </aside>
