@@ -9,6 +9,11 @@ import { initMarkers } from './demands/markers.js';
 import { initSearch } from './demands/search.js';
 import { initList } from './demands/list.js';
 import { initLayerPanel } from './layers/panel.js';
+import { initPipeLayer } from './pipes/layer.js';
+import { initPipeTools } from './pipes/tools.js';
+import { initPipeToolbar } from './pipes/toolbar.js';
+import { initAttrPanel } from './pipes/attrPanel.js';
+import { initTotals } from './pipes/totals.js';
 
 // 기능 모듈 초기화
 initMarkers();
@@ -16,6 +21,13 @@ initSearch();
 initList();
 initLayerPanel();
 initParcelClick();
+
+// 배관 작도/편집 (2단계)
+initPipeLayer();
+initPipeTools();
+initPipeToolbar();
+initAttrPanel();
+initTotals();
 
 // 환경 안내 (키 유무)
 const note = document.getElementById('env-note');

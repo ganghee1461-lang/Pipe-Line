@@ -32,9 +32,9 @@ const EXISTING_COLOR = '#868e96';
 export function pipeStyle(info) {
   if (!info) return { color: EXISTING_COLOR, dash: 'solid' };
 
-  // 기존관: 회색 실선 (status 기반)
-  if (info.status === 'existing' && !info.use) {
-    return { color: EXISTING_COLOR, dash: 'solid' };
+  // 기존관: 회색 실선 (신설관과 구분)
+  if (info.status === 'existing') {
+    return { color: EXISTING_COLOR, dash: 'solid', arrow: info.use === 'inlet' };
   }
 
   const diams = DIAMETERS[info.material] || DIAMETERS.PLP;
@@ -51,10 +51,10 @@ export function pipeStyle(info) {
 // 배관 라벨(범례·연장 집계 키)
 export function pipeKey(info) {
   if (!info) return '미지정';
-  if (info.status === 'existing' && !info.use) return '기존관';
+  const st = info.status === 'existing' ? '기존' : '예정';
   const useK = info.use === 'supply' ? '공급관' : '인입관';
   const press = info.use === 'supply' && info.pressure ? ` ${info.pressure}` : '';
-  return `${useK}${press} ${info.material} ${info.diameter}`;
+  return `${st} ${useK}${press} ${info.material} ${info.diameter}`;
 }
 
 // ── 모드별 강조 규칙 ── (시각표현만, 원본 데이터 불변)

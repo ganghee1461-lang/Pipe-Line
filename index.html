@@ -52,15 +52,81 @@
         </div>
       </section>
 
+      <!-- 배관 연장 집계 -->
+      <section class="panel">
+        <div class="panel-label">배관 연장 집계</div>
+        <ul id="pipe-totals"></ul>
+        <div id="pipe-total-sum"></div>
+      </section>
+
       <footer id="env-note"></footer>
     </aside>
 
     <main id="map-wrap">
       <div id="map"></div>
+
+      <!-- 배관 도구 툴바 -->
+      <div id="pipe-tools">
+        <button data-tool="select" title="선택 (V)">선택</button>
+        <button data-tool="draw" title="작도 (P)">작도</button>
+        <button data-tool="vertex" title="꼭짓점 편집 (A)">꼭짓점</button>
+        <span class="tb-sep"></span>
+        <button id="tb-undo" title="실행취소 (Ctrl+Z)">↶</button>
+        <button id="tb-redo" title="다시실행 (Ctrl+Y)">↷</button>
+      </div>
+
       <div id="basemap-switch">
         <button data-base="Base" class="active">기본</button>
         <button data-base="Satellite">위성</button>
       </div>
+
+      <!-- 배관 속성 패널 -->
+      <div id="pipe-attr" class="hidden">
+        <div class="pa-head">
+          <strong>배관 속성</strong>
+          <span id="pa-len" class="pa-len"></span>
+          <button id="pa-close" class="pa-close">✕</button>
+        </div>
+        <div class="pa-grid">
+          <label>재질
+            <select id="pa-material">
+              <option value="PLP">PLP(강관)</option>
+              <option value="PE">PE</option>
+            </select>
+          </label>
+          <label>관경
+            <select id="pa-diameter"></select>
+          </label>
+          <label>용도
+            <select id="pa-use">
+              <option value="supply">공급관</option>
+              <option value="inlet">인입관</option>
+            </select>
+          </label>
+          <label>압력
+            <select id="pa-pressure">
+              <option value="중압">중압</option>
+              <option value="저압">저압</option>
+            </select>
+          </label>
+          <label>상태
+            <select id="pa-status">
+              <option value="planned">설치예정</option>
+              <option value="existing">기존관</option>
+            </select>
+          </label>
+          <label>심의
+            <select id="pa-review">
+              <option value="none">비대상</option>
+              <option value="target">굴착심의 대상</option>
+            </select>
+          </label>
+        </div>
+        <div class="pa-actions">
+          <button id="pa-del" class="btn-del">이 배관 삭제</button>
+        </div>
+      </div>
+
       <div id="parcel-popup" class="hidden"></div>
     </main>
   </div>
