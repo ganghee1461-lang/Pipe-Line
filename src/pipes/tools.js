@@ -14,7 +14,7 @@ import Point from 'ol/geom/Point.js';
 import LineString from 'ol/geom/LineString.js';
 import { Style, Stroke, RegularShape, Circle, Fill } from 'ol/style.js';
 import {
-  platformModifierKeyOnly, shiftKeyOnly, altKeyOnly, singleClick, noModifierKeys,
+  platformModifierKeyOnly, shiftKeyOnly, altKeyOnly, singleClick, noModifierKeys, primaryAction,
 } from 'ol/events/condition.js';
 import { fromLonLat, toLonLat } from 'ol/proj.js';
 import { map } from '../map/map.js';
@@ -194,8 +194,9 @@ function onKey(e) {
 }
 
 export function initPipeTools() {
-  // source 미지정 — drawend 후 Draw가 소스에 중복 추가하는 것 방지
-  draw = new Draw({ type: 'LineString' });
+  // source 미지정 — drawend 후 Draw가 소스에 중복 추가하는 것 방지.
+  // 좌클릭(primaryAction)에서만 점 추가 → 우클릭은 점 없이 종료만.
+  draw = new Draw({ type: 'LineString', condition: (e) => noModifierKeys(e) && primaryAction(e) });
   draw.on('drawend', (e) => {
     const coords = lineToLonLat(e.feature.getGeometry());
     const p = addPipe({ coords });
