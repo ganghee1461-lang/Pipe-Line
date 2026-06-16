@@ -1,0 +1,93 @@
+{
+  "version": 1,
+  "savedAt": "2026-06-16T06:59:47.356Z",
+  "demands": [
+    {
+      "id": 1,
+      "memo": "",
+      "query": "광혜원리 520",
+      "address": "충청북도 진천군 광혜원면 광혜원리 520",
+      "lon": 127.44002016299082,
+      "lat": 36.99165136432229,
+      "meters": [
+        {
+          "use": "일반",
+          "grade": 4,
+          "qty": 4
+        }
+      ]
+    }
+  ],
+  "pipes": [
+    {
+      "id": 1,
+      "coords": [
+        [
+          126.86953735351562,
+          37.542105962935736
+        ],
+        [
+          127.01819610595705,
+          37.57721440559766
+        ],
+        [
+          127.02677917480469,
+          37.55952617279482
+        ]
+      ],
+      "segs": [
+        {
+          "material": "PE",
+          "diameter": "63A",
+          "use": "supply",
+          "pressure": "저압",
+          "status": "planned",
+          "review": "target",
+          "pavement": "asphalt",
+          "section": 1
+        },
+        {
+          "material": "PE",
+          "diameter": "63A",
+          "use": "supply",
+          "pressure": "저압",
+          "status": "planned",
+          "review": "target",
+          "pavement": "asphalt",
+          "section": 1
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "coords": [
+        [
+          126.98385623373147,
+          37.54822855351078
+        ],
+        [
+          127.02450369091247,
+          37.56421596400692
+        ]
+      ],
+      "segs": [
+        {
+          "material": "PE",
+          "diameter": "63A",
+          "use": "supply",
+          "pressure": "저압",
+          "status": "planned",
+          "review": "target",
+          "pavement": "concrete",
+          "section": 2
+        }
+      ]
+    }
+  ],
+  "markerStyle": {
+    "color": "#b91c1c",
+    "borderColor": "#ffffff",
+    "shape": "circle",
+    "border": "solid"
+  }
+}
