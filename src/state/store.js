@@ -57,6 +57,26 @@ export function clearDemands() {
   emit('demands:changed', state.demands);
 }
 
+// ── 계량기 (수요처별 다중) ──  meter = { use, grade, qty }
+export function addMeter(demandId) {
+  const d = state.demands.find((x) => x.id === demandId);
+  if (!d) return;
+  d.meters = [...(d.meters || []), { use: '일반', grade: 4, qty: 1 }];
+  emit('demands:changed', state.demands);
+}
+export function updateMeter(demandId, idx, patch) {
+  const d = state.demands.find((x) => x.id === demandId);
+  if (!d || !d.meters || !d.meters[idx]) return;
+  d.meters[idx] = { ...d.meters[idx], ...patch };
+  emit('demands:changed', state.demands);
+}
+export function removeMeter(demandId, idx) {
+  const d = state.demands.find((x) => x.id === demandId);
+  if (!d || !d.meters) return;
+  d.meters.splice(idx, 1);
+  emit('demands:changed', state.demands);
+}
+
 // ── 배관 (세그먼트 모델) ──
 // 배관 = 폴리라인. 각 점-점 구간(세그먼트)이 개별 속성/연장 단위.
 // 선택은 세그먼트 키 'pipeId:i' (i = 세그먼트 인덱스 0..N-2).

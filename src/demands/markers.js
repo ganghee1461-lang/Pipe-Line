@@ -7,7 +7,8 @@ import Point from 'ol/geom/Point.js';
 import { fromLonLat } from 'ol/proj.js';
 import { Style, Circle, RegularShape, Fill, Stroke, Text } from 'ol/style.js';
 import { map } from '../map/map.js';
-import { getState, subscribe, updateDemand, setUI } from '../state/store.js';
+import { getState, subscribe, updateDemand, setUI, addMeter, updateMeter, removeMeter } from '../state/store.js';
+import { METER_USES, METER_GRADES } from '../config/meters.js';
 
 // 마커 채움 색상 ('transparent' = 투명, 체커보드로 표시). 테두리색도 동일 팔레트 사용.
 export const MARKER_COLORS = [
@@ -164,6 +165,53 @@ function esc(s) {
 }
 function hidePopup() { popup.classList.add('hidden'); popup.innerHTML = ''; }
 
+function meterRowHtml(m, idx) {
+  const isCustom = !METER_GRADES.includes(Number(m.grade));
+  const gradeOpts = METER_GRADES.map((g) => `<option value="${g}" ${Number(m.grade) === g ? 'selected' : ''}>${g}</option>`).join('')
+    + `<option value="custom" ${isCustom ? 'selected' : ''}>직접</option>`;
+  return `<div class="mt-row" data-idx="${idx}">
+    <select class="mt-use">${METER_USES.map((u) => `<option ${m.use === u ? 'selected' : ''}>${u}</option>`).join('')}</select>
+    <select class="mt-grade">${gradeOpts}</select>
+    <input class="mt-custom ${isCustom ? '' : 'hidden'}" type="number" min="1" value="${isCustom ? esc(m.grade) : ''}" placeholder="등급" />
+    <input class="mt-qty" type="number" min="1" value="${esc(m.qty ?? 1)}" title="수량" />
+    <button class="mt-del" title="삭제">✕</button>
+  </div>`;
+}
+
+function renderMeters(d) {
+  const wrap = popup.querySelector('.mp-meters-list');
+  const meters = d.meters || [];
+  wrap.innerHTML = meters.length
+    ? meters.map(meterRowHtml).join('')
+    : '<div class="mt-empty">계량기 없음</div>';
+
+  wrap.querySelectorAll('.mt-row').forEach((row) => {
+    const idx = Number(row.dataset.idx);
+    const useSel = row.querySelector('.mt-use');
+    const gradeSel = row.querySelector('.mt-grade');
+    const custom = row.querySelector('.mt-custom');
+    const qty = row.querySelector('.mt-qty');
+
+    useSel.addEventListener('change', () => updateMeter(d.id, idx, { use: useSel.value }));
+    gradeSel.addEventListener('change', () => {
+      if (gradeSel.value === 'custom') { custom.classList.remove('hidden'); custom.focus(); }
+      else { custom.classList.add('hidden'); updateMeter(d.id, idx, { grade: Number(gradeSel.value) }); }
+    });
+    custom.addEventListener('change', () => {
+      const v = parseInt(custom.value, 10);
+      if (Number.isFinite(v) && v >= 1) updateMeter(d.id, idx, { grade: v });
+    });
+    qty.addEventListener('change', () => {
+      const v = parseInt(qty.value, 10);
+      if (Number.isFinite(v) && v >= 1) updateMeter(d.id, idx, { qty: v });
+    });
+    row.querySelector('.mt-del').addEventListener('click', () => {
+      removeMeter(d.id, idx);
+      renderMeters(getState().demands.find((x) => x.id === d.id));
+    });
+  });
+}
+
 function showPopup(pixel, d, num) {
   popup.innerHTML = `
     <div class="mp-bar">
@@ -174,6 +222,10 @@ function showPopup(pixel, d, num) {
     <div class="mp-body">
       <div class="mp-addr">${esc(d.address)}</div>
       <textarea class="mp-memo" placeholder="메모…">${esc(d.memo || '')}</textarea>
+      <div class="mp-meters">
+        <div class="mp-meters-head"><span>계량기 (용도·등급·수량)</span><button class="mp-add-meter">+ 추가</button></div>
+        <div class="mp-meters-list"></div>
+      </div>
     </div>`;
   popup.classList.remove('hidden');
   popup.style.left = `${pixel[0] + 14}px`;
@@ -184,6 +236,12 @@ function showPopup(pixel, d, num) {
   const save = () => updateDemand(d.id, { memo: memo.value });
   memo.addEventListener('change', save);
   memo.addEventListener('blur', save);
+
+  popup.querySelector('.mp-add-meter').addEventListener('click', () => {
+    addMeter(d.id);
+    renderMeters(getState().demands.find((x) => x.id === d.id));
+  });
+  renderMeters(d);
 }
 
 function markerAtPixel(pixel) {

@@ -54,7 +54,14 @@
           </section>
 
           <section class="panel grow">
-            <div class="panel-label">수요처 <span id="demand-count">0</span></div>
+            <div class="panel-label di-list-head">
+              <span>수요처 <span id="demand-count">0</span></span>
+              <select id="demand-sort" class="di-sort" title="정렬">
+                <option value="num">순번</option>
+                <option value="meters">계량기 많은순</option>
+                <option value="memo">메모 우선</option>
+              </select>
+            </div>
             <ul id="demand-list"></ul>
           </section>
         </div>
