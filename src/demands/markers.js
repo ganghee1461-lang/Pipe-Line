@@ -64,6 +64,10 @@ function complement(hex) {
   if (s < 0.12) return '#7c3aed'; // 무채색(흰/회색) → 고정 보라
   return hslToHex((h + 0.5) % 1, Math.max(0.6, s), Math.min(0.55, Math.max(0.42, l)));
 }
+function isLight(hex) {
+  const [r, g, b] = hexToRgb(hex);
+  return (0.299 * r + 0.587 * g + 0.114 * b) / 255 > 0.62;
+}
 
 function makeImage(shape, radius, fill, stroke) {
   if (shape === 'triangle') return new RegularShape({ points: 3, radius: radius + 2, fill, stroke });
@@ -97,14 +101,16 @@ function styleFor(feature) {
       image: new Circle({ radius: radius + 5, stroke: new Stroke({ color: '#1d4ed8', width: 2.5 }), fill: new Fill({ color: NONE }) }),
     }));
   }
-  // 마커 본체 + 번호 (세미볼드 + 얇은 흰 헤일로)
+  // 마커 본체 + 번호 (글자색=테두리색, 헤일로는 명도 따라 자동 대비)
+  const labelColor = borderColor === 'transparent' ? '#111827' : borderColor;
+  const halo = isLight(labelColor) ? '#1c1c1e' : '#ffffff';
   styles.push(new Style({
     image: makeImage(shape, radius, fill, stroke),
     text: new Text({
       text: String(d.id),
       font: '600 11px "Noto Sans KR", sans-serif',
-      fill: new Fill({ color: '#111827' }),
-      stroke: new Stroke({ color: '#ffffff', width: 2 }),
+      fill: new Fill({ color: labelColor }),
+      stroke: new Stroke({ color: halo, width: 2 }),
       offsetY: shape === 'triangle' ? 2 : 0,
     }),
   }));
