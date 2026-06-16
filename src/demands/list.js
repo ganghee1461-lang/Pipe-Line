@@ -36,7 +36,7 @@ function render() {
         <button class="di-del" title="삭제">🗑</button>
       </div>
       <div class="di-addr">${esc(d.address)}</div>
-      <input class="di-memo-input ${d.memo ? '' : 'hidden'}" placeholder="메모…" value="${esc(d.memo || '')}" />
+      <textarea class="di-memo-input ${d.memo ? '' : 'hidden'}" rows="2" placeholder="메모…">${esc(d.memo || '')}</textarea>
     `;
 
     // 리스트 클릭 → 시점 이동 + 선택

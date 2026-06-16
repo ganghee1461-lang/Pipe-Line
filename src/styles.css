@@ -113,7 +113,7 @@ button { font-family: inherit; cursor: pointer; border: none; border-radius: 6px
 .di-memo-btn, .di-del, .di-style-btn { background: transparent; padding: 2px 4px; font-size: 12px; opacity: 0.55; }
 .di-memo-btn:hover, .di-del:hover, .di-style-btn:hover { opacity: 1; }
 .di-addr { font-size: 11px; color: var(--text-2); margin-top: 3px; }
-.di-memo-input { margin-top: 5px; font-size: 11px; }
+.di-memo-input { width: 100%; box-sizing: border-box; margin-top: 5px; font-size: 12px; min-height: 46px; padding: 7px 9px; resize: vertical; line-height: 1.4; }
 .hidden { display: none !important; }
 
 /* ── 마커 스타일 팔레트 ── */
@@ -123,8 +123,18 @@ button { font-family: inherit; cursor: pointer; border: none; border-radius: 6px
 .ci.on { border-color: var(--text); box-shadow: 0 0 0 2px var(--accent); }
 
 /* 전체 마커 스타일 패널 */
-#ms-colors, #ms-border-color { display: flex; flex-wrap: nowrap; gap: 5px; }
-#ms-colors .ci, #ms-border-color .ci { width: 20px; height: 20px; flex-shrink: 0; }
+#ms-colors, #ms-border-color { display: flex; flex-wrap: wrap; gap: 5px; }
+#ms-colors .ci, #ms-border-color .ci { width: 19px; height: 19px; flex-shrink: 0; }
+.ci-checker {
+  background-color: #fff;
+  background-image:
+    linear-gradient(45deg, #b9b9b9 25%, transparent 25%),
+    linear-gradient(-45deg, #b9b9b9 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, #b9b9b9 75%),
+    linear-gradient(-45deg, transparent 75%, #b9b9b9 75%);
+  background-size: 8px 8px;
+  background-position: 0 0, 0 4px, 4px -4px, -4px 0;
+}
 .ms-cap { font-size: 10.5px; color: var(--muted); margin: 9px 0 5px; }
 .ms-cap:first-of-type { margin-top: 2px; }
 .ms-grid { display: flex; flex-direction: column; gap: 9px; margin-top: 11px; }

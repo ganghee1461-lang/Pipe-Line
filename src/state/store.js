@@ -12,7 +12,7 @@ const state = {
     filterMemoOnly: false,
     selectedDemandId: null,
     selectedSegs: [],   // 선택된 세그먼트 키 'pipeId:i' (다중)
-    markerStyle: { color: '#b91c1c', borderColor: '#ffffff', shape: 'circle', fill: 'filled', border: 'solid' },
+    markerStyle: { color: '#b91c1c', borderColor: '#ffffff', shape: 'circle', border: 'solid' },
   },
 };
 
@@ -237,7 +237,7 @@ export function exportProject() {
   };
 }
 export function importProject(data) {
-  if (data?.markerStyle) state.ui.markerStyle = { color: '#b91c1c', borderColor: '#ffffff', shape: 'circle', fill: 'filled', border: 'solid', ...data.markerStyle };
+  if (data?.markerStyle) state.ui.markerStyle = { color: '#b91c1c', borderColor: '#ffffff', shape: 'circle', border: 'solid', ...data.markerStyle };
   state.demands = Array.isArray(data?.demands) ? data.demands.map((d) => ({ ...d })) : [];
   state.pipes = Array.isArray(data?.pipes)
     ? data.pipes.map((p) => ({
