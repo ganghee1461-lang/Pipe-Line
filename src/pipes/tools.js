@@ -21,7 +21,7 @@ import { map } from '../map/map.js';
 import { pipeSource, setHoveredSeg } from './layer.js';
 import { reconcileSegs } from './util.js';
 import {
-  getState, subscribe, addPipe, setPipeGeometry, removeSegs,
+  getState, subscribe, addPipe, extendPipe, setPipeGeometry, removeSegs,
   selectSeg, selectSegs, toggleSeg, addSegsToSelection, clearSegSelection,
   setTool, undo, redo, segKey,
 } from '../state/store.js';
@@ -129,11 +129,25 @@ function applyTool() {
     map.addInteraction(dragBox);
   }
 
-  // 모드 떠나면 꼭짓점 편집 상태 초기화
+  // 모드 떠나면 꼭짓점 편집 상태 초기화 + 선택 해제(작도/꼭짓점 진입 시 V선택 초기화)
   if (tool !== 'vertex') { selVertex = null; hoverCoord = null; draggingCoord = null; }
+  if (tool !== 'select') clearSegSelection();
   hoverSrc.clear();
   showVertexHighlight();
   updateCursor();
+}
+
+// 연속 중복 좌표 제거 (같은 위치 점 두 개 방지)
+function dedupe(coords) {
+  const out = [];
+  for (const c of coords) {
+    const last = out[out.length - 1];
+    if (!last || Math.abs(last[0] - c[0]) > 1e-9 || Math.abs(last[1] - c[1]) > 1e-9) out.push(c);
+  }
+  return out;
+}
+function samePt(a, b) {
+  return a && b && Math.abs(a[0] - b[0]) < 1e-7 && Math.abs(a[1] - b[1]) < 1e-7;
 }
 
 // 픽셀 위치에서 가장 가까운 세그먼트 키
@@ -221,11 +235,19 @@ function onKey(e) {
 }
 
 export function initPipeTools() {
-  // 좌클릭(primaryAction)에서만 점 추가 → 우클릭은 점 없이 종료만.
-  draw = new Draw({ type: 'LineString', condition: (e) => noModifierKeys(e) && primaryAction(e) });
+  // 좌클릭에서 점 추가(Ctrl 포함) → 우클릭은 점 없이 종료만.
+  draw = new Draw({ type: 'LineString', condition: (e) => primaryAction(e) });
   draw.on('drawend', (e) => {
-    const coords = lineToLonLat(e.feature.getGeometry());
-    const p = addPipe({ coords });
+    const coords = dedupe(lineToLonLat(e.feature.getGeometry()));
+    if (coords.length < 2) return;
+    // 기존 배관의 끝점에서 시작했으면 그 배관을 이어서 연장 (같은 점 중복 없이)
+    const first = coords[0];
+    let p = null;
+    for (const pp of getState().pipes) {
+      if (samePt(pp.coords[pp.coords.length - 1], first)) { p = extendPipe(pp.id, coords.slice(1), false); break; }
+      if (samePt(pp.coords[0], first)) { p = extendPipe(pp.id, coords.slice(1), true); break; }
+    }
+    if (!p) p = addPipe({ coords });
     setTool('select');
     selectSegs(p.segs.map((_, i) => segKey(p.id, i)));
   });

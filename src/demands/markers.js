@@ -77,13 +77,14 @@ function makeImage(shape, radius, fill, stroke) {
 
 function styleFor(feature) {
   const d = feature.get('demand');
+  const num = feature.get('num') ?? d.id; // 표시 순번 (삭제 시 자동 재부여)
   const hasMemo = !!(d.memo && d.memo.trim());
   const selected = getState().ui.selectedDemandId === d.id;
   const ms = getState().ui.markerStyle; // { color, borderColor, shape, border }
   const { color, shape } = ms;
   const borderColor = ms.borderColor || '#ffffff';
   const dashed = ms.border === 'dashed';
-  const key = `${color}-${borderColor}-${shape}-${ms.border}-${hasMemo ? 'm' : ''}-${selected ? 's' : ''}-${d.id}`;
+  const key = `${color}-${borderColor}-${shape}-${ms.border}-${hasMemo ? 'm' : ''}-${selected ? 's' : ''}-${num}`;
   if (styleCache.has(key)) return styleCache.get(key);
 
   const radius = 10;
@@ -107,7 +108,7 @@ function styleFor(feature) {
   styles.push(new Style({
     image: makeImage(shape, radius, fill, stroke),
     text: new Text({
-      text: String(d.id),
+      text: String(num),
       font: '600 11px "Noto Sans KR", sans-serif',
       fill: new Fill({ color: labelColor }),
       stroke: new Stroke({ color: halo, width: 2 }),
@@ -133,14 +134,15 @@ function styleFor(feature) {
 function rebuild(demands) {
   src.clear();
   styleCache.clear();
-  const feats = demands
-    .filter((d) => Number.isFinite(d.lon) && Number.isFinite(d.lat))
-    .map((d) => {
-      const f = new Feature({ geometry: new Point(fromLonLat([d.lon, d.lat])) });
-      f.set('demand', d);
-      f.setId(d.id);
-      return f;
-    });
+  const feats = [];
+  demands.forEach((d, i) => {
+    if (!Number.isFinite(d.lon) || !Number.isFinite(d.lat)) return;
+    const f = new Feature({ geometry: new Point(fromLonLat([d.lon, d.lat])) });
+    f.set('demand', d);
+    f.set('num', i + 1); // 배열 순서 = 표시 순번
+    f.setId(d.id);
+    feats.push(f);
+  });
   src.addFeatures(feats);
   applyFilter();
 }
@@ -162,10 +164,10 @@ function esc(s) {
 }
 function hidePopup() { popup.classList.add('hidden'); popup.innerHTML = ''; }
 
-function showPopup(pixel, d) {
+function showPopup(pixel, d, num) {
   popup.innerHTML = `
     <div class="mp-bar">
-      <b>#${d.id}</b>
+      <b>#${num ?? d.id}</b>
       <span class="mp-q" title="${esc(d.query)}">${esc(d.query)}</span>
       <button class="mp-close">✕</button>
     </div>
@@ -204,7 +206,7 @@ export function initMarkers() {
     if (!f) { hidePopup(); return; }
     const d = f.get('demand');
     setUI({ selectedDemandId: d.id });
-    showPopup(evt.pixel, d);
+    showPopup(evt.pixel, d, f.get('num'));
   });
 }
 

@@ -14,6 +14,8 @@ export function initList() {
 
 function render() {
   const { demands, ui } = getState();
+  const numById = new Map();
+  demands.forEach((d, i) => numById.set(d.id, i + 1)); // 표시 순번 = 배열 위치
   const visible = ui.filterMemoOnly
     ? demands.filter((d) => d.memo && d.memo.trim())
     : demands;
@@ -30,7 +32,7 @@ function render() {
 
     li.innerHTML = `
       <div class="di-head">
-        <span class="di-badge">#${d.id}</span>
+        <span class="di-badge">#${numById.get(d.id)}</span>
         <span class="di-query" title="${esc(d.query)}">${esc(d.query)}</span>
         <button class="di-memo-btn" title="메모">🔖</button>
         <button class="di-del" title="삭제">🗑</button>

@@ -140,6 +140,24 @@ export function addPipe({ coords, segs } = {}) {
   return pipe;
 }
 
+// 기존 배관 끝점에서 이어 그리기 (끝/시작에 점·세그먼트 추가)
+export function extendPipe(id, addedCoords, atStart) {
+  const p = state.pipes.find((x) => x.id === id);
+  if (!p) return null;
+  const added = addedCoords.map((c) => [...c]);
+  const newSegs = added.map(newAttr);
+  if (atStart) {
+    p.coords = [...added.slice().reverse(), ...p.coords];
+    p.segs = [...newSegs, ...p.segs];
+  } else {
+    p.coords = [...p.coords, ...added];
+    p.segs = [...p.segs, ...newSegs];
+  }
+  commit();
+  emit('pipes:changed', state.pipes);
+  return p;
+}
+
 // 형상 편집 결과 반영 (coords + 재조정된 segs). modify 전용.
 export function setPipeGeometry(id, coords, segs) {
   const p = state.pipes.find((x) => x.id === id);
