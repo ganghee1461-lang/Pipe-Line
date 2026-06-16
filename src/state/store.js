@@ -6,6 +6,7 @@ const state = {
   pipes: [],            // { id, coords:[[lon,lat]...], segs:[attr×(N-1)] }  세그먼트=점-점 구간
   ui: {
     mode: 'sales',      // 'sales' | 'excavation' | 'network'
+    colorBy: 'diameter', // 영업 모드 색상 기준: 'diameter' | 'pavement'
     tool: 'select',     // 'select' | 'draw' | 'vertex'
     basemap: 'Base',
     filterMemoOnly: false,

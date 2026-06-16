@@ -30,7 +30,7 @@ function render() {
   const types = new Map(); // 라벨 -> 대표 attr
   for (const p of pipes) {
     for (const a of p.segs) {
-      const k = legendGroup(a, ui.mode);
+      const k = legendGroup(a, ui.mode, ui.colorBy);
       if (!types.has(k)) types.set(k, a);
     }
   }
@@ -43,7 +43,7 @@ function render() {
 
   listEl.innerHTML = [...types.entries()]
     .map(([k, a]) => {
-      const s = pipeStyle(a, ui.mode);
+      const s = pipeStyle(a, ui.mode, ui.colorBy);
       return `<li class="lg-row">
         <span class="lg-swatch" style="border-top:3px ${dashCss(s.dash)} ${s.color}"></span>
         <span class="lg-label">${esc(k)}</span>

@@ -66,6 +66,7 @@ body {
 .seg button:last-child { border-right: none; }
 .seg button:hover { background: var(--surface-3); }
 .seg button.active { background: var(--accent); color: #fff; }
+#colorby-switch { margin-top: 6px; }
 #mode-legend { margin-top: 7px; font-size: 10.5px; color: var(--muted); line-height: 1.45; }
 .panel.grow { flex: 1; overflow-y: auto; min-height: 80px; }
 .panel-label {

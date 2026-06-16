@@ -24,7 +24,7 @@ function render() {
       if (a.status === 'existing') continue; // 기존관 연장 제외
       const len = segLength(p.coords, i);
       total += len;
-      const k = legendGroup(a, ui.mode);
+      const k = legendGroup(a, ui.mode, ui.colorBy);
       groups.set(k, (groups.get(k) || 0) + len);
     }
   }

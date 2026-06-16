@@ -41,9 +41,19 @@ export function sectionColor(n) {
   return SECTION_COLORS[((i % len) + len) % len];
 }
 
-// info = { use, pressure, material, diameter, status, review }
-// mode = 'sales' | 'excavation' | 'network' — 모드별로 색/대시가 달라진다.
-export function pipeStyle(info, mode = 'sales') {
+// 포장 종류별 색상/라벨 (영업 모드 '포장색' 기준에서 사용 — 4종이라 선명)
+const PAVEMENT_COLOR = { asphalt: '#374151', concrete: '#9aa0a6', block: '#b45309', none: '#16a34a' };
+const PAVEMENT_LABEL = { asphalt: '아스팔트', concrete: '콘크리트', block: '보도블럭', none: '포장없음' };
+export function pavementLabel(p) { return PAVEMENT_LABEL[p] || '포장없음'; }
+
+function salesDash(info) {
+  if (info.use === 'supply') return info.pressure === '저압' ? 'dashed' : 'solid';
+  return 'solid';
+}
+
+// info = { use, pressure, material, diameter, status, review, pavement, section }
+// mode = 'sales' | 'excavation' | 'network', colorBy = 'diameter' | 'pavement'(영업 전용)
+export function pipeStyle(info, mode = 'sales', colorBy = 'diameter') {
   if (!info) return { color: EXISTING_COLOR, dash: 'solid' };
   const arrow = info.use === 'inlet';
 
@@ -65,13 +75,13 @@ export function pipeStyle(info, mode = 'sales') {
     return { color: EXISTING_COLOR, dash: 'solid', arrow };
   }
 
-  // ── 영업 신설관: 관경색, 공급관 저압=파선 ──
+  // ── 영업 신설관: 색상 기준(관경 / 포장), 대시는 공급관 저압=파선 ──
+  if (colorBy === 'pavement') {
+    return { color: PAVEMENT_COLOR[info.pavement] || PAVEMENT_COLOR.none, dash: salesDash(info), arrow };
+  }
   const diams = DIAMETERS[info.material] || DIAMETERS.PLP;
   const idx = Math.max(0, diams.indexOf(info.diameter));
-  const color = DIAM_COLORS[idx] || '#888888';
-  let dash = 'solid';
-  if (info.use === 'supply') dash = info.pressure === '저압' ? 'dashed' : 'solid';
-  return { color, dash, arrow };
+  return { color: DIAM_COLORS[idx] || '#888888', dash: salesDash(info), arrow };
 }
 
 // 배관 라벨(범례·연장 집계 키)
@@ -85,10 +95,13 @@ export function pipeKey(info) {
 }
 
 // 모드별 집계·범례 그룹 키 (스타일 분기와 동일 기준으로 묶어 색이 맞도록)
-export function legendGroup(info, mode) {
+export function legendGroup(info, mode, colorBy = 'diameter') {
   if (!info) return '미지정';
   if (mode === 'network') {
     return info.status === 'existing' ? '기존관' : `${info.section || 1}번 구간`;
+  }
+  if (mode === 'sales' && colorBy === 'pavement') {
+    return info.status === 'existing' ? '기존관' : pavementLabel(info.pavement);
   }
   if (mode === 'excavation') {
     if (info.status === 'existing') return '기존관';

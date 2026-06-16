@@ -24,14 +24,14 @@ export function setHoveredSeg(key) {
 
 function styleFor(feature) {
   const p = feature.get('pipe');
-  const { mode, selectedSegs, tool } = getState().ui;
+  const { mode, colorBy, selectedSegs, tool } = getState().ui;
   const cs = feature.getGeometry().getCoordinates();
   const selSet = new Set(selectedSegs);
   const styles = [];
 
   for (let i = 0; i < p.segs.length; i++) {
     const a = p.segs[i];
-    const s = pipeStyle(a, mode);
+    const s = pipeStyle(a, mode, colorBy);
     const seg = new LineString([cs[i], cs[i + 1]]);
     const key = segKey(p.id, i);
     const selected = selSet.has(key);
