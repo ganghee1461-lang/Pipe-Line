@@ -209,6 +209,51 @@ function snapToVertex(lonlat) {
   return best ? [...best] : null;
 }
 
+// 3857 좌표를 선분(a~b) 위로 정사영
+function projectOnSeg(p, a, b) {
+  const dx = b[0] - a[0], dy = b[1] - a[1];
+  const l2 = dx * dx + dy * dy;
+  let t = l2 ? ((p[0] - a[0]) * dx + (p[1] - a[1]) * dy) / l2 : 0;
+  t = Math.max(0, Math.min(1, t));
+  return [a[0] + t * dx, a[1] + t * dy];
+}
+
+// 작도 점을 기존 배관에 연결:
+//  1) 기존 꼭짓점 근처 → 그 꼭짓점 좌표 반환
+//  2) 기존 선분 '모서리'에 닿음 → 그 선분에 접속점 삽입 후 삽입 좌표 반환
+//  3) 아무 데도 안 닿음 → null
+function connectPointToPipe(lonlat) {
+  const v = snapToVertex(lonlat);
+  if (v) return v;
+
+  const pt = fromLonLat(lonlat);
+  const px0 = map.getPixelFromCoordinate(pt);
+  if (!px0) return null;
+  let best = null, bestD = 8; // px
+  for (const p of getState().pipes) {
+    for (let i = 0; i < p.segs.length; i++) {
+      const a = fromLonLat(p.coords[i]);
+      const b = fromLonLat(p.coords[i + 1]);
+      const pa = map.getPixelFromCoordinate(a);
+      const pb = map.getPixelFromCoordinate(b);
+      if (!pa || !pb) continue;
+      const d = distToSeg(px0, pa, pb);
+      if (d < bestD) { bestD = d; best = { p, i, a, b }; }
+    }
+  }
+  if (!best) return null;
+  const proj = projectOnSeg(pt, best.a, best.b);
+  const ppx = map.getPixelFromCoordinate(proj);
+  const paPx = map.getPixelFromCoordinate(best.a);
+  const pbPx = map.getPixelFromCoordinate(best.b);
+  // 끝/꼭짓점에 가까우면 분할 불필요(꼭짓점 스냅이 처리)
+  if (Math.hypot(ppx[0] - paPx[0], ppx[1] - paPx[1]) < 8) return null;
+  if (Math.hypot(ppx[0] - pbPx[0], ppx[1] - pbPx[1]) < 8) return null;
+  const projLL = toLonLat(proj);
+  insertVertex(best.p.id, best.i, projLL);
+  return [...projLL];
+}
+
 // 한 꼭짓점(좌표)에 닿는 모든 세그먼트의 구간번호 모음 (신설관만, 오름차순)
 function incidentSections(coord3857) {
   const ll = toLonLat(coord3857);
@@ -333,10 +378,11 @@ export function initPipeTools() {
   draw.on('drawend', (e) => {
     let coords = dedupe(lineToLonLat(e.feature.getGeometry()));
     if (coords.length < 2) return;
-    // 양 끝점을 기존 꼭짓점에 정확히 스냅 → 연결(연장/분기) 판정이 확실해짐
-    const s0 = snapToVertex(coords[0]); if (s0) coords[0] = s0;
-    const li = coords.length - 1;
-    const sl = snapToVertex(coords[li]); if (sl) coords[li] = sl;
+    // 새 선의 각 점이 기존 배관(꼭짓점 또는 선분 모서리)에 닿으면 자동으로 접속점 생성·연결
+    for (let k = 0; k < coords.length; k++) {
+      const c = connectPointToPipe(coords[k]);
+      if (c) coords[k] = c;
+    }
     coords = dedupe(coords);
     if (coords.length < 2) return;
     // 기존 배관의 끝점에서 시작했으면 그 배관을 이어서 연장 (같은 점 중복 없이)
