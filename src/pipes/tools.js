@@ -21,7 +21,7 @@ import { map } from '../map/map.js';
 import { pipeSource, setHoveredSeg } from './layer.js';
 import { reconcileSegs } from './util.js';
 import {
-  getState, subscribe, addPipe, extendPipe, setPipeGeometry, removeSegs,
+  getState, subscribe, addPipe, extendPipe, setPipeGeometry, removeSegs, insertVertex,
   selectSeg, selectSegs, toggleSeg, addSegsToSelection, clearSegSelection,
   setTool, undo, redo, segKey,
 } from '../state/store.js';
@@ -100,7 +100,7 @@ function lineToLonLat(geom) {
 function updateCursor() {
   const el = map.getTargetElement();
   if (!el) return;
-  if (activeTool === 'draw') el.style.cursor = 'crosshair';
+  if (activeTool === 'draw') el.style.cursor = ctrlDown ? 'copy' : 'crosshair';
   else if (activeTool === 'vertex') el.style.cursor = ctrlDown ? 'copy' : '';
   else el.style.cursor = '';
 }
@@ -167,6 +167,28 @@ function segAtPixel(pixel, coordinate) {
     if (d < bestD) { bestD = d; best = i; }
   }
   return segKey(p.id, best);
+}
+
+// 작도 시작점이 기존 배관 선분 위(Ctrl 분기)면 그 선분에 접속점을 삽입.
+// 끝/꼭짓점에 가까우면(=이미 노드) 삽입하지 않음.
+function insertJunctionNear(coord3857) {
+  const px0 = map.getPixelFromCoordinate(coord3857);
+  if (!px0) return;
+  let best = null, bestD = 8; // px
+  for (const p of getState().pipes) {
+    for (let i = 0; i < p.segs.length; i++) {
+      const a = map.getPixelFromCoordinate(fromLonLat(p.coords[i]));
+      const b = map.getPixelFromCoordinate(fromLonLat(p.coords[i + 1]));
+      if (!a || !b) continue;
+      const d = distToSeg(px0, a, b);
+      if (d < bestD) { bestD = d; best = { p, i, a, b }; }
+    }
+  }
+  if (!best) return;
+  const nearA = Math.hypot(px0[0] - best.a[0], px0[1] - best.a[1]) < 8;
+  const nearB = Math.hypot(px0[0] - best.b[0], px0[1] - best.b[1]) < 8;
+  if (nearA || nearB) return; // 이미 꼭짓점/끝점 → 분할 불필요
+  insertVertex(best.p.id, best.i, toLonLat(coord3857));
 }
 
 function distToSeg(pt, a, b) {
@@ -237,6 +259,13 @@ function onKey(e) {
 export function initPipeTools() {
   // 좌클릭에서 점 추가(Ctrl 포함) → 우클릭은 점 없이 종료만.
   draw = new Draw({ type: 'LineString', condition: (e) => primaryAction(e) });
+  // Ctrl로 작도 시작 시: 시작점이 기존 선분 위면 그 선분에 접속점을 삽입(분기)
+  draw.on('drawstart', (e) => {
+    if (!ctrlDown) return;
+    const c = e.feature.getGeometry().getCoordinates();
+    const first = Array.isArray(c[0]) ? c[0] : c;
+    if (first) insertJunctionNear(first);
+  });
   draw.on('drawend', (e) => {
     const coords = dedupe(lineToLonLat(e.feature.getGeometry()));
     if (coords.length < 2) return;

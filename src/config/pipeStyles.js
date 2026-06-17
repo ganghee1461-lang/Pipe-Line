@@ -22,23 +22,37 @@ export const DIAM_COLORS = [
 // 대시 패턴 (OpenLayers Stroke.lineDash 와 동일 단위)
 export const DASH = {
   solid: undefined,
-  dashed: [10, 6],
-  dotted: [2, 6],
+  dashed: [12, 7],
+  dotted: [2, 7],
+  dashdot: [14, 6, 3, 6], // 일점쇄선
 };
 
 const EXISTING_COLOR = '#868e96'; // 기존관 회색 (영업 모드)
 const EXISTING_BLUE = '#0d47a1';  // 기존관 파랑 (굴착심의/배관망)
 const REVIEW_RED = '#d32f2f';     // 굴착심의 예정관 빨강
 
-// N번 구간별 색상 (배관망 분석). 구간 번호로 순환.
+// N번 구간별 색상 (배관망 분석). 1~10은 색상으로, 11번/21번/31번부터는 같은 색을
+// 대시 단계(실선→긴파선→점선→일점쇄선)로 구분 → 색×대시로 40구간까지 고유.
 export const SECTION_COLORS = [
-  '#e6194B', '#3cb44b', '#4363d8', '#f58231', '#911eb4',
-  '#00838f', '#f032e6', '#9A6324', '#808000', '#000075',
+  '#e6194B', // 1 빨강
+  '#3cb44b', // 2 초록
+  '#4363d8', // 3 파랑
+  '#f58231', // 4 주황
+  '#911eb4', // 5 보라
+  '#00b8b8', // 6 청록
+  '#f032e6', // 7 자홍
+  '#9A6324', // 8 갈색
+  '#000075', // 9 남색
+  '#808000', // 10 올리브
 ];
+const SECTION_DASH = ['solid', 'dashed', 'dotted', 'dashdot'];
+function mod(i, len) { return ((i % len) + len) % len; }
 export function sectionColor(n) {
-  const i = (Number(n) || 1) - 1;
-  const len = SECTION_COLORS.length;
-  return SECTION_COLORS[((i % len) + len) % len];
+  return SECTION_COLORS[mod((Number(n) || 1) - 1, SECTION_COLORS.length)];
+}
+export function sectionDash(n) {
+  const tier = Math.floor(((Number(n) || 1) - 1) / SECTION_COLORS.length);
+  return SECTION_DASH[mod(tier, SECTION_DASH.length)];
 }
 
 // 포장 종류별 색상/라벨 (영업 모드 '포장색' 기준에서 사용 — 4종이라 선명)
@@ -67,7 +81,7 @@ export function pipeStyle(info, mode = 'sales', colorBy = 'diameter') {
   // ── 배관망 분석: 기존관=파란실선 / 신설관=N번 구간별 색상 점선 ──
   if (mode === 'network') {
     if (info.status === 'existing') return { color: EXISTING_BLUE, dash: 'solid', arrow };
-    return { color: sectionColor(info.section), dash: 'dashed', arrow };
+    return { color: sectionColor(info.section), dash: sectionDash(info.section), arrow };
   }
 
   // ── 영업: 기존관=회색실선 ──

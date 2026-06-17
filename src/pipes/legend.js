@@ -22,7 +22,9 @@ function apply() {
 }
 
 function dashCss(d) {
-  return d === 'dashed' ? 'dashed' : d === 'dotted' ? 'dotted' : 'solid';
+  if (d === 'dotted') return 'dotted';
+  if (d === 'dashed' || d === 'dashdot') return 'dashed'; // CSS는 일점쇄선 미지원 → 파선으로 근사
+  return 'solid';
 }
 
 function render() {

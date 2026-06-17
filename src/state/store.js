@@ -179,6 +179,17 @@ export function extendPipe(id, addedCoords, atStart) {
   return p;
 }
 
+// 선분 i 위(꼭짓점 i ~ i+1 사이)에 점 삽입 → 그 선분을 둘로 분할(속성 동일).
+// 작도 모드 Ctrl+분기 시작 시 기존 배관에 접속점 추가용.
+export function insertVertex(pipeId, i, lonlat) {
+  const p = state.pipes.find((x) => x.id === pipeId);
+  if (!p || i < 0 || i >= p.segs.length) return;
+  p.coords = [...p.coords.slice(0, i + 1), [...lonlat], ...p.coords.slice(i + 1)];
+  p.segs = [...p.segs.slice(0, i + 1), { ...p.segs[i] }, ...p.segs.slice(i + 1)];
+  commit();
+  emit('pipes:changed', state.pipes);
+}
+
 // 형상 편집 결과 반영 (coords + 재조정된 segs). modify 전용.
 export function setPipeGeometry(id, coords, segs) {
   const p = state.pipes.find((x) => x.id === id);
