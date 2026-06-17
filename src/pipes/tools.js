@@ -191,6 +191,23 @@ function insertJunctionNear(coord3857) {
   insertVertex(best.p.id, best.i, toLonLat(coord3857));
 }
 
+// 좌표를 기존 배관 꼭짓점에 정확히 스냅(픽셀 허용오차 내) → 저장 좌표 그대로 반환.
+// 작도 끝점이 기존 점과 정확히 일치해야 연장/분기 연결(그래프 노드 공유)이 성립.
+function snapToVertex(lonlat) {
+  const px0 = map.getPixelFromCoordinate(fromLonLat(lonlat));
+  if (!px0) return null;
+  let best = null, bestD = 10; // px
+  for (const p of getState().pipes) {
+    for (const c of p.coords) {
+      const px = map.getPixelFromCoordinate(fromLonLat(c));
+      if (!px) continue;
+      const d = Math.hypot(px[0] - px0[0], px[1] - px0[1]);
+      if (d < bestD) { bestD = d; best = c; }
+    }
+  }
+  return best ? [...best] : null;
+}
+
 function distToSeg(pt, a, b) {
   const dx = b[0] - a[0], dy = b[1] - a[1];
   const l2 = dx * dx + dy * dy;
@@ -267,7 +284,13 @@ export function initPipeTools() {
     if (first) insertJunctionNear(first);
   });
   draw.on('drawend', (e) => {
-    const coords = dedupe(lineToLonLat(e.feature.getGeometry()));
+    let coords = dedupe(lineToLonLat(e.feature.getGeometry()));
+    if (coords.length < 2) return;
+    // 양 끝점을 기존 꼭짓점에 정확히 스냅 → 연결(연장/분기) 판정이 확실해짐
+    const s0 = snapToVertex(coords[0]); if (s0) coords[0] = s0;
+    const li = coords.length - 1;
+    const sl = snapToVertex(coords[li]); if (sl) coords[li] = sl;
+    coords = dedupe(coords);
     if (coords.length < 2) return;
     // 기존 배관의 끝점에서 시작했으면 그 배관을 이어서 연장 (같은 점 중복 없이)
     const first = coords[0];
