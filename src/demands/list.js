@@ -6,13 +6,24 @@ const listEl = document.getElementById('demand-list');
 const countEl = document.getElementById('demand-count');
 const filterMemo = document.getElementById('filter-memo');
 const sortSel = document.getElementById('demand-sort');
+const sortDirBtn = document.getElementById('demand-sort-dir');
 let sortBy = 'num';
+let sortAsc = true; // true=오름차순
 
 export function initList() {
   subscribe('demands:changed', render);
   subscribe('ui:changed', render);
   filterMemo.addEventListener('change', (e) => setUI({ filterMemoOnly: e.target.checked }));
-  if (sortSel) sortSel.addEventListener('change', () => { sortBy = sortSel.value; render(); });
+  if (sortSel) sortSel.addEventListener('change', () => { sortBy = sortSel.value; updateDir(); render(); });
+  if (sortDirBtn) sortDirBtn.addEventListener('click', () => { sortAsc = !sortAsc; updateDir(); render(); });
+  updateDir();
+}
+
+// 메모는 단순 유무라 방향 토글 비활성화
+function updateDir() {
+  const disabled = sortBy === 'memo';
+  sortDirBtn.disabled = disabled;
+  sortDirBtn.textContent = sortAsc ? '▲' : '▼';
 }
 
 function meterTotal(d) {
@@ -35,9 +46,17 @@ function render() {
   demands.forEach((d, i) => numById.set(d.id, i + 1)); // 표시 순번 = 배열 위치(정렬과 무관)
 
   let visible = ui.filterMemoOnly ? demands.filter((d) => d.memo && d.memo.trim()) : [...demands];
-  if (sortBy === 'meters') visible.sort((a, b) => meterTotal(b) - meterTotal(a));
-  else if (sortBy === 'memo') visible.sort((a, b) => (b.memo ? 1 : 0) - (a.memo ? 1 : 0));
-  else visible.sort((a, b) => numById.get(a.id) - numById.get(b.id));
+  const dir = sortAsc ? 1 : -1;
+  if (sortBy === 'address') {
+    visible.sort((a, b) => dir * String(a.address || '').localeCompare(String(b.address || ''), 'ko'));
+  } else if (sortBy === 'meters') {
+    visible.sort((a, b) => dir * (meterTotal(a) - meterTotal(b)));
+  } else if (sortBy === 'memo') {
+    // 메모 있는 것 먼저 (방향 무관)
+    visible.sort((a, b) => (b.memo && b.memo.trim() ? 1 : 0) - (a.memo && a.memo.trim() ? 1 : 0));
+  } else {
+    visible.sort((a, b) => dir * (numById.get(a.id) - numById.get(b.id)));
+  }
 
   countEl.textContent = demands.length;
   listEl.innerHTML = '';

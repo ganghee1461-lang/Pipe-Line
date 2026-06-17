@@ -57,11 +57,15 @@
           <section class="panel grow">
             <div class="panel-label di-list-head">
               <span>수요처 <span id="demand-count">0</span></span>
-              <select id="demand-sort" class="di-sort" title="정렬">
-                <option value="num">순번</option>
-                <option value="meters">계량기 많은순</option>
-                <option value="memo">메모 우선</option>
-              </select>
+              <span class="di-sort-wrap">
+                <select id="demand-sort" class="di-sort" title="정렬 기준">
+                  <option value="num">순번</option>
+                  <option value="address">주소</option>
+                  <option value="meters">계량기 수</option>
+                  <option value="memo">메모</option>
+                </select>
+                <button id="demand-sort-dir" class="di-sort-dir" title="오름/내림차순">▲</button>
+              </span>
             </div>
             <ul id="demand-list"></ul>
           </section>
@@ -70,7 +74,16 @@
         <!-- 배관 탭 -->
         <div class="tab-pane hidden" data-tab="pipes">
           <section class="panel">
-            <div class="panel-label">배관 연장 집계</div>
+            <div class="panel-label di-list-head">
+              <span>배관 연장 집계</span>
+              <span class="di-sort-wrap">
+                <select id="pt-sort" class="di-sort" title="정렬 기준">
+                  <option value="len">연장</option>
+                  <option value="name">이름</option>
+                </select>
+                <button id="pt-sort-dir" class="di-sort-dir" title="오름/내림차순">▼</button>
+              </span>
+            </div>
             <ul id="pipe-totals"></ul>
             <div id="pipe-total-sum"></div>
             <button id="meter-toggle" class="meter-toggle" aria-expanded="false">▸ 구간별 계량기 정보 보기</button>
@@ -122,6 +135,8 @@
                 </div>
               </div>
             </div>
+            <div class="ms-cap">크기</div>
+            <input type="range" id="ms-size" min="6" max="20" step="1" value="10" />
           </section>
         </div>
 

@@ -1,16 +1,38 @@
 // ── 배관 연장 집계 (모드별 타겟 속성으로 그룹, 기존관 제외) ──
-import { getState, subscribe } from '../state/store.js';
+import { getState, subscribe, selectSegs, setTool, segKey } from '../state/store.js';
 import { legendGroup } from '../config/pipeStyles.js';
 import { segLength, fmtLength } from './util.js';
 
-let listEl, sumEl, meterToggle, meterAgg;
+let listEl, sumEl, meterToggle, meterAgg, sortSel, sortDirBtn;
 let meterOpen = false;
+let sortBy = 'len';  // 'len' | 'name'
+let sortAsc = false; // 연장: 기본 많은순(내림차순)
+
+function leadingNum(s) { const m = /^(\d+)/.exec(s); return m ? Number(m[1]) : null; }
+function cmpName(a, b) {
+  const na = leadingNum(a), nb = leadingNum(b);
+  if (na != null && nb != null) return na - nb;
+  if (na != null) return -1;
+  if (nb != null) return 1;
+  return a.localeCompare(b, 'ko');
+}
 
 export function initTotals() {
   listEl = document.getElementById('pipe-totals');
   sumEl = document.getElementById('pipe-total-sum');
   meterToggle = document.getElementById('meter-toggle');
   meterAgg = document.getElementById('meter-agg');
+  sortSel = document.getElementById('pt-sort');
+  sortDirBtn = document.getElementById('pt-sort-dir');
+  sortSel.addEventListener('change', () => { sortBy = sortSel.value; render(); });
+  sortDirBtn.addEventListener('click', () => { sortAsc = !sortAsc; sortDirBtn.textContent = sortAsc ? '▲' : '▼'; render(); });
+
+  // 집계 항목 클릭 → 해당 속성 선분들 선택·하이라이트
+  listEl.addEventListener('click', (e) => {
+    const li = e.target.closest('.pt-row');
+    if (!li || !li.dataset.key) return;
+    selectGroup(li.dataset.key);
+  });
   meterToggle.addEventListener('click', () => {
     meterOpen = !meterOpen;
     meterToggle.setAttribute('aria-expanded', String(meterOpen));
@@ -92,15 +114,31 @@ function render() {
     return;
   }
 
-  const rows = [...groups.entries()].sort((a, b) => b[1] - a[1]);
+  const dir = sortAsc ? 1 : -1;
+  const rows = [...groups.entries()].sort((a, b) =>
+    sortBy === 'name' ? dir * cmpName(a[0], b[0]) : dir * (a[1] - b[1]));
   listEl.innerHTML = rows
     .map(([k, len]) => `
-      <li class="pt-row">
+      <li class="pt-row" data-key="${esc(k)}" title="클릭하면 해당 선분 선택">
         <span class="pt-key">${esc(k)}</span>
         <span class="pt-val">${fmtLength(len)}</span>
       </li>`)
     .join('');
   sumEl.textContent = `합계 ${fmtLength(total)}`;
+}
+
+// 같은 그룹(legendGroup) 라벨을 가진 모든 선분을 선택
+function selectGroup(key) {
+  const { pipes, ui } = getState();
+  const keys = [];
+  for (const p of pipes) {
+    for (let i = 0; i < p.segs.length; i++) {
+      if (legendGroup(p.segs[i], ui.mode, ui.colorBy) === key) keys.push(segKey(p.id, i));
+    }
+  }
+  if (!keys.length) return;
+  setTool('select');
+  selectSegs(keys);
 }
 
 function esc(s) {

@@ -248,7 +248,8 @@ button { font-family: inherit; cursor: pointer; border: none; border-radius: 6px
 
 /* ── 배관 연장 집계 ── */
 #pipe-totals { list-style: none; display: flex; flex-direction: column; gap: 3px; }
-.pt-row { display: flex; justify-content: space-between; gap: 8px; font-size: 11.5px; padding: 2px 0; }
+.pt-row { display: flex; justify-content: space-between; gap: 8px; font-size: 11.5px; padding: 3px 5px; border-radius: 5px; cursor: pointer; }
+.pt-row:hover { background: var(--surface-2); }
 .pt-key { color: var(--text-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .pt-val { color: var(--text); font-weight: 500; flex-shrink: 0; }
 .pt-empty { font-size: 11px; color: var(--muted); }
@@ -334,6 +335,10 @@ button { font-family: inherit; cursor: pointer; border: none; border-radius: 6px
 .di-meters b { color: var(--text); font-weight: 600; }
 .di-list-head { display: flex; justify-content: space-between; align-items: center; }
 .di-sort { font-family: inherit; font-size: 11px; padding: 2px 4px; border: 1px solid var(--border); border-radius: 5px; background: var(--surface-2); color: var(--text-2); text-transform: none; letter-spacing: 0; }
+.di-sort-wrap { display: inline-flex; align-items: center; gap: 3px; }
+.di-sort-dir { font-size: 10px; line-height: 1; padding: 3px 5px; border: 1px solid var(--border); border-radius: 5px; background: var(--surface-2); color: var(--text-2); cursor: pointer; }
+.di-sort-dir:hover { color: var(--text); border-color: var(--accent); }
+.di-sort-dir:disabled { opacity: .35; cursor: default; }
 
 /* ── 저장/불러오기 ── */
 #gh-list-btn { margin-bottom: 4px; }

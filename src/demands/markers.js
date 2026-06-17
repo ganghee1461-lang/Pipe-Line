@@ -7,7 +7,7 @@ import Point from 'ol/geom/Point.js';
 import { fromLonLat } from 'ol/proj.js';
 import { Style, Circle, RegularShape, Fill, Stroke, Text } from 'ol/style.js';
 import { map } from '../map/map.js';
-import { getState, subscribe, updateDemand, setUI, addMeter, updateMeter, removeMeter } from '../state/store.js';
+import { getState, subscribe, updateDemand, removeDemand, setUI, addMeter, updateMeter, removeMeter } from '../state/store.js';
 import { METER_USES, METER_GRADES } from '../config/meters.js';
 
 // 마커 채움 색상 ('transparent' = 투명, 체커보드로 표시). 테두리색도 동일 팔레트 사용.
@@ -86,10 +86,10 @@ function styleFor(feature) {
   const borderColor = ms.borderColor || '#ffffff';
   const dashed = ms.border === 'dashed';
   const showNum = ms.showNum !== false;
-  const key = `${color}-${borderColor}-${shape}-${ms.border}-${showNum ? 'n' : ''}-${hasMemo ? 'm' : ''}-${selected ? 's' : ''}-${num}`;
+  const radius = ms.radius || 10;
+  const key = `${color}-${borderColor}-${shape}-${ms.border}-${showNum ? 'n' : ''}-${radius}-${hasMemo ? 'm' : ''}-${selected ? 's' : ''}-${num}`;
   if (styleCache.has(key)) return styleCache.get(key);
 
-  const radius = 10;
   const fill = new Fill({ color: color === 'transparent' ? NONE : color });
   const stroke = new Stroke({
     color: borderColor === 'transparent' ? NONE : borderColor,
@@ -111,7 +111,7 @@ function styleFor(feature) {
     image: makeImage(shape, radius, fill, stroke),
     text: showNum ? new Text({
       text: String(num),
-      font: '600 11px "Noto Sans KR", sans-serif',
+      font: `600 ${Math.max(10, Math.round(radius * 1.05))}px "Noto Sans KR", sans-serif`,
       fill: new Fill({ color: labelColor }),
       stroke: new Stroke({ color: halo, width: 2 }),
       offsetY: shape === 'triangle' ? 2 : 0,
@@ -259,13 +259,30 @@ export function initMarkers() {
   subscribe('demands:changed', rebuild);
   subscribe('ui:changed', applyFilter);
 
-  // 마커 클릭 → 선택 + 메모/스타일 팝업
+  // 마커 클릭 → 선택 + 메모/스타일 팝업 / 빈 곳 클릭 → 선택 해제
   map.on('singleclick', (evt) => {
     const f = markerAtPixel(evt.pixel);
-    if (!f) { hidePopup(); return; }
+    if (!f) {
+      hidePopup();
+      if (getState().ui.selectedDemandId != null) setUI({ selectedDemandId: null });
+      return;
+    }
     const d = f.get('demand');
     setUI({ selectedDemandId: d.id });
     showPopup(evt.pixel, d, f.get('num'));
+  });
+
+  // 지도에서 선택된 마커를 Del/Backspace로 삭제 (입력 중·배관선분 선택 중이 아닐 때)
+  window.addEventListener('keydown', (e) => {
+    if (e.code !== 'Delete' && e.code !== 'Backspace') return;
+    const t = e.target;
+    if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT')) return;
+    const { selectedDemandId, selectedSegs } = getState().ui;
+    if (selectedDemandId == null || selectedSegs.length) return; // 배관 선분 삭제와 충돌 방지
+    e.preventDefault();
+    removeDemand(selectedDemandId);
+    setUI({ selectedDemandId: null });
+    hidePopup();
   });
 }
 

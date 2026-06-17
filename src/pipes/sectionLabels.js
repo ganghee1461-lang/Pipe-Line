@@ -6,15 +6,55 @@ import VectorLayer from 'ol/layer/Vector.js';
 import VectorSource from 'ol/source/Vector.js';
 import Feature from 'ol/Feature.js';
 import Point from 'ol/geom/Point.js';
-import { Style, Text, Fill, Stroke } from 'ol/style.js';
+import { Style, Icon } from 'ol/style.js';
 import { fromLonLat, toLonLat } from 'ol/proj.js';
 import { map } from '../map/map.js';
 import { getState, subscribe } from '../state/store.js';
 import { pipeSource } from './layer.js';
-import { sectionColor } from '../config/pipeStyles.js';
 
+// 축소해도 사라지지 않도록 declutter 끔
 const src = new VectorSource();
-const layer = new VectorLayer({ source: src, zIndex: 10, declutter: true, style: styleFor });
+const layer = new VectorLayer({ source: src, zIndex: 10, declutter: false, style: styleFor });
+
+// 통일색 배지(짙은 슬레이트 + 흰 글씨). 구간 색상과 무관 → 시인성 우선.
+const BADGE_BG = '#1f2937';
+const badgeCache = new Map();
+function roundRect(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r);
+  ctx.closePath();
+}
+function badgeStyle(n) {
+  const label = String(n);
+  if (badgeCache.has(label)) return badgeCache.get(label);
+  const dpr = window.devicePixelRatio || 1;
+  const fs = 13, padX = 7, padY = 4;
+  const c = document.createElement('canvas');
+  let ctx = c.getContext('2d');
+  ctx.font = `bold ${fs}px "Noto Sans KR", sans-serif`;
+  const w = Math.ceil(ctx.measureText(label).width) + padX * 2;
+  const h = fs + padY * 2;
+  c.width = w * dpr; c.height = h * dpr;
+  ctx = c.getContext('2d');
+  ctx.scale(dpr, dpr);
+  ctx.font = `bold ${fs}px "Noto Sans KR", sans-serif`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  roundRect(ctx, 1, 1, w - 2, h - 2, 5);
+  ctx.fillStyle = BADGE_BG; ctx.fill();
+  ctx.lineWidth = 1.5; ctx.strokeStyle = '#ffffff'; ctx.stroke();
+  ctx.fillStyle = '#ffffff';
+  ctx.fillText(label, w / 2, h / 2 + 0.5);
+  const style = new Style({
+    image: new Icon({ img: c, imgSize: [c.width, c.height], scale: 1 / dpr, displacement: [0, 14] }),
+  });
+  badgeCache.set(label, style);
+  return style;
+}
 
 // 라이브 좌표: 편집(드래그) 중인 피처 형상을 우선 사용 → 라벨이 점을 따라옴
 function coordsOf(p) {
@@ -40,17 +80,7 @@ function rebuild() {
 }
 
 function styleFor(f) {
-  const sec = f.get('sec');
-  return new Style({
-    text: new Text({
-      text: `${sec}구간 종점`,
-      font: 'bold 12px "Noto Sans KR", sans-serif',
-      fill: new Fill({ color: sectionColor(sec) }),
-      stroke: new Stroke({ color: '#ffffff', width: 3.5 }),
-      offsetY: -13,
-      padding: [2, 3, 2, 3],
-    }),
-  });
+  return badgeStyle(f.get('sec'));
 }
 
 let raf = 0;
