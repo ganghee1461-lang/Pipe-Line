@@ -16,6 +16,7 @@ import { initAttrPanel } from './pipes/attrPanel.js';
 import { initTotals } from './pipes/totals.js';
 import { initModePanel } from './pipes/modePanel.js';
 import { initLegend } from './pipes/legend.js';
+import { initSectionLabels } from './pipes/sectionLabels.js';
 import { initSavePanel } from './io/savePanel.js';
 import { initTabs } from './ui/tabs.js';
 import { initMarkerStyle } from './demands/markerStyle.js';
@@ -37,6 +38,7 @@ initAttrPanel();
 initTotals();
 initModePanel();
 initLegend();
+initSectionLabels();
 initSavePanel();
 
 // 환경 안내 (키 유무)
