@@ -7,7 +7,7 @@ import { segLength, fmtLength } from './util.js';
 const MIX = '__mix__';
 const FIXED = ['use', 'pressure', 'status', 'review', 'pavement'];
 let els = {};
-let panel, titleEl, lenEl, delBtn, statusWrap, markerWrap;
+let panel, titleEl, lenEl, delBtn, statusWrap, markerWrap, reviewWrap, sectionWrap;
 
 export function initAttrPanel() {
   panel = document.getElementById('pipe-attr');
@@ -16,6 +16,8 @@ export function initAttrPanel() {
   delBtn = document.getElementById('pa-del');
   statusWrap = document.getElementById('pa-status-wrap');
   markerWrap = document.getElementById('pa-marker-wrap');
+  reviewWrap = document.getElementById('pa-review-wrap');
+  sectionWrap = document.getElementById('pa-section-wrap');
   ['material', 'diameter', 'section', 'markerNo', ...FIXED].forEach((f) => { els[f] = document.getElementById(`pa-${f}`); });
 
   // 마커번호 (인입관 전용): 연결된 수요처 표시번호
@@ -113,6 +115,11 @@ function render() {
   const isInlet = useV === 'inlet';
   statusWrap.classList.toggle('hidden', isInlet);
   markerWrap.classList.toggle('hidden', !isInlet);
+
+  // 기존관: 구간번호·심의 불필요 → 숨김 (인입관은 항상 신설 취급)
+  const isExisting = !isInlet && common('status') === 'existing';
+  reviewWrap.classList.toggle('hidden', isExisting);
+  sectionWrap.classList.toggle('hidden', isExisting);
   if (isInlet) {
     const mk = common('markerNo');
     if (mk === MIX) { els.markerNo.value = ''; els.markerNo.placeholder = '혼합'; }
