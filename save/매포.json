@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "savedAt": "2026-06-17T00:43:06.470Z",
+  "savedAt": "2026-06-17T00:45:31.268Z",
   "demands": [],
   "pipes": [
     {
@@ -699,7 +699,7 @@
   ],
   "markerStyle": {
     "color": "#b91c1c",
-    "borderColor": "#ffffff",
+    "borderColor": "#b91c1c",
     "shape": "circle",
     "border": "solid"
   }
