@@ -1,0 +1,1732 @@
+{
+  "version": 1,
+  "savedAt": "2026-06-17T03:47:45.194Z",
+  "demands": [
+    {
+      "id": 1,
+      "memo": "",
+      "query": "진천군 이월면 송림리 468-20",
+      "address": "충청북도 진천군 이월면 송림리 468-20",
+      "lon": 127.42620621381808,
+      "lat": 36.93157688864616,
+      "meters": [
+        {
+          "use": "단독",
+          "grade": 4,
+          "qty": 1
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "memo": "",
+      "query": "진천군 이월면 송림리 468-8",
+      "address": "충청북도 진천군 이월면 송림리 468-8",
+      "lon": 127.42637863125992,
+      "lat": 36.93151130351757,
+      "meters": [
+        {
+          "use": "단독",
+          "grade": 4,
+          "qty": 1
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "memo": "",
+      "query": "진천군 이월면 송림리 469-0",
+      "address": "충청북도 진천군 이월면 송림리 469",
+      "lon": 127.42603462444026,
+      "lat": 36.931496227721894,
+      "meters": [
+        {
+          "use": "업무난방",
+          "grade": 4,
+          "qty": 2
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "memo": "",
+      "query": "진천군 이월면 송림리 471-1",
+      "address": "충청북도 진천군 이월면 송림리 471-1",
+      "lon": 127.42610046274267,
+      "lat": 36.93134425144849,
+      "meters": [
+        {
+          "use": "단독",
+          "grade": 4,
+          "qty": 1
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "memo": "",
+      "query": "진천군 이월면 송림리 471-15",
+      "address": "충청북도 진천군 이월면 송림리 471-15",
+      "lon": 127.42632359032162,
+      "lat": 36.93099248126023,
+      "meters": [
+        {
+          "use": "단독",
+          "grade": 4,
+          "qty": 1
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "memo": "",
+      "query": "진천군 이월면 송림리 471-16",
+      "address": "충청북도 진천군 이월면 송림리 471-16",
+      "lon": 127.42615201250514,
+      "lat": 36.93078659970671,
+      "meters": [
+        {
+          "use": "단독",
+          "grade": 4,
+          "qty": 1
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "memo": "",
+      "query": "진천군 이월면 송림리 471-17",
+      "address": "충청북도 진천군 이월면 송림리 471-17",
+      "lon": 127.42635343289218,
+      "lat": 36.93076928853448,
+      "meters": [
+        {
+          "use": "단독",
+          "grade": 4,
+          "qty": 1
+        }
+      ]
+    },
+    {
+      "id": 8,
+      "memo": "",
+      "query": "진천군 이월면 송림리 471-22",
+      "address": "충청북도 진천군 이월면 송림리 471-22",
+      "lon": 127.42666547073094,
+      "lat": 36.930874997535724,
+      "meters": [
+        {
+          "use": "단독",
+          "grade": 4,
+          "qty": 1
+        }
+      ]
+    },
+    {
+      "id": 9,
+      "memo": "",
+      "query": "진천군 이월면 송림리 471-4",
+      "address": "충청북도 진천군 이월면 송림리 471-4",
+      "lon": 127.42644338047384,
+      "lat": 36.93109060741796,
+      "meters": [
+        {
+          "use": "단독",
+          "grade": 4,
+          "qty": 1
+        }
+      ]
+    },
+    {
+      "id": 11,
+      "memo": "",
+      "query": "진천군 이월면 송림리 472-8",
+      "address": "충청북도 진천군 이월면 송림리 472-8",
+      "lon": 127.4257181593869,
+      "lat": 36.93056236955786,
+      "meters": [
+        {
+          "use": "단독",
+          "grade": 4,
+          "qty": 1
+        }
+      ]
+    },
+    {
+      "id": 12,
+      "memo": "",
+      "query": "진천군 이월면 송림리 500-4",
+      "address": "충청북도 진천군 이월면 송림리 500-4",
+      "lon": 127.42583081889137,
+      "lat": 36.93167334251031,
+      "meters": [
+        {
+          "use": "단독",
+          "grade": 4,
+          "qty": 1
+        }
+      ]
+    },
+    {
+      "id": 13,
+      "memo": "",
+      "query": "진천군 이월면 송림리 447-2",
+      "address": "충청북도 진천군 이월면 송림리 447-2",
+      "lon": 127.42849585819079,
+      "lat": 36.93010547784783,
+      "meters": [
+        {
+          "use": "단독",
+          "grade": 4,
+          "qty": 1
+        }
+      ]
+    },
+    {
+      "id": 14,
+      "memo": "",
+      "query": "진천군 이월면 송림리 448-35",
+      "address": "충청북도 진천군 이월면 송림리 448-35",
+      "lon": 127.4284613756688,
+      "lat": 36.93029151173707,
+      "meters": [
+        {
+          "use": "단독",
+          "grade": 4,
+          "qty": 1
+        }
+      ]
+    },
+    {
+      "id": 15,
+      "memo": "",
+      "query": "진천군 이월면 송림리 448-24",
+      "address": "충청북도 진천군 이월면 송림리 448-24",
+      "lon": 127.4275647525914,
+      "lat": 36.9308165785922,
+      "meters": [
+        {
+          "use": "단독",
+          "grade": 4,
+          "qty": 1
+        }
+      ]
+    },
+    {
+      "id": 16,
+      "memo": "",
+      "query": "진천군 이월면 송림리 448-25",
+      "address": "충청북도 진천군 이월면 송림리 448-25",
+      "lon": 127.42783621581927,
+      "lat": 36.93061151437118,
+      "meters": [
+        {
+          "use": "단독",
+          "grade": 4,
+          "qty": 1
+        }
+      ]
+    },
+    {
+      "id": 17,
+      "memo": "",
+      "query": "진천군 이월면 송림리 449-12",
+      "address": "충청북도 진천군 이월면 송림리 449-12",
+      "lon": 127.42773587685988,
+      "lat": 36.93038492948108,
+      "meters": [
+        {
+          "use": "단독",
+          "grade": 4,
+          "qty": 1
+        }
+      ]
+    },
+    {
+      "id": 18,
+      "memo": "",
+      "query": "진천군 이월면 송림리 448-26",
+      "address": "충청북도 진천군 이월면 송림리 448-26",
+      "lon": 127.42790000669328,
+      "lat": 36.93070687879232,
+      "meters": [
+        {
+          "use": "단독",
+          "grade": 4,
+          "qty": 1
+        }
+      ]
+    },
+    {
+      "id": 19,
+      "memo": "",
+      "query": "진천군 이월면 송림리 432-7",
+      "address": "충청북도 진천군 이월면 송림리 432-7",
+      "lon": 127.42814268459651,
+      "lat": 36.93164083914179,
+      "meters": [
+        {
+          "use": "단독",
+          "grade": 4,
+          "qty": 1
+        }
+      ]
+    },
+    {
+      "id": 20,
+      "memo": "",
+      "query": "진천군 이월면 송림리 503-7",
+      "address": "충청북도 진천군 이월면 송림리 503-7",
+      "lon": 127.4277622406894,
+      "lat": 36.931599583285944,
+      "meters": [
+        {
+          "use": "일반",
+          "grade": 10,
+          "qty": 1
+        }
+      ]
+    },
+    {
+      "id": 21,
+      "memo": "",
+      "query": "진천군 이월면 송림리 425-27",
+      "address": "충청북도 진천군 이월면 송림리 425-27",
+      "lon": 127.42835716033758,
+      "lat": 36.93224063955148,
+      "meters": [
+        {
+          "use": "단독",
+          "grade": 4,
+          "qty": 1
+        }
+      ]
+    },
+    {
+      "id": 22,
+      "memo": "",
+      "query": "진천군 이월면 송림리 432-14",
+      "address": "충청북도 진천군 이월면 송림리 432-14",
+      "lon": 127.42824044479866,
+      "lat": 36.93187644494809,
+      "meters": [
+        {
+          "use": "단독",
+          "grade": 4,
+          "qty": 1
+        }
+      ]
+    },
+    {
+      "id": 23,
+      "memo": "",
+      "query": "진천군 이월면 송림리 432-5",
+      "address": "충청북도 진천군 이월면 송림리 432-5",
+      "lon": 127.42807703025771,
+      "lat": 36.932144671547604,
+      "meters": [
+        {
+          "use": "단독",
+          "grade": 4,
+          "qty": 7
+        }
+      ]
+    },
+    {
+      "id": 24,
+      "memo": "",
+      "query": "진천군 이월면 송림리 472-14",
+      "address": "충청북도 진천군 이월면 송림리 472-14",
+      "lon": 127.42624907817395,
+      "lat": 36.93048427304478,
+      "meters": [
+        {
+          "use": "단독",
+          "grade": 4,
+          "qty": 1
+        }
+      ]
+    }
+  ],
+  "pipes": [
+    {
+      "id": 1,
+      "coords": [
+        [
+          127.42695178004203,
+          36.93295042799244
+        ],
+        [
+          127.42661400740045,
+          36.93119608913804
+        ],
+        [
+          127.42667751370959,
+          36.931127725187736
+        ],
+        [
+          127.42772231160248,
+          36.93099343551472
+        ],
+        [
+          127.42824018627098,
+          36.93093113117686
+        ],
+        [
+          127.42835876864164,
+          36.9315232971466
+        ],
+        [
+          127.42838181465704,
+          36.93163838173015
+        ],
+        [
+          127.42845500569318,
+          36.93206411436212
+        ],
+        [
+          127.42833252540575,
+          36.93211800697435
+        ],
+        [
+          127.4283179428297,
+          36.93212442345835
+        ],
+        [
+          127.42826665502457,
+          36.93206770557232
+        ],
+        [
+          127.4281916999161,
+          36.93198481453837
+        ],
+        [
+          127.42818550020053,
+          36.931977958419495
+        ]
+      ],
+      "segs": [
+        {
+          "material": "PE",
+          "diameter": "63A",
+          "use": "supply",
+          "pressure": "저압",
+          "status": "existing",
+          "review": "target",
+          "pavement": "asphalt",
+          "section": 1,
+          "markerNo": ""
+        },
+        {
+          "material": "PE",
+          "diameter": "63A",
+          "use": "supply",
+          "pressure": "저압",
+          "status": "existing",
+          "review": "target",
+          "pavement": "asphalt",
+          "section": 1,
+          "markerNo": ""
+        },
+        {
+          "material": "PE",
+          "diameter": "63A",
+          "use": "supply",
+          "pressure": "저압",
+          "status": "existing",
+          "review": "target",
+          "pavement": "asphalt",
+          "section": 1,
+          "markerNo": ""
+        },
+        {
+          "material": "PE",
+          "diameter": "63A",
+          "use": "supply",
+          "pressure": "저압",
+          "status": "existing",
+          "review": "target",
+          "pavement": "asphalt",
+          "section": 1,
+          "markerNo": ""
+        },
+        {
+          "material": "PE",
+          "diameter": "63A",
+          "use": "supply",
+          "pressure": "저압",
+          "status": "existing",
+          "review": "target",
+          "pavement": "asphalt",
+          "section": 1,
+          "markerNo": ""
+        },
+        {
+          "material": "PE",
+          "diameter": "63A",
+          "use": "supply",
+          "pressure": "저압",
+          "status": "existing",
+          "review": "target",
+          "pavement": "asphalt",
+          "section": 1,
+          "markerNo": ""
+        },
+        {
+          "material": "PE",
+          "diameter": "160A",
+          "use": "supply",
+          "pressure": "저압",
+          "status": "planned",
+          "review": "target",
+          "pavement": "asphalt",
+          "section": 6,
+          "markerNo": ""
+        },
+        {
+          "material": "PE",
+          "diameter": "110A",
+          "use": "supply",
+          "pressure": "저압",
+          "status": "planned",
+          "review": "target",
+          "pavement": "asphalt",
+          "section": 6,
+          "markerNo": ""
+        },
+        {
+          "material": "PE",
+          "diameter": "110A",
+          "use": "supply",
+          "pressure": "저압",
+          "status": "planned",
+          "review": "target",
+          "pavement": "asphalt",
+          "section": 6,
+          "markerNo": ""
+        },
+        {
+          "material": "PE",
+          "diameter": "110A",
+          "use": "supply",
+          "pressure": "저압",
+          "status": "planned",
+          "review": "target",
+          "pavement": "concrete",
+          "section": 6,
+          "markerNo": ""
+        },
+        {
+          "material": "PE",
+          "diameter": "110A",
+          "use": "supply",
+          "pressure": "저압",
+          "status": "planned",
+          "review": "target",
+          "pavement": "concrete",
+          "section": 6,
+          "markerNo": ""
+        },
+        {
+          "material": "PE",
+          "diameter": "110A",
+          "use": "supply",
+          "pressure": "저압",
+          "status": "planned",
+          "review": "target",
+          "pavement": "concrete",
+          "section": 6,
+          "markerNo": ""
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "coords": [
+        [
+          127.42824018627098,
+          36.93093113117686
+        ],
+        [
+          127.42812931049701,
+          36.93037351158506
+        ],
+        [
+          127.42801230028718,
+          36.92978503609024
+        ]
+      ],
+      "segs": [
+        {
+          "material": "PE",
+          "diameter": "63A",
+          "use": "supply",
+          "pressure": "저압",
+          "status": "existing",
+          "review": "target",
+          "pavement": "asphalt",
+          "section": 1,
+          "markerNo": ""
+        },
+        {
+          "material": "PE",
+          "diameter": "63A",
+          "use": "supply",
+          "pressure": "저압",
+          "status": "existing",
+          "review": "target",
+          "pavement": "asphalt",
+          "section": 1,
+          "markerNo": ""
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "coords": [
+        [
+          127.42593877035488,
+          36.93167351095393
+        ],
+        [
+          127.42609060885437,
+          36.931533585421775
+        ],
+        [
+          127.42611617710301,
+          36.931513678695154
+        ],
+        [
+          127.42621446883166,
+          36.93143715144309
+        ],
+        [
+          127.42622637171652,
+          36.93142664177513
+        ],
+        [
+          127.42650539590518,
+          36.931180276582495
+        ],
+        [
+          127.42661400740045,
+          36.93119608913804
+        ],
+        [
+          127.42659152155424,
+          36.93106884425538
+        ],
+        [
+          127.42655949780419,
+          36.930887625077546
+        ],
+        [
+          127.42654493647542,
+          36.930805223841446
+        ],
+        [
+          127.42652481628343,
+          36.93069136535685
+        ],
+        [
+          127.42632862987622,
+          36.93067785862824
+        ],
+        [
+          127.42629833621731,
+          36.930675773018535
+        ],
+        [
+          127.42623674870583,
+          36.93067153293924
+        ],
+        [
+          127.42617682272204,
+          36.93068071805595
+        ],
+        [
+          127.4261579886506,
+          36.93068360483596
+        ],
+        [
+          127.42584839378134,
+          36.93065664094222
+        ],
+        [
+          127.42583219680276,
+          36.93065468719567
+        ]
+      ],
+      "segs": [
+        {
+          "material": "PE",
+          "diameter": "90A",
+          "use": "supply",
+          "pressure": "저압",
+          "status": "planned",
+          "review": "target",
+          "pavement": "asphalt",
+          "section": 1,
+          "markerNo": ""
+        },
+        {
+          "material": "PE",
+          "diameter": "90A",
+          "use": "supply",
+          "pressure": "저압",
+          "status": "planned",
+          "review": "target",
+          "pavement": "asphalt",
+          "section": 1,
+          "markerNo": ""
+        },
+        {
+          "material": "PE",
+          "diameter": "90A",
+          "use": "supply",
+          "pressure": "저압",
+          "status": "planned",
+          "review": "target",
+          "pavement": "asphalt",
+          "section": 1,
+          "markerNo": ""
+        },
+        {
+          "material": "PE",
+          "diameter": "90A",
+          "use": "supply",
+          "pressure": "저압",
+          "status": "planned",
+          "review": "target",
+          "pavement": "asphalt",
+          "section": 1,
+          "markerNo": ""
+        },
+        {
+          "material": "PE",
+          "diameter": "90A",
+          "use": "supply",
+          "pressure": "저압",
+          "status": "planned",
+          "review": "target",
+          "pavement": "asphalt",
+          "section": 1,
+          "markerNo": ""
+        },
+        {
+          "material": "PE",
+          "diameter": "90A",
+          "use": "supply",
+          "pressure": "저압",
+          "status": "planned",
+          "review": "target",
+          "pavement": "asphalt",
+          "section": 1,
+          "markerNo": ""
+        },
+        {
+          "material": "PE",
+          "diameter": "90A",
+          "use": "supply",
+          "pressure": "저압",
+          "status": "planned",
+          "review": "target",
+          "pavement": "asphalt",
+          "section": 2,
+          "markerNo": ""
+        },
+        {
+          "material": "PE",
+          "diameter": "90A",
+          "use": "supply",
+          "pressure": "저압",
+          "status": "planned",
+          "review": "target",
+          "pavement": "asphalt",
+          "section": 2,
+          "markerNo": ""
+        },
+        {
+          "material": "PE",
+          "diameter": "90A",
+          "use": "supply",
+          "pressure": "저압",
+          "status": "planned",
+          "review": "target",
+          "pavement": "asphalt",
+          "section": 2,
+          "markerNo": ""
+        },
+        {
+          "material": "PE",
+          "diameter": "90A",
+          "use": "supply",
+          "pressure": "저압",
+          "status": "planned",
+          "review": "target",
+          "pavement": "asphalt",
+          "section": 2,
+          "markerNo": ""
+        },
+        {
+          "material": "PE",
+          "diameter": "63A",
+          "use": "supply",
+          "pressure": "저압",
+          "status": "planned",
+          "review": "target",
+          "pavement": "asphalt",
+          "section": 2,
+          "markerNo": ""
+        },
+        {
+          "material": "PE",
+          "diameter": "63A",
+          "use": "supply",
+          "pressure": "저압",
+          "status": "planned",
+          "review": "target",
+          "pavement": "asphalt",
+          "section": 2,
+          "markerNo": ""
+        },
+        {
+          "material": "PE",
+          "diameter": "63A",
+          "use": "supply",
+          "pressure": "저압",
+          "status": "planned",
+          "review": "target",
+          "pavement": "asphalt",
+          "section": 2,
+          "markerNo": ""
+        },
+        {
+          "material": "PE",
+          "diameter": "63A",
+          "use": "supply",
+          "pressure": "저압",
+          "status": "planned",
+          "review": "target",
+          "pavement": "asphalt",
+          "section": 2,
+          "markerNo": ""
+        },
+        {
+          "material": "PE",
+          "diameter": "63A",
+          "use": "supply",
+          "pressure": "저압",
+          "status": "planned",
+          "review": "target",
+          "pavement": "asphalt",
+          "section": 2,
+          "markerNo": ""
+        },
+        {
+          "material": "PE",
+          "diameter": "63A",
+          "use": "supply",
+          "pressure": "저압",
+          "status": "planned",
+          "review": "target",
+          "pavement": "asphalt",
+          "section": 2,
+          "markerNo": ""
+        },
+        {
+          "material": "PE",
+          "diameter": "63A",
+          "use": "supply",
+          "pressure": "저압",
+          "status": "planned",
+          "review": "target",
+          "pavement": "asphalt",
+          "section": 2,
+          "markerNo": ""
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "coords": [
+        [
+          127.42751961435496,
+          36.930671007974595
+        ],
+        [
+          127.42756048006295,
+          36.930651053594005
+        ],
+        [
+          127.42763625031674,
+          36.930614055604195
+        ],
+        [
+          127.42794361172946,
+          36.9304612824246
+        ],
+        [
+          127.42812931049701,
+          36.93037351158506
+        ],
+        [
+          127.42849863581496,
+          36.93021729968008
+        ],
+        [
+          127.42850890456394,
+          36.93021295634796
+        ],
+        [
+          127.42851929347654,
+          36.93020856219039
+        ]
+      ],
+      "segs": [
+        {
+          "material": "PE",
+          "diameter": "90A",
+          "use": "supply",
+          "pressure": "저압",
+          "status": "planned",
+          "review": "target",
+          "pavement": "asphalt",
+          "section": 4,
+          "markerNo": ""
+        },
+        {
+          "material": "PE",
+          "diameter": "90A",
+          "use": "supply",
+          "pressure": "저압",
+          "status": "planned",
+          "review": "target",
+          "pavement": "asphalt",
+          "section": 4,
+          "markerNo": ""
+        },
+        {
+          "material": "PE",
+          "diameter": "90A",
+          "use": "supply",
+          "pressure": "저압",
+          "status": "planned",
+          "review": "target",
+          "pavement": "asphalt",
+          "section": 4,
+          "markerNo": ""
+        },
+        {
+          "material": "PE",
+          "diameter": "90A",
+          "use": "supply",
+          "pressure": "저압",
+          "status": "planned",
+          "review": "target",
+          "pavement": "asphalt",
+          "section": 4,
+          "markerNo": ""
+        },
+        {
+          "material": "PE",
+          "diameter": "90A",
+          "use": "supply",
+          "pressure": "저압",
+          "status": "planned",
+          "review": "target",
+          "pavement": "asphalt",
+          "section": 3,
+          "markerNo": ""
+        },
+        {
+          "material": "PE",
+          "diameter": "90A",
+          "use": "supply",
+          "pressure": "저압",
+          "status": "planned",
+          "review": "target",
+          "pavement": "asphalt",
+          "section": 3,
+          "markerNo": ""
+        },
+        {
+          "material": "PE",
+          "diameter": "90A",
+          "use": "supply",
+          "pressure": "저압",
+          "status": "planned",
+          "review": "target",
+          "pavement": "asphalt",
+          "section": 3,
+          "markerNo": ""
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "coords": [
+        [
+          127.42794361172946,
+          36.9304612824246
+        ],
+        [
+          127.42788221336399,
+          36.9303841710331
+        ],
+        [
+          127.42786669759846,
+          36.930364684471556
+        ]
+      ],
+      "segs": [
+        {
+          "material": "PE",
+          "diameter": "90A",
+          "use": "supply",
+          "pressure": "저압",
+          "status": "planned",
+          "review": "target",
+          "pavement": "asphalt",
+          "section": 4,
+          "markerNo": ""
+        },
+        {
+          "material": "PE",
+          "diameter": "90A",
+          "use": "supply",
+          "pressure": "저압",
+          "status": "planned",
+          "review": "target",
+          "pavement": "asphalt",
+          "section": 4,
+          "markerNo": ""
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "coords": [
+        [
+          127.42772231160248,
+          36.93099343551472
+        ],
+        [
+          127.42789099494549,
+          36.93085652283324
+        ],
+        [
+          127.42791184100757,
+          36.93083960300528
+        ]
+      ],
+      "segs": [
+        {
+          "material": "PE",
+          "diameter": "63A",
+          "use": "supply",
+          "pressure": "저압",
+          "status": "planned",
+          "review": "target",
+          "pavement": "concrete",
+          "section": 5,
+          "markerNo": ""
+        },
+        {
+          "material": "PE",
+          "diameter": "63A",
+          "use": "supply",
+          "pressure": "저압",
+          "status": "planned",
+          "review": "target",
+          "pavement": "concrete",
+          "section": 5,
+          "markerNo": ""
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "coords": [
+        [
+          127.42835876864164,
+          36.9315232971466
+        ],
+        [
+          127.4280823179276,
+          36.9314794826185
+        ],
+        [
+          127.42800796233774,
+          36.93153454682249
+        ],
+        [
+          127.42793526280697,
+          36.93158838458963
+        ],
+        [
+          127.42791445448876,
+          36.93160379421977
+        ]
+      ],
+      "segs": [
+        {
+          "material": "PE",
+          "diameter": "160A",
+          "use": "supply",
+          "pressure": "저압",
+          "status": "planned",
+          "review": "target",
+          "pavement": "asphalt",
+          "section": 7,
+          "markerNo": ""
+        },
+        {
+          "material": "PE",
+          "diameter": "90A",
+          "use": "supply",
+          "pressure": "저압",
+          "status": "planned",
+          "review": "target",
+          "pavement": "asphalt",
+          "section": 7,
+          "markerNo": ""
+        },
+        {
+          "material": "PE",
+          "diameter": "90A",
+          "use": "supply",
+          "pressure": "저압",
+          "status": "planned",
+          "review": "target",
+          "pavement": "asphalt",
+          "section": 7,
+          "markerNo": ""
+        },
+        {
+          "material": "PE",
+          "diameter": "90A",
+          "use": "supply",
+          "pressure": "저압",
+          "status": "planned",
+          "review": "target",
+          "pavement": "asphalt",
+          "section": 7,
+          "markerNo": ""
+        }
+      ]
+    },
+    {
+      "id": 8,
+      "coords": [
+        [
+          127.4281916999161,
+          36.93198481453837
+        ],
+        [
+          127.4281937710552,
+          36.93197240018914
+        ]
+      ],
+      "segs": [
+        {
+          "material": "PE",
+          "diameter": "63A",
+          "use": "inlet",
+          "pressure": "저압",
+          "status": "planned",
+          "review": "target",
+          "pavement": "asphalt",
+          "section": 6,
+          "markerNo": 21
+        }
+      ]
+    },
+    {
+      "id": 9,
+      "coords": [
+        [
+          127.42826665502457,
+          36.93206770557232
+        ],
+        [
+          127.42824520983861,
+          36.932076691322095
+        ]
+      ],
+      "segs": [
+        {
+          "material": "PE",
+          "diameter": "63A",
+          "use": "inlet",
+          "pressure": "저압",
+          "status": "planned",
+          "review": "target",
+          "pavement": "asphalt",
+          "section": 6,
+          "markerNo": 22
+        }
+      ]
+    },
+    {
+      "id": 10,
+      "coords": [
+        [
+          127.42833252540575,
+          36.93211800697435
+        ],
+        [
+          127.42837169022862,
+          36.93216384467637
+        ]
+      ],
+      "segs": [
+        {
+          "material": "PE",
+          "diameter": "63A",
+          "use": "inlet",
+          "pressure": "저압",
+          "status": "planned",
+          "review": "target",
+          "pavement": "asphalt",
+          "section": 6,
+          "markerNo": 20
+        }
+      ]
+    },
+    {
+      "id": 11,
+      "coords": [
+        [
+          127.42800796233774,
+          36.93153454682249
+        ],
+        [
+          127.42802862839349,
+          36.93155176516488
+        ]
+      ],
+      "segs": [
+        {
+          "material": "PE",
+          "diameter": "63A",
+          "use": "inlet",
+          "pressure": "저압",
+          "status": "planned",
+          "review": "target",
+          "pavement": "asphalt",
+          "section": 7,
+          "markerNo": 18
+        }
+      ]
+    },
+    {
+      "id": 12,
+      "coords": [
+        [
+          127.42793526280697,
+          36.93158838458963
+        ],
+        [
+          127.42788038943888,
+          36.931557823488774
+        ]
+      ],
+      "segs": [
+        {
+          "material": "PE",
+          "diameter": "63A",
+          "use": "inlet",
+          "pressure": "저압",
+          "status": "planned",
+          "review": "target",
+          "pavement": "asphalt",
+          "section": 7,
+          "markerNo": 19
+        }
+      ]
+    },
+    {
+      "id": 13,
+      "coords": [
+        [
+          127.42789099494549,
+          36.93085652283324
+        ],
+        [
+          127.42785726835442,
+          36.930827225663435
+        ]
+      ],
+      "segs": [
+        {
+          "material": "PE",
+          "diameter": "63A",
+          "use": "inlet",
+          "pressure": "저압",
+          "status": "planned",
+          "review": "target",
+          "pavement": "asphalt",
+          "section": 5,
+          "markerNo": 17
+        }
+      ]
+    },
+    {
+      "id": 14,
+      "coords": [
+        [
+          127.42756048006295,
+          36.930651053594005
+        ],
+        [
+          127.42757132132733,
+          36.93066429266392
+        ]
+      ],
+      "segs": [
+        {
+          "material": "PE",
+          "diameter": "63A",
+          "use": "inlet",
+          "pressure": "저압",
+          "status": "planned",
+          "review": "target",
+          "pavement": "asphalt",
+          "section": 4,
+          "markerNo": 14
+        }
+      ]
+    },
+    {
+      "id": 15,
+      "coords": [
+        [
+          127.42763625031674,
+          36.930614055604195
+        ],
+        [
+          127.42765534520917,
+          36.930635881578525
+        ]
+      ],
+      "segs": [
+        {
+          "material": "PE",
+          "diameter": "63A",
+          "use": "inlet",
+          "pressure": "저압",
+          "status": "planned",
+          "review": "target",
+          "pavement": "asphalt",
+          "section": 4,
+          "markerNo": 15
+        }
+      ]
+    },
+    {
+      "id": 16,
+      "coords": [
+        [
+          127.42788221336399,
+          36.9303841710331
+        ],
+        [
+          127.42785312451305,
+          36.9303910293757
+        ]
+      ],
+      "segs": [
+        {
+          "material": "PE",
+          "diameter": "63A",
+          "use": "inlet",
+          "pressure": "저압",
+          "status": "planned",
+          "review": "target",
+          "pavement": "asphalt",
+          "section": 4,
+          "markerNo": 16
+        }
+      ]
+    },
+    {
+      "id": 17,
+      "coords": [
+        [
+          127.42849863581496,
+          36.93021729968008
+        ],
+        [
+          127.42851542887448,
+          36.930240993322585
+        ]
+      ],
+      "segs": [
+        {
+          "material": "PE",
+          "diameter": "63A",
+          "use": "inlet",
+          "pressure": "저압",
+          "status": "planned",
+          "review": "target",
+          "pavement": "asphalt",
+          "section": 3,
+          "markerNo": 13
+        }
+      ]
+    },
+    {
+      "id": 18,
+      "coords": [
+        [
+          127.42850890456394,
+          36.93021295634796
+        ],
+        [
+          127.42849803816523,
+          36.93019414833371
+        ]
+      ],
+      "segs": [
+        {
+          "material": "PE",
+          "diameter": "63A",
+          "use": "inlet",
+          "pressure": "저압",
+          "status": "planned",
+          "review": "target",
+          "pavement": "asphalt",
+          "section": 3,
+          "markerNo": 12
+        }
+      ]
+    },
+    {
+      "id": 19,
+      "coords": [
+        [
+          127.42629833621731,
+          36.930675773018535
+        ],
+        [
+          127.42628975191437,
+          36.93068814117777
+        ]
+      ],
+      "segs": [
+        {
+          "material": "PE",
+          "diameter": "63A",
+          "use": "inlet",
+          "pressure": "저압",
+          "status": "planned",
+          "review": "target",
+          "pavement": "asphalt",
+          "section": 2,
+          "markerNo": 6
+        }
+      ]
+    },
+    {
+      "id": 20,
+      "coords": [
+        [
+          127.42632862987622,
+          36.93067785862824
+        ],
+        [
+          127.42632006313337,
+          36.9306916019319
+        ]
+      ],
+      "segs": [
+        {
+          "material": "PE",
+          "diameter": "63A",
+          "use": "inlet",
+          "pressure": "저압",
+          "status": "planned",
+          "review": "target",
+          "pavement": "asphalt",
+          "section": 2,
+          "markerNo": 7
+        }
+      ]
+    },
+    {
+      "id": 21,
+      "coords": [
+        [
+          127.42617682272204,
+          36.93068071805595
+        ],
+        [
+          127.42615984669015,
+          36.930632384567986
+        ]
+      ],
+      "segs": [
+        {
+          "material": "PE",
+          "diameter": "63A",
+          "use": "inlet",
+          "pressure": "저압",
+          "status": "planned",
+          "review": "target",
+          "pavement": "asphalt",
+          "section": 2,
+          "markerNo": 23
+        }
+      ]
+    },
+    {
+      "id": 22,
+      "coords": [
+        [
+          127.42584839378134,
+          36.93065664094222
+        ],
+        [
+          127.42584903639822,
+          36.930645074008225
+        ]
+      ],
+      "segs": [
+        {
+          "material": "PE",
+          "diameter": "63A",
+          "use": "inlet",
+          "pressure": "저압",
+          "status": "planned",
+          "review": "target",
+          "pavement": "asphalt",
+          "section": 2,
+          "markerNo": 10
+        }
+      ]
+    },
+    {
+      "id": 23,
+      "coords": [
+        [
+          127.42659152155424,
+          36.93106884425538
+        ],
+        [
+          127.42651358168568,
+          36.93107829179799
+        ]
+      ],
+      "segs": [
+        {
+          "material": "PE",
+          "diameter": "63A",
+          "use": "inlet",
+          "pressure": "저압",
+          "status": "planned",
+          "review": "target",
+          "pavement": "asphalt",
+          "section": 2,
+          "markerNo": 9
+        }
+      ]
+    },
+    {
+      "id": 24,
+      "coords": [
+        [
+          127.42655949780419,
+          36.930887625077546
+        ],
+        [
+          127.42648261477191,
+          36.93089679789877
+        ]
+      ],
+      "segs": [
+        {
+          "material": "PE",
+          "diameter": "63A",
+          "use": "inlet",
+          "pressure": "저압",
+          "status": "planned",
+          "review": "target",
+          "pavement": "asphalt",
+          "section": 2,
+          "markerNo": 5
+        }
+      ]
+    },
+    {
+      "id": 25,
+      "coords": [
+        [
+          127.42654493647542,
+          36.930805223841446
+        ],
+        [
+          127.42656244047355,
+          36.93080275086403
+        ]
+      ],
+      "segs": [
+        {
+          "material": "PE",
+          "diameter": "63A",
+          "use": "inlet",
+          "pressure": "저압",
+          "status": "planned",
+          "review": "target",
+          "pavement": "asphalt",
+          "section": 2,
+          "markerNo": 8
+        }
+      ]
+    },
+    {
+      "id": 26,
+      "coords": [
+        [
+          127.42621446883166,
+          36.93143715144309
+        ],
+        [
+          127.42624864317902,
+          36.931459427786194
+        ]
+      ],
+      "segs": [
+        {
+          "material": "PE",
+          "diameter": "63A",
+          "use": "inlet",
+          "pressure": "저압",
+          "status": "planned",
+          "review": "target",
+          "pavement": "asphalt",
+          "section": 1,
+          "markerNo": 2
+        }
+      ]
+    },
+    {
+      "id": 27,
+      "coords": [
+        [
+          127.42622637171652,
+          36.93142664177513
+        ],
+        [
+          127.42620391330455,
+          36.93140937973128
+        ]
+      ],
+      "segs": [
+        {
+          "material": "PE",
+          "diameter": "63A",
+          "use": "inlet",
+          "pressure": "저압",
+          "status": "planned",
+          "review": "target",
+          "pavement": "asphalt",
+          "section": 1,
+          "markerNo": 4
+        }
+      ]
+    },
+    {
+      "id": 28,
+      "coords": [
+        [
+          127.42593877035488,
+          36.93167351095393
+        ],
+        [
+          127.42590908713203,
+          36.93167676705397
+        ]
+      ],
+      "segs": [
+        {
+          "material": "PE",
+          "diameter": "63A",
+          "use": "inlet",
+          "pressure": "저압",
+          "status": "planned",
+          "review": "target",
+          "pavement": "asphalt",
+          "section": 1,
+          "markerNo": 11
+        }
+      ]
+    },
+    {
+      "id": 29,
+      "coords": [
+        [
+          127.42611617710301,
+          36.931513678695154
+        ],
+        [
+          127.42610044127113,
+          36.93150072405963
+        ]
+      ],
+      "segs": [
+        {
+          "material": "PE",
+          "diameter": "63A",
+          "use": "inlet",
+          "pressure": "저압",
+          "status": "planned",
+          "review": "target",
+          "pavement": "asphalt",
+          "section": 1,
+          "markerNo": 3
+        }
+      ]
+    },
+    {
+      "id": 30,
+      "coords": [
+        [
+          127.42609060885437,
+          36.931533585421775
+        ],
+        [
+          127.42609865354781,
+          36.93153930043344
+        ]
+      ],
+      "segs": [
+        {
+          "material": "PE",
+          "diameter": "63A",
+          "use": "inlet",
+          "pressure": "저압",
+          "status": "planned",
+          "review": "target",
+          "pavement": "asphalt",
+          "section": 1,
+          "markerNo": 1
+        }
+      ]
+    }
+  ],
+  "terminals": [],
+  "markerStyle": {
+    "color": "transparent",
+    "borderColor": "#b91c1c",
+    "shape": "circle",
+    "border": "solid",
+    "showNum": true,
+    "radius": 10
+  },
+  "view": {
+    "lon": 127.42800116536856,
+    "lat": 36.93149993789115,
+    "zoom": 18.000246457241353
+  }
+}
