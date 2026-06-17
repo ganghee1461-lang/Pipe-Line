@@ -80,7 +80,7 @@ export function initParcelClick() {
           { dataProjection: 'EPSG:4326', featureProjection: 'EPSG:3857' }
         );
         feat.set('public', pub);
-        centroid = centroidOf(feat.getGeometry()) || evt.coordinate;
+        try { centroid = centroidOf(feat.getGeometry()) || evt.coordinate; } catch { centroid = evt.coordinate; }
       }
 
       if (!additive) clearSelection();
@@ -88,6 +88,9 @@ export function initParcelClick() {
       if (feat) highlightSrc.addFeature(feat);
       selected.push(item);
       renderPopup();
+    } catch (err) {
+      console.error('[parcel] 조회 실패', err);
+      flash('필지 조회 중 오류가 발생했습니다');
     } finally {
       busy = false;
     }

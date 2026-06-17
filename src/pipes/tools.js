@@ -7,6 +7,7 @@ import Modify from 'ol/interaction/Modify.js';
 import Snap from 'ol/interaction/Snap.js';
 import DragBox from 'ol/interaction/DragBox.js';
 import DragPan from 'ol/interaction/DragPan.js';
+import DoubleClickZoom from 'ol/interaction/DoubleClickZoom.js';
 import VectorLayer from 'ol/layer/Vector.js';
 import VectorSource from 'ol/source/Vector.js';
 import Feature from 'ol/Feature.js';
@@ -208,6 +209,52 @@ function snapToVertex(lonlat) {
   return best ? [...best] : null;
 }
 
+// 한 꼭짓점(좌표)에 닿는 모든 세그먼트의 구간번호 모음 (신설관만, 오름차순)
+function incidentSections(coord3857) {
+  const ll = toLonLat(coord3857);
+  const key = `${ll[0].toFixed(6)},${ll[1].toFixed(6)}`;
+  const secs = new Set();
+  for (const p of getState().pipes) {
+    for (let vi = 0; vi < p.coords.length; vi++) {
+      const k = `${p.coords[vi][0].toFixed(6)},${p.coords[vi][1].toFixed(6)}`;
+      if (k !== key) continue;
+      for (const si of [vi - 1, vi]) {
+        if (si >= 0 && si < p.segs.length && p.segs[si].status !== 'existing') {
+          secs.add(p.segs[si].section || 1);
+        }
+      }
+    }
+  }
+  return [...secs].sort((a, b) => a - b);
+}
+
+// 분기 꼭짓점: 겹친 구간 중 어느 구간의 종점인지 선택하는 작은 메뉴
+let pickEl = null;
+function hideSectionPicker() {
+  if (!pickEl) return;
+  pickEl.remove();
+  pickEl = null;
+  document.removeEventListener('pointerdown', onPickOutside, true);
+}
+function onPickOutside(e) {
+  if (pickEl && !pickEl.contains(e.target)) hideSectionPicker();
+}
+function showSectionPicker(clientX, clientY, secs, pipeId, idx) {
+  hideSectionPicker();
+  const marked = new Set(getState().terminals.filter((t) => t.pipeId === pipeId && t.idx === idx).map((t) => t.section));
+  pickEl = document.createElement('div');
+  pickEl.className = 'sec-pick';
+  pickEl.innerHTML = `<div class="sec-pick-h">구간 종점 지정</div>`
+    + secs.map((s) => `<button data-sec="${s}">${marked.has(s) ? '✓ ' : ''}${s}구간 종점</button>`).join('');
+  document.body.appendChild(pickEl);
+  pickEl.style.left = `${clientX}px`;
+  pickEl.style.top = `${clientY}px`;
+  pickEl.querySelectorAll('button').forEach((b) => {
+    b.addEventListener('click', () => { toggleTerminal(pipeId, idx, Number(b.dataset.sec)); hideSectionPicker(); });
+  });
+  setTimeout(() => document.addEventListener('pointerdown', onPickOutside, true), 0);
+}
+
 function distToSeg(pt, a, b) {
   const dx = b[0] - a[0], dy = b[1] - a[1];
   const l2 = dx * dx + dy * dy;
@@ -349,9 +396,10 @@ export function initPipeTools() {
     if (keys.length) addSegsToSelection(keys);
   });
 
-  // DragPan을 '보조키 없을 때만' 패닝으로 교체 → Shift 드래그=박스선택
+  // DragPan을 '보조키 없을 때만' 패닝으로 교체 → Shift 드래그=박스선택.
+  // 더블클릭 확대(DoubleClickZoom)는 제거.
   map.getInteractions().getArray().slice().forEach((i) => {
-    if (i instanceof DragPan) map.removeInteraction(i);
+    if (i instanceof DragPan || i instanceof DoubleClickZoom) map.removeInteraction(i);
   });
   map.addInteraction(new DragPan({ condition: noModifierKeys }));
 
@@ -392,7 +440,7 @@ export function initPipeTools() {
 
   window.addEventListener('keydown', onKey);
 
-  // 우클릭: 작도 중이면 작도 종료 / 그 외엔 꼭짓점 종점 표시 토글(배관망 분석용)
+  // 우클릭: 작도 중이면 작도 종료 / 그 외엔 꼭짓점 종점 표시(배관망 분석용)
   map.getViewport().addEventListener('contextmenu', (e) => {
     if (activeTool === 'draw') {
       e.preventDefault();
@@ -401,10 +449,12 @@ export function initPipeTools() {
     }
     if (getState().ui.mode !== 'network') return; // 종점 표시는 배관망 모드 전용
     const v = nearestVertexInfo(map.getEventPixel(e));
-    if (v) {
-      e.preventDefault();
-      toggleTerminal(v.id, v.idx);
-    }
+    if (!v) return;
+    e.preventDefault();
+    const secs = incidentSections(v.coord);
+    if (!secs.length) return;
+    if (secs.length === 1) toggleTerminal(v.id, v.idx, secs[0]); // 단일 구간 → 바로 토글
+    else showSectionPicker(e.clientX, e.clientY, secs, v.id, v.idx); // 분기 → 구간 선택
   });
 
   // Ctrl 시각 피드백 (점 추가 가능 + 미리보기 갱신)

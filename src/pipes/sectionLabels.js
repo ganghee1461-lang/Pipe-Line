@@ -33,14 +33,8 @@ function rebuild() {
     if (!p) continue;
     const cs = coordsOf(p);
     if (t.idx < 0 || t.idx >= cs.length) continue;
-    // 인접 세그먼트(종점에 닿는 구간)의 번호
-    const segIdx = t.idx > 0 ? t.idx - 1 : 0;
-    const a = p.segs[segIdx];
-    if (!a) continue;
-    const sec = a.section || 1;
-
     const f = new Feature(new Point(fromLonLat(cs[t.idx])));
-    f.set('sec', sec);
+    f.set('sec', t.section || 1);
     src.addFeature(f);
   }
 }
@@ -49,7 +43,7 @@ function styleFor(f) {
   const sec = f.get('sec');
   return new Style({
     text: new Text({
-      text: `${sec}구간 끝`,
+      text: `${sec}구간 종점`,
       font: 'bold 12px "Noto Sans KR", sans-serif',
       fill: new Fill({ color: sectionColor(sec) }),
       stroke: new Stroke({ color: '#ffffff', width: 3.5 }),

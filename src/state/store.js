@@ -59,10 +59,11 @@ export function clearDemands() {
 }
 
 // ── 구간 종점 표시 (배관망 모드, 꼭짓점 우클릭으로 지정/해제) ──
-export function toggleTerminal(pipeId, idx) {
-  const i = state.terminals.findIndex((t) => t.pipeId === pipeId && t.idx === idx);
+// 한 점에 여러 구간이 겹치므로 section을 함께 저장(같은 점에 구간별 종점 가능).
+export function toggleTerminal(pipeId, idx, section) {
+  const i = state.terminals.findIndex((t) => t.pipeId === pipeId && t.idx === idx && t.section === section);
   if (i >= 0) state.terminals.splice(i, 1);
-  else state.terminals.push({ pipeId, idx });
+  else state.terminals.push({ pipeId, idx, section });
   emit('terminals:changed', state.terminals);
 }
 

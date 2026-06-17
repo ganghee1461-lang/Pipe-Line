@@ -286,6 +286,12 @@ button { font-family: inherit; cursor: pointer; border: none; border-radius: 6px
 .pp-row b { color: var(--text); text-align: right; word-break: break-all; font-weight: 500; }
 .pp-actions { margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border-soft); }
 .pp-hint { margin-top: 6px; font-size: 10.5px; color: var(--muted); text-align: center; }
+
+/* 구간 종점 선택 메뉴 (분기 꼭짓점 우클릭) */
+.sec-pick { position: fixed; z-index: 1000; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; box-shadow: 0 6px 24px rgba(0,0,0,.18); padding: 5px; min-width: 130px; }
+.sec-pick-h { font-size: 10.5px; color: var(--muted); padding: 3px 8px 5px; }
+.sec-pick button { display: block; width: 100%; text-align: left; padding: 6px 8px; background: transparent; border: none; border-radius: 5px; font-size: 12px; color: var(--text); cursor: pointer; }
+.sec-pick button:hover { background: var(--surface-2); }
 .pp-multi { max-height: 160px; overflow-y: auto; }
 .pp-addmarker { width: 100%; padding: 7px; background: var(--accent); color: #fff; border: none; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; }
 .pp-addmarker:hover { filter: brightness(1.08); }
