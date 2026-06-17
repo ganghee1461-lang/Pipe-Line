@@ -4,6 +4,7 @@
 const state = {
   demands: [],          // { id, query, address, lon, lat, memo }
   pipes: [],            // { id, coords:[[lon,lat]...], segs:[attr×(N-1)] }  세그먼트=점-점 구간
+  terminals: [],        // 구간 종점 표시 { pipeId, idx } (배관망 모드, 우클릭 지정)
   ui: {
     mode: 'sales',      // 'sales' | 'excavation' | 'network'
     colorBy: 'diameter', // 영업 모드 색상 기준: 'diameter' | 'pavement'
@@ -12,7 +13,7 @@ const state = {
     filterMemoOnly: false,
     selectedDemandId: null,
     selectedSegs: [],   // 선택된 세그먼트 키 'pipeId:i' (다중)
-    markerStyle: { color: '#b91c1c', borderColor: '#ffffff', shape: 'circle', border: 'solid' },
+    markerStyle: { color: 'transparent', borderColor: '#b91c1c', shape: 'circle', border: 'solid', showNum: true },
   },
 };
 
@@ -55,6 +56,14 @@ export function removeDemand(id) {
 export function clearDemands() {
   state.demands = [];
   emit('demands:changed', state.demands);
+}
+
+// ── 구간 종점 표시 (배관망 모드, 꼭짓점 우클릭으로 지정/해제) ──
+export function toggleTerminal(pipeId, idx) {
+  const i = state.terminals.findIndex((t) => t.pipeId === pipeId && t.idx === idx);
+  if (i >= 0) state.terminals.splice(i, 1);
+  else state.terminals.push({ pipeId, idx });
+  emit('terminals:changed', state.terminals);
 }
 
 // ── 계량기 (수요처별 다중) ──  meter = { use, grade, qty }
@@ -283,11 +292,12 @@ export function exportProject() {
     savedAt: new Date().toISOString(),
     demands: state.demands.map((d) => ({ ...d })),
     pipes: clonePipes(state.pipes),
+    terminals: state.terminals.map((t) => ({ ...t })),
     markerStyle: { ...state.ui.markerStyle },
   };
 }
 export function importProject(data) {
-  if (data?.markerStyle) state.ui.markerStyle = { color: '#b91c1c', borderColor: '#ffffff', shape: 'circle', border: 'solid', ...data.markerStyle };
+  if (data?.markerStyle) state.ui.markerStyle = { color: 'transparent', borderColor: '#b91c1c', shape: 'circle', border: 'solid', showNum: true, ...data.markerStyle };
   state.demands = Array.isArray(data?.demands) ? data.demands.map((d) => ({ ...d })) : [];
   state.pipes = Array.isArray(data?.pipes)
     ? data.pipes.map((p) => ({
@@ -296,6 +306,7 @@ export function importProject(data) {
         segs: (p.segs || []).map((a) => ({ ...DEFAULT_ATTR, ...a })),
       }))
     : [];
+  state.terminals = Array.isArray(data?.terminals) ? data.terminals.map((t) => ({ ...t })) : [];
   demandSeq = state.demands.reduce((m, d) => Math.max(m, d.id || 0), 0);
   pipeSeq = state.pipes.reduce((m, p) => Math.max(m, p.id || 0), 0);
   state.ui.selectedSegs = [];
@@ -304,6 +315,7 @@ export function importProject(data) {
   histIdx = 0;
   emit('demands:changed', state.demands);
   emit('pipes:changed', state.pipes);
+  emit('terminals:changed', state.terminals);
   emit('ui:changed', state.ui);
 }
 

@@ -27,6 +27,7 @@
           <button data-colorby="pavement">포장색</button>
         </div>
         <div id="mode-legend"></div>
+        <button id="mode-collapse" class="mode-collapse" title="모드 탭 접기">▴</button>
       </section>
 
       <!-- 탭 -->
@@ -80,13 +81,6 @@
         <!-- 디자인 탭 (레이어 + 마커 스타일) -->
         <div class="tab-pane hidden" data-tab="layers">
           <section class="panel">
-            <div class="panel-label">화면 표시</div>
-            <label class="switch-row">
-              <input type="checkbox" id="hide-modetabs" /> 모드 전환 탭 숨기기
-            </label>
-          </section>
-
-          <section class="panel">
             <div class="panel-label">레이어</div>
             <div class="layer-row">
               <label class="switch-row">
@@ -118,6 +112,13 @@
                 <div class="seg sm" id="ms-border">
                   <button data-border="solid">실선</button>
                   <button data-border="dashed">점선</button>
+                </div>
+              </div>
+              <div class="ms-field">
+                <span class="ms-lab">숫자</span>
+                <div class="seg sm" id="ms-num">
+                  <button data-num="show">표시</button>
+                  <button data-num="hide">숨김</button>
                 </div>
               </div>
             </div>

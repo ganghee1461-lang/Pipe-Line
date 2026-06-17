@@ -23,7 +23,7 @@ import { reconcileSegs } from './util.js';
 import {
   getState, subscribe, addPipe, extendPipe, setPipeGeometry, removeSegs, insertVertex,
   selectSeg, selectSegs, toggleSeg, addSegsToSelection, clearSegSelection,
-  setTool, undo, redo, segKey,
+  setTool, undo, redo, segKey, toggleTerminal,
 } from '../state/store.js';
 
 let draw, modify, snap, dragBox;
@@ -392,11 +392,18 @@ export function initPipeTools() {
 
   window.addEventListener('keydown', onKey);
 
-  // 우클릭: 작도 종료
+  // 우클릭: 작도 중이면 작도 종료 / 그 외엔 꼭짓점 종점 표시 토글(배관망 분석용)
   map.getViewport().addEventListener('contextmenu', (e) => {
     if (activeTool === 'draw') {
       e.preventDefault();
       try { draw.finishDrawing(); } catch { /* 점 부족 시 무시 */ }
+      return;
+    }
+    if (getState().ui.mode !== 'network') return; // 종점 표시는 배관망 모드 전용
+    const v = nearestVertexInfo(map.getEventPixel(e));
+    if (v) {
+      e.preventDefault();
+      toggleTerminal(v.id, v.idx);
     }
   });
 

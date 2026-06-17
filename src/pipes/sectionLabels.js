@@ -1,7 +1,7 @@
-// ── 말단 구간번호 라벨 (배관망 모드 전용) ──
-// 같은 구간번호는 네트워크 전체에서 묶어 라벨 1개만 표시(루프/분기에서 중복 방지).
-// 위치: 자유단(degree==1) 중 구간 중심에서 가장 먼 점 → 없으면(루프) 중심 근처.
-// 드래그 중에는 배관 피처의 라이브 형상을 따라 라벨도 같이 움직인다.
+// ── 구간 종점 라벨 (배관망 모드 전용) ──
+// 자동 판정이 오류가 많아 '수동 지정' 방식으로 변경:
+//   배관망 모드에서 꼭짓점을 우클릭 → 그 점을 인접 구간의 '종점'으로 표시/해제.
+// 라벨은 꼭짓점 좌표에 붙고, 드래그 시 라이브 형상을 따라 같이 움직인다.
 import VectorLayer from 'ol/layer/Vector.js';
 import VectorSource from 'ol/source/Vector.js';
 import Feature from 'ol/Feature.js';
@@ -16,9 +16,6 @@ import { sectionColor } from '../config/pipeStyles.js';
 const src = new VectorSource();
 const layer = new VectorLayer({ source: src, zIndex: 10, declutter: true, style: styleFor });
 
-function keyOf(c) { return `${c[0].toFixed(6)},${c[1].toFixed(6)}`; }
-function dist2(a, b) { const dx = a[0] - b[0], dy = a[1] - b[1]; return dx * dx + dy * dy; }
-
 // 라이브 좌표: 편집(드래그) 중인 피처 형상을 우선 사용 → 라벨이 점을 따라옴
 function coordsOf(p) {
   const f = pipeSource.getFeatureById(p.id);
@@ -28,56 +25,21 @@ function coordsOf(p) {
 
 function rebuild() {
   src.clear();
-  const { pipes, ui } = getState();
+  const { pipes, terminals, ui } = getState();
   if (ui.mode !== 'network') return;
 
-  const live = new Map();
-  for (const p of pipes) live.set(p.id, coordsOf(p));
+  for (const t of terminals) {
+    const p = pipes.find((x) => x.id === t.pipeId);
+    if (!p) continue;
+    const cs = coordsOf(p);
+    if (t.idx < 0 || t.idx >= cs.length) continue;
+    // 인접 세그먼트(종점에 닿는 구간)의 번호
+    const segIdx = t.idx > 0 ? t.idx - 1 : 0;
+    const a = p.segs[segIdx];
+    if (!a) continue;
+    const sec = a.section || 1;
 
-  // 좌표 degree (신설/기존 모두 포함해 접속 여부 판단)
-  const deg = new Map();
-  for (const p of pipes) {
-    const cs = live.get(p.id);
-    for (let i = 0; i < p.segs.length; i++) {
-      for (const c of [cs[i], cs[i + 1]]) {
-        const k = keyOf(c);
-        deg.set(k, (deg.get(k) || 0) + 1);
-      }
-    }
-  }
-
-  // 구간번호별 정점 모음 (신설관만)
-  const sections = new Map(); // sec -> Map(key -> coord)
-  for (const p of pipes) {
-    const cs = live.get(p.id);
-    for (let i = 0; i < p.segs.length; i++) {
-      if (p.segs[i].status === 'existing') continue;
-      const sec = p.segs[i].section || 1;
-      if (!sections.has(sec)) sections.set(sec, new Map());
-      const v = sections.get(sec);
-      v.set(keyOf(cs[i]), cs[i]);
-      v.set(keyOf(cs[i + 1]), cs[i + 1]);
-    }
-  }
-
-  for (const [sec, vmap] of sections) {
-    const verts = [...vmap.values()];
-    if (!verts.length) continue;
-    const cx = verts.reduce((s, c) => s + c[0], 0) / verts.length;
-    const cy = verts.reduce((s, c) => s + c[1], 0) / verts.length;
-    const center = [cx, cy];
-
-    const free = verts.filter((c) => deg.get(keyOf(c)) === 1);
-    let pos;
-    if (free.length) {
-      // 자유단(말단) 여러 개면 중심에서 가장 먼 것 = 가장 끝
-      free.sort((a, b) => dist2(b, center) - dist2(a, center));
-      pos = free[0];
-    } else {
-      // 루프 등 자유단 없음 → 중심에 가장 가까운 정점
-      pos = verts.slice().sort((a, b) => dist2(a, center) - dist2(b, center))[0];
-    }
-    const f = new Feature(new Point(fromLonLat(pos)));
+    const f = new Feature(new Point(fromLonLat(cs[t.idx])));
     f.set('sec', sec);
     src.addFeature(f);
   }
@@ -87,11 +49,12 @@ function styleFor(f) {
   const sec = f.get('sec');
   return new Style({
     text: new Text({
-      text: String(sec),
-      font: 'bold 13px sans-serif',
+      text: `${sec}구간 끝`,
+      font: 'bold 12px "Noto Sans KR", sans-serif',
       fill: new Fill({ color: sectionColor(sec) }),
       stroke: new Stroke({ color: '#ffffff', width: 3.5 }),
-      offsetY: -11,
+      offsetY: -13,
+      padding: [2, 3, 2, 3],
     }),
   });
 }
@@ -105,6 +68,7 @@ function scheduleRebuild() {
 export function initSectionLabels() {
   map.addLayer(layer);
   subscribe('pipes:changed', rebuild);
+  subscribe('terminals:changed', rebuild);
   subscribe('ui:changed', rebuild);
   pipeSource.on('changefeature', scheduleRebuild); // 꼭짓점 드래그 중 라이브 추적
   rebuild();

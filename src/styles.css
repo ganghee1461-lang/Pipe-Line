@@ -68,6 +68,8 @@ body {
 .seg button.active { background: var(--accent); color: #fff; }
 #colorby-switch { margin-top: 6px; }
 #mode-legend { margin-top: 7px; font-size: 10.5px; color: var(--muted); line-height: 1.45; }
+.mode-collapse { display: block; width: 100%; margin-top: 8px; padding: 2px; background: var(--surface-2); border: 1px solid var(--border-soft); border-radius: 5px; color: var(--muted); font-size: 11px; line-height: 1; cursor: pointer; }
+.mode-collapse:hover { color: var(--text); border-color: var(--border); }
 .panel.grow { flex: 1; overflow-y: auto; min-height: 80px; }
 .panel-label {
   font-size: 10.5px; font-weight: 700; color: var(--muted);

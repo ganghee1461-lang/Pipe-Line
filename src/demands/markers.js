@@ -85,7 +85,8 @@ function styleFor(feature) {
   const { color, shape } = ms;
   const borderColor = ms.borderColor || '#ffffff';
   const dashed = ms.border === 'dashed';
-  const key = `${color}-${borderColor}-${shape}-${ms.border}-${hasMemo ? 'm' : ''}-${selected ? 's' : ''}-${num}`;
+  const showNum = ms.showNum !== false;
+  const key = `${color}-${borderColor}-${shape}-${ms.border}-${showNum ? 'n' : ''}-${hasMemo ? 'm' : ''}-${selected ? 's' : ''}-${num}`;
   if (styleCache.has(key)) return styleCache.get(key);
 
   const radius = 10;
@@ -108,13 +109,13 @@ function styleFor(feature) {
   const halo = isLight(labelColor) ? '#1c1c1e' : '#ffffff';
   styles.push(new Style({
     image: makeImage(shape, radius, fill, stroke),
-    text: new Text({
+    text: showNum ? new Text({
       text: String(num),
       font: '600 11px "Noto Sans KR", sans-serif',
       fill: new Fill({ color: labelColor }),
       stroke: new Stroke({ color: halo, width: 2 }),
       offsetY: shape === 'triangle' ? 2 : 0,
-    }),
+    }) : undefined,
   }));
   // 메모 표시: 보색 코너 점 (우상단)
   if (hasMemo) {
