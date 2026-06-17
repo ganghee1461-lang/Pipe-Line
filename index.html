@@ -91,24 +91,8 @@
           </section>
         </div>
 
-        <!-- 디자인 탭 (레이어 + 마커 스타일) -->
+        <!-- 디자인 탭 (마커 스타일 + 레이어) -->
         <div class="tab-pane hidden" data-tab="layers">
-          <section class="panel">
-            <div class="panel-label">레이어</div>
-            <div class="layer-row">
-              <label class="switch-row">
-                <input type="checkbox" id="poss-toggle" /> 소유구분지적도
-              </label>
-              <input type="range" id="poss-opacity" min="10" max="100" value="75" />
-            </div>
-            <div class="layer-row">
-              <label class="switch-row">
-                <input type="checkbox" id="road-toggle" /> 도시계획도로
-              </label>
-              <input type="range" id="road-opacity" min="10" max="100" value="80" />
-            </div>
-          </section>
-
           <section class="panel">
             <div class="panel-label">마커 스타일 (전체)</div>
             <div class="ms-cap">채움색</div>
@@ -136,7 +120,23 @@
               </div>
             </div>
             <div class="ms-cap">크기</div>
-            <input type="range" id="ms-size" min="6" max="20" step="1" value="10" />
+            <input type="range" id="ms-size" class="ms-size" min="6" max="20" step="1" value="10" />
+          </section>
+
+          <section class="panel">
+            <div class="panel-label">레이어</div>
+            <div class="layer-row">
+              <label class="switch-row">
+                <input type="checkbox" id="poss-toggle" /> 소유구분지적도
+              </label>
+              <input type="range" id="poss-opacity" min="10" max="100" value="75" />
+            </div>
+            <div class="layer-row">
+              <label class="switch-row">
+                <input type="checkbox" id="road-toggle" /> 도시계획도로
+              </label>
+              <input type="range" id="road-opacity" min="10" max="100" value="80" />
+            </div>
           </section>
         </div>
 

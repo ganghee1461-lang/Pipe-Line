@@ -2,8 +2,14 @@
 // 저장 = GitHub save/ 폴더에 커밋(/api/save). 목록·불러오기도 GitHub 경유(확인 후 대체).
 // 로컬 파일 내보내기/열기도 백업용으로 제공.
 import { exportProject, importProject } from '../state/store.js';
+import { getViewState, setViewState } from '../map/map.js';
 
 let nameInput, statusEl, ghListEl;
+
+// 프로젝트 데이터 + 현재 편집 시점(지도 위치/줌)
+function projectData() {
+  return { ...exportProject(), view: getViewState() };
+}
 
 export function initSavePanel() {
   nameInput = document.getElementById('save-name');
@@ -41,7 +47,7 @@ async function saveToGithub() {
     const r = await fetch('/api/save', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, data: exportProject() }),
+      body: JSON.stringify({ name, data: projectData() }),
     });
     const j = await r.json().catch(() => ({}));
     if (!r.ok) throw new Error(j.error || `HTTP ${r.status}`);
@@ -79,7 +85,9 @@ async function loadGithub(file) {
   try {
     const r = await fetch(`/api/save?file=${encodeURIComponent(file)}`);
     if (!r.ok) throw new Error(`HTTP ${r.status}`);
-    importProject(await r.json());
+    const data = await r.json();
+    importProject(data);
+    setViewState(data.view);
     status(`불러옴: ${file}`);
     nameInput.value = file.replace(/\.json$/i, '');
   } catch (err) {
@@ -102,7 +110,7 @@ async function deleteGithub(file) {
 
 function exportFile() {
   const name = (nameInput.value || 'pipeline').trim();
-  const blob = new Blob([JSON.stringify(exportProject(), null, 2)], { type: 'application/json' });
+  const blob = new Blob([JSON.stringify(projectData(), null, 2)], { type: 'application/json' });
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
   a.download = `${name}.json`;
@@ -117,7 +125,9 @@ function importFromFile(e) {
   const reader = new FileReader();
   reader.onload = () => {
     try {
-      importProject(JSON.parse(reader.result));
+      const data = JSON.parse(reader.result);
+      importProject(data);
+      setViewState(data.view);
       if (nameInput) nameInput.value = file.name.replace(/\.json$/i, '');
       status(`불러옴: ${file.name}`);
     } catch {

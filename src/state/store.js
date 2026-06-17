@@ -39,6 +39,7 @@ let demandSeq = 0;
 export function addDemand(d) {
   const demand = { id: ++demandSeq, memo: '', ...d };
   state.demands.push(demand);
+  commit();
   emit('demands:changed', state.demands);
   return demand;
 }
@@ -46,15 +47,18 @@ export function updateDemand(id, patch) {
   const d = state.demands.find((x) => x.id === id);
   if (!d) return;
   Object.assign(d, patch);
+  commit();
   emit('demands:changed', state.demands);
 }
 export function removeDemand(id) {
   const i = state.demands.findIndex((x) => x.id === id);
   if (i >= 0) state.demands.splice(i, 1);
+  commit();
   emit('demands:changed', state.demands);
 }
 export function clearDemands() {
   state.demands = [];
+  commit();
   emit('demands:changed', state.demands);
 }
 
@@ -64,6 +68,7 @@ export function toggleTerminal(pipeId, idx, section) {
   const i = state.terminals.findIndex((t) => t.pipeId === pipeId && t.idx === idx && t.section === section);
   if (i >= 0) state.terminals.splice(i, 1);
   else state.terminals.push({ pipeId, idx, section });
+  commit();
   emit('terminals:changed', state.terminals);
 }
 
@@ -72,18 +77,21 @@ export function addMeter(demandId) {
   const d = state.demands.find((x) => x.id === demandId);
   if (!d) return;
   d.meters = [...(d.meters || []), { use: '일반', grade: 4, qty: 1 }];
+  commit();
   emit('demands:changed', state.demands);
 }
 export function updateMeter(demandId, idx, patch) {
   const d = state.demands.find((x) => x.id === demandId);
   if (!d || !d.meters || !d.meters[idx]) return;
   d.meters[idx] = { ...d.meters[idx], ...patch };
+  commit();
   emit('demands:changed', state.demands);
 }
 export function removeMeter(demandId, idx) {
   const d = state.demands.find((x) => x.id === demandId);
   if (!d || !d.meters) return;
   d.meters.splice(idx, 1);
+  commit();
   emit('demands:changed', state.demands);
 }
 
@@ -115,9 +123,7 @@ export function getSegAttr(key) {
   return p ? p.segs[i] : null;
 }
 
-// ── Undo/Redo 히스토리 (배관 스냅샷) ──
-let history = [[]];
-let histIdx = 0;
+// ── Undo/Redo 히스토리 (배관 + 수요처 + 종점 스냅샷) ──
 function clonePipes(arr) {
   return arr.map((p) => ({
     id: p.id,
@@ -125,9 +131,21 @@ function clonePipes(arr) {
     segs: p.segs.map((a) => ({ ...a })),
   }));
 }
+function cloneDemands(arr) {
+  return arr.map((d) => ({ ...d, meters: d.meters ? d.meters.map((m) => ({ ...m })) : undefined }));
+}
+function snapshot() {
+  return {
+    pipes: clonePipes(state.pipes),
+    demands: cloneDemands(state.demands),
+    terminals: state.terminals.map((t) => ({ ...t })),
+  };
+}
+let history = [snapshot()];
+let histIdx = 0;
 function commit() {
   history = history.slice(0, histIdx + 1);
-  history.push(clonePipes(state.pipes));
+  history.push(snapshot());
   histIdx++;
 }
 function fixSelection() {
@@ -137,21 +155,26 @@ function fixSelection() {
     return p && i < p.segs.length;
   });
 }
+function restore() {
+  const s = history[histIdx];
+  state.pipes = clonePipes(s.pipes);
+  state.demands = cloneDemands(s.demands);
+  state.terminals = s.terminals.map((t) => ({ ...t }));
+  fixSelection();
+  emit('demands:changed', state.demands);
+  emit('pipes:changed', state.pipes);
+  emit('terminals:changed', state.terminals);
+  emit('ui:changed', state.ui);
+}
 export function undo() {
   if (histIdx <= 0) return;
   histIdx--;
-  state.pipes = clonePipes(history[histIdx]);
-  fixSelection();
-  emit('pipes:changed', state.pipes);
-  emit('ui:changed', state.ui);
+  restore();
 }
 export function redo() {
   if (histIdx >= history.length - 1) return;
   histIdx++;
-  state.pipes = clonePipes(history[histIdx]);
-  fixSelection();
-  emit('pipes:changed', state.pipes);
-  emit('ui:changed', state.ui);
+  restore();
 }
 export function canUndo() { return histIdx > 0; }
 export function canRedo() { return histIdx < history.length - 1; }
@@ -312,7 +335,7 @@ export function importProject(data) {
   pipeSeq = state.pipes.reduce((m, p) => Math.max(m, p.id || 0), 0);
   state.ui.selectedSegs = [];
   state.ui.selectedDemandId = null;
-  history = [clonePipes(state.pipes)];
+  history = [snapshot()];
   histIdx = 0;
   emit('demands:changed', state.demands);
   emit('pipes:changed', state.pipes);

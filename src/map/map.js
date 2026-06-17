@@ -3,7 +3,7 @@ import Map from 'ol/Map.js';
 import View from 'ol/View.js';
 import TileLayer from 'ol/layer/Tile.js';
 import XYZ from 'ol/source/XYZ.js';
-import { fromLonLat } from 'ol/proj.js';
+import { fromLonLat, toLonLat } from 'ol/proj.js';
 import { boundingExtent } from 'ol/extent.js';
 import { tileUrl } from '../config/vworld.js';
 import { getState, setUI } from '../state/store.js';
@@ -56,6 +56,21 @@ export function fitToLonLats(lonlats, { maxZoom = 17, padding = 90 } = {}) {
 
 export function currentZoom() {
   return map.getView().getZoom();
+}
+
+// 편집 시점(중심 좌표 + 줌) 저장/복원 — 프로젝트 저장 시 함께 보관
+export function getViewState() {
+  const v = map.getView();
+  const c = v.getCenter();
+  if (!c) return null;
+  const [lon, lat] = toLonLat(c);
+  return { lon, lat, zoom: v.getZoom() };
+}
+export function setViewState(s) {
+  if (!s) return;
+  const v = map.getView();
+  if (Number.isFinite(s.lon) && Number.isFinite(s.lat)) v.setCenter(fromLonLat([s.lon, s.lat]));
+  if (Number.isFinite(s.zoom)) v.setZoom(s.zoom);
 }
 
 // 디버그 편의
