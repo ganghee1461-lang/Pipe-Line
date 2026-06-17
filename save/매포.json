@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "savedAt": "2026-06-17T01:17:15.773Z",
+  "savedAt": "2026-06-17T04:15:12.736Z",
   "demands": [],
   "pipes": [
     {
@@ -48,7 +48,8 @@
           "status": "planned",
           "review": "target",
           "pavement": "asphalt",
-          "section": 1
+          "section": 1,
+          "markerNo": ""
         },
         {
           "material": "PE",
@@ -58,7 +59,8 @@
           "status": "planned",
           "review": "target",
           "pavement": "asphalt",
-          "section": 2
+          "section": 2,
+          "markerNo": ""
         },
         {
           "material": "PE",
@@ -68,7 +70,8 @@
           "status": "planned",
           "review": "target",
           "pavement": "asphalt",
-          "section": 5
+          "section": 5,
+          "markerNo": ""
         },
         {
           "material": "PE",
@@ -78,7 +81,8 @@
           "status": "planned",
           "review": "target",
           "pavement": "asphalt",
-          "section": 6
+          "section": 6,
+          "markerNo": ""
         },
         {
           "material": "PE",
@@ -88,7 +92,8 @@
           "status": "planned",
           "review": "target",
           "pavement": "asphalt",
-          "section": 9
+          "section": 9,
+          "markerNo": ""
         },
         {
           "material": "PE",
@@ -98,7 +103,8 @@
           "status": "planned",
           "review": "target",
           "pavement": "asphalt",
-          "section": 11
+          "section": 11,
+          "markerNo": ""
         },
         {
           "material": "PE",
@@ -108,7 +114,8 @@
           "status": "planned",
           "review": "target",
           "pavement": "asphalt",
-          "section": 11
+          "section": 11,
+          "markerNo": ""
         }
       ]
     },
@@ -137,7 +144,8 @@
           "status": "planned",
           "review": "target",
           "pavement": "asphalt",
-          "section": 24
+          "section": 24,
+          "markerNo": ""
         },
         {
           "material": "PE",
@@ -147,7 +155,8 @@
           "status": "planned",
           "review": "target",
           "pavement": "asphalt",
-          "section": 25
+          "section": 25,
+          "markerNo": ""
         }
       ]
     },
@@ -176,7 +185,8 @@
           "status": "planned",
           "review": "target",
           "pavement": "asphalt",
-          "section": 19
+          "section": 19,
+          "markerNo": ""
         },
         {
           "material": "PE",
@@ -186,7 +196,8 @@
           "status": "planned",
           "review": "target",
           "pavement": "asphalt",
-          "section": 16
+          "section": 16,
+          "markerNo": ""
         }
       ]
     },
@@ -211,7 +222,8 @@
           "status": "planned",
           "review": "target",
           "pavement": "asphalt",
-          "section": 20
+          "section": 20,
+          "markerNo": ""
         }
       ]
     },
@@ -236,7 +248,8 @@
           "status": "planned",
           "review": "target",
           "pavement": "asphalt",
-          "section": 23
+          "section": 23,
+          "markerNo": ""
         }
       ]
     },
@@ -261,7 +274,8 @@
           "status": "planned",
           "review": "target",
           "pavement": "asphalt",
-          "section": 22
+          "section": 22,
+          "markerNo": ""
         }
       ]
     },
@@ -286,7 +300,8 @@
           "status": "planned",
           "review": "target",
           "pavement": "asphalt",
-          "section": 21
+          "section": 21,
+          "markerNo": ""
         }
       ]
     },
@@ -315,7 +330,8 @@
           "status": "planned",
           "review": "target",
           "pavement": "asphalt",
-          "section": 18
+          "section": 18,
+          "markerNo": ""
         },
         {
           "material": "PE",
@@ -325,7 +341,8 @@
           "status": "planned",
           "review": "target",
           "pavement": "asphalt",
-          "section": 17
+          "section": 17,
+          "markerNo": ""
         }
       ]
     },
@@ -350,7 +367,8 @@
           "status": "planned",
           "review": "target",
           "pavement": "asphalt",
-          "section": 14
+          "section": 14,
+          "markerNo": ""
         }
       ]
     },
@@ -375,7 +393,8 @@
           "status": "planned",
           "review": "target",
           "pavement": "asphalt",
-          "section": 15
+          "section": 15,
+          "markerNo": ""
         }
       ]
     },
@@ -400,7 +419,8 @@
           "status": "planned",
           "review": "target",
           "pavement": "asphalt",
-          "section": 13
+          "section": 13,
+          "markerNo": ""
         }
       ]
     },
@@ -425,7 +445,8 @@
           "status": "planned",
           "review": "target",
           "pavement": "asphalt",
-          "section": 12
+          "section": 12,
+          "markerNo": ""
         }
       ]
     },
@@ -454,7 +475,8 @@
           "status": "planned",
           "review": "target",
           "pavement": "asphalt",
-          "section": 6
+          "section": 6,
+          "markerNo": ""
         },
         {
           "material": "PE",
@@ -464,7 +486,8 @@
           "status": "planned",
           "review": "target",
           "pavement": "asphalt",
-          "section": 5
+          "section": 5,
+          "markerNo": ""
         }
       ]
     },
@@ -493,7 +516,8 @@
           "status": "planned",
           "review": "target",
           "pavement": "asphalt",
-          "section": 8
+          "section": 8,
+          "markerNo": ""
         },
         {
           "material": "PE",
@@ -503,7 +527,8 @@
           "status": "planned",
           "review": "target",
           "pavement": "asphalt",
-          "section": 8
+          "section": 8,
+          "markerNo": ""
         }
       ]
     },
@@ -528,7 +553,8 @@
           "status": "planned",
           "review": "target",
           "pavement": "asphalt",
-          "section": 7
+          "section": 7,
+          "markerNo": ""
         }
       ]
     },
@@ -553,7 +579,8 @@
           "status": "planned",
           "review": "target",
           "pavement": "asphalt",
-          "section": 9
+          "section": 9,
+          "markerNo": ""
         }
       ]
     },
@@ -578,7 +605,8 @@
           "status": "planned",
           "review": "target",
           "pavement": "asphalt",
-          "section": 9
+          "section": 9,
+          "markerNo": ""
         }
       ]
     },
@@ -607,7 +635,8 @@
           "status": "planned",
           "review": "target",
           "pavement": "asphalt",
-          "section": 10
+          "section": 10,
+          "markerNo": ""
         },
         {
           "material": "PE",
@@ -617,7 +646,8 @@
           "status": "planned",
           "review": "target",
           "pavement": "asphalt",
-          "section": 10
+          "section": 10,
+          "markerNo": ""
         }
       ]
     },
@@ -642,7 +672,8 @@
           "status": "planned",
           "review": "target",
           "pavement": "asphalt",
-          "section": 3
+          "section": 3,
+          "markerNo": ""
         }
       ]
     },
@@ -667,7 +698,8 @@
           "status": "planned",
           "review": "target",
           "pavement": "asphalt",
-          "section": 4
+          "section": 4,
+          "markerNo": ""
         }
       ]
     },
@@ -692,15 +724,150 @@
           "status": "planned",
           "review": "target",
           "pavement": "asphalt",
-          "section": 17
+          "section": 17,
+          "markerNo": ""
         }
       ]
+    }
+  ],
+  "terminals": [
+    {
+      "pipeId": 1,
+      "idx": 2,
+      "section": 2
+    },
+    {
+      "pipeId": 19,
+      "idx": 0,
+      "section": 3
+    },
+    {
+      "pipeId": 20,
+      "idx": 0,
+      "section": 4
+    },
+    {
+      "pipeId": 13,
+      "idx": 2,
+      "section": 5
+    },
+    {
+      "pipeId": 13,
+      "idx": 0,
+      "section": 6
+    },
+    {
+      "pipeId": 15,
+      "idx": 0,
+      "section": 7
+    },
+    {
+      "pipeId": 14,
+      "idx": 0,
+      "section": 8
+    },
+    {
+      "pipeId": 1,
+      "idx": 7,
+      "section": 11
+    },
+    {
+      "pipeId": 18,
+      "idx": 2,
+      "section": 10
+    },
+    {
+      "pipeId": 11,
+      "idx": 1,
+      "section": 13
+    },
+    {
+      "pipeId": 10,
+      "idx": 1,
+      "section": 15
+    },
+    {
+      "pipeId": 3,
+      "idx": 2,
+      "section": 16
+    },
+    {
+      "pipeId": 21,
+      "idx": 1,
+      "section": 17
+    },
+    {
+      "pipeId": 8,
+      "idx": 0,
+      "section": 18
+    },
+    {
+      "pipeId": 3,
+      "idx": 0,
+      "section": 19
+    },
+    {
+      "pipeId": 2,
+      "idx": 0,
+      "section": 24
+    },
+    {
+      "pipeId": 5,
+      "idx": 1,
+      "section": 23
+    },
+    {
+      "pipeId": 6,
+      "idx": 1,
+      "section": 22
+    },
+    {
+      "pipeId": 7,
+      "idx": 1,
+      "section": 21
+    },
+    {
+      "pipeId": 4,
+      "idx": 1,
+      "section": 20
+    },
+    {
+      "pipeId": 2,
+      "idx": 1,
+      "section": 25
+    },
+    {
+      "pipeId": 12,
+      "idx": 1,
+      "section": 12
+    },
+    {
+      "pipeId": 9,
+      "idx": 1,
+      "section": 14
+    },
+    {
+      "pipeId": 17,
+      "idx": 1,
+      "section": 9
+    },
+    {
+      "pipeId": 1,
+      "idx": 1,
+      "section": 1
     }
   ],
   "markerStyle": {
     "color": "#b91c1c",
     "borderColor": "#b91c1c",
     "shape": "circle",
-    "border": "solid"
+    "border": "solid",
+    "showNum": true,
+    "radius": 10
+  },
+  "view": {
+    "lon": 128.29944455174913,
+    "lat": 37.03349355082108,
+    "zoom": 17.839944486594185
   }
 }
