@@ -215,7 +215,7 @@ button { font-family: inherit; cursor: pointer; border: none; border-radius: 6px
 .lg-head button { background: transparent; font-size: 12px; padding: 0 4px; }
 #pipe-legend.collapsed .lg-head { border-bottom: none; }
 #pipe-legend.collapsed #legend-list { display: none; }
-#legend-list { list-style: none; padding: 8px 11px; display: flex; flex-direction: column; gap: 6px; max-height: 240px; overflow-y: auto; }
+#legend-list { list-style: none; padding: 8px 11px; display: flex; flex-direction: column; gap: 6px; max-height: calc(100vh - 64px); overflow-y: auto; }
 .lg-row { display: flex; align-items: center; gap: 9px; }
 .lg-swatch { width: 28px; flex-shrink: 0; }
 .lg-label { color: var(--text-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
