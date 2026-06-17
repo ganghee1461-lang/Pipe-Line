@@ -12,6 +12,14 @@ export function initModePanel() {
   const cbSeg = document.getElementById('colorby-switch');
   const legend = document.getElementById('mode-legend');
 
+  // 모드 전환 탭 숨기기 토글 (디자인 탭)
+  const hideToggle = document.getElementById('hide-modetabs');
+  if (hideToggle) {
+    hideToggle.addEventListener('change', () => {
+      seg.style.display = hideToggle.checked ? 'none' : '';
+    });
+  }
+
   seg.querySelectorAll('button[data-mode]').forEach((b) => {
     b.addEventListener('click', () => setUI({ mode: b.dataset.mode }));
   });

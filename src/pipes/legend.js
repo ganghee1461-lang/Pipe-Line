@@ -41,7 +41,9 @@ function render() {
   }
   box.classList.remove('hidden');
 
-  listEl.innerHTML = [...types.entries()]
+  // 오름차순 정렬: 번호 붙은 키(1번 구간…)는 숫자순, 그 외는 한글 가나다순(번호 키 우선)
+  const ordered = [...types.entries()].sort((a, b) => cmpKey(a[0], b[0]));
+  listEl.innerHTML = ordered
     .map(([k, a]) => {
       const s = pipeStyle(a, ui.mode, ui.colorBy);
       return `<li class="lg-row">
@@ -50,6 +52,19 @@ function render() {
       </li>`;
     })
     .join('');
+}
+
+function leadingNum(s) {
+  const m = /^(\d+)/.exec(s);
+  return m ? Number(m[1]) : null;
+}
+function cmpKey(a, b) {
+  const na = leadingNum(a);
+  const nb = leadingNum(b);
+  if (na != null && nb != null) return na - nb; // 둘 다 번호 → 숫자 오름차순
+  if (na != null) return -1;                    // 번호 키를 앞으로
+  if (nb != null) return 1;
+  return a.localeCompare(b, 'ko');              // 그 외 가나다순
 }
 
 function esc(s) {

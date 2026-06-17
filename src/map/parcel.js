@@ -10,7 +10,7 @@ import { possLayer } from './wms.js';
 import { pipeSource } from '../pipes/layer.js';
 import { isMarkerAt } from '../demands/markers.js';
 import { VWORLD } from '../config/vworld.js';
-import { getState } from '../state/store.js';
+import { getState, addDemand } from '../state/store.js';
 import { getParcel, getPossession, reverseGeocode, isPublicLand } from '../api/vworld.js';
 
 const geojson = new GeoJSON();
@@ -74,17 +74,18 @@ export function initParcelClick() {
         feat.set('public', pub);
         highlightSrc.addFeature(feat);
       }
-      showPopup(evt.pixel, { parcel, poss, rev, pub });
+      showPopup(evt.pixel, { parcel, poss, rev, pub, lon, lat });
     } finally {
       busy = false;
     }
   });
 }
 
-function showPopup(pixel, { parcel, poss, rev, pub }) {
+function showPopup(pixel, { parcel, poss, rev, pub, lon, lat }) {
   const tag = pub === true ? ['공유지', '#1d4ed8'] : pub === false ? ['사유지', '#b91c1c'] : ['미확인', '#8a8578'];
+  const jibun = rev.parcel || parcel.jibun || '-';
   const rows = [
-    ['지번', rev.parcel || parcel.jibun || '-'],
+    ['지번', jibun],
     rev.road ? ['도로명', rev.road] : null,
     ['소유구분', poss?.name || '미확인'],
     poss?.jimok ? ['지목', poss.jimok] : null,
@@ -99,11 +100,22 @@ function showPopup(pixel, { parcel, poss, rev, pub }) {
     </div>
     <div class="pp-body">
       ${rows.map(([k, v]) => `<div class="pp-row"><span>${k}</span><b>${v}</b></div>`).join('')}
+    </div>
+    <div class="pp-actions">
+      <button class="pp-addmarker">+ 수요처 마커 추가</button>
     </div>`;
   popup.classList.remove('hidden');
   popup.style.left = pixel[0] + 14 + 'px';
   popup.style.top = pixel[1] + 'px';
   popup.querySelector('.pp-close').onclick = () => { hidePopup(); highlightSrc.clear(); };
+
+  const addBtn = popup.querySelector('.pp-addmarker');
+  addBtn.onclick = () => {
+    if (!Number.isFinite(lon) || !Number.isFinite(lat)) return;
+    addDemand({ query: jibun, address: rev.road || jibun, lon, lat });
+    addBtn.textContent = '✓ 추가됨';
+    addBtn.disabled = true;
+  };
 }
 
 function hidePopup() {

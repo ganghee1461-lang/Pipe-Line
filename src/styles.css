@@ -282,6 +282,10 @@ button { font-family: inherit; cursor: pointer; border: none; border-radius: 6px
 .pp-row:last-child { border-bottom: none; }
 .pp-row span { color: var(--muted); }
 .pp-row b { color: var(--text); text-align: right; word-break: break-all; font-weight: 500; }
+.pp-actions { margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border-soft); }
+.pp-addmarker { width: 100%; padding: 7px; background: var(--accent); color: #fff; border: none; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; }
+.pp-addmarker:hover { filter: brightness(1.08); }
+.pp-addmarker:disabled { background: var(--surface-2); color: var(--accent); cursor: default; }
 
 /* ── 마커 클릭 팝업 ── */
 #marker-popup {
