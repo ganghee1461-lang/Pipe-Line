@@ -90,6 +90,7 @@ const DEFAULT_ATTR = {
   review: 'target',   // 'target'(심의대상) | 'none'
   pavement: 'asphalt', // 'none' | 'asphalt' | 'concrete' | 'block'
   section: 1,         // N번 구간 (배관망 분석에서 구간별 색상)
+  markerNo: '',       // 인입관 전용: 연결된 수요처 표시번호 (계량기 집계용)
 };
 const newAttr = () => ({ ...DEFAULT_ATTR });
 

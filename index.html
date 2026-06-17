@@ -72,6 +72,8 @@
             <div class="panel-label">배관 연장 집계</div>
             <ul id="pipe-totals"></ul>
             <div id="pipe-total-sum"></div>
+            <button id="meter-toggle" class="meter-toggle" aria-expanded="false">▸ 구간별 계량기 정보 보기</button>
+            <div id="meter-agg" class="meter-agg hidden"></div>
           </section>
         </div>
 
@@ -200,11 +202,14 @@
               <option value="저압">저압</option>
             </select>
           </label>
-          <label>상태
+          <label id="pa-status-wrap">상태
             <select id="pa-status">
               <option value="planned">설치예정</option>
               <option value="existing">기존관</option>
             </select>
+          </label>
+          <label id="pa-marker-wrap" class="hidden">마커번호
+            <input id="pa-markerNo" type="number" min="1" step="1" placeholder="수요처 #" />
           </label>
           <label>심의
             <select id="pa-review">

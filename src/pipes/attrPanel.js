@@ -7,14 +7,23 @@ import { segLength, fmtLength } from './util.js';
 const MIX = '__mix__';
 const FIXED = ['use', 'pressure', 'status', 'review', 'pavement'];
 let els = {};
-let panel, titleEl, lenEl, delBtn;
+let panel, titleEl, lenEl, delBtn, statusWrap, markerWrap;
 
 export function initAttrPanel() {
   panel = document.getElementById('pipe-attr');
   titleEl = document.getElementById('pa-title');
   lenEl = document.getElementById('pa-len');
   delBtn = document.getElementById('pa-del');
-  ['material', 'diameter', 'section', ...FIXED].forEach((f) => { els[f] = document.getElementById(`pa-${f}`); });
+  statusWrap = document.getElementById('pa-status-wrap');
+  markerWrap = document.getElementById('pa-marker-wrap');
+  ['material', 'diameter', 'section', 'markerNo', ...FIXED].forEach((f) => { els[f] = document.getElementById(`pa-${f}`); });
+
+  // 마커번호 (인입관 전용): 연결된 수요처 표시번호
+  els.markerNo.addEventListener('change', () => {
+    const raw = els.markerNo.value.trim();
+    const v = raw === '' ? '' : parseInt(raw, 10);
+    if (raw === '' || (Number.isFinite(v) && v >= 1)) updateSegs(getState().ui.selectedSegs, { markerNo: raw === '' ? '' : v });
+  });
 
   els.material.addEventListener('change', () => {
     const m = els.material.value;
@@ -97,7 +106,18 @@ function render() {
   fillDiameters(matV === MIX ? null : matV, common('diameter'));
   setSelect(els.diameter, common('diameter'));
   FIXED.forEach((f) => setSelect(els[f], common(f)));
-  els.pressure.disabled = common('use') !== 'supply';
+  const useV = common('use');
+  els.pressure.disabled = useV !== 'supply';
+
+  // 인입관: 상태 대신 마커번호 표시 / 그 외: 상태 표시
+  const isInlet = useV === 'inlet';
+  statusWrap.classList.toggle('hidden', isInlet);
+  markerWrap.classList.toggle('hidden', !isInlet);
+  if (isInlet) {
+    const mk = common('markerNo');
+    if (mk === MIX) { els.markerNo.value = ''; els.markerNo.placeholder = '혼합'; }
+    else { els.markerNo.value = mk === '' || mk == null ? '' : mk; els.markerNo.placeholder = '수요처 #'; }
+  }
 
   // 구간 번호: 단일이면 값, 혼합이면 빈칸 + placeholder
   const sec = common('section');
