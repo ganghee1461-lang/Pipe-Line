@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "savedAt": "2026-06-19T00:09:23.586Z",
+  "savedAt": "2026-06-19T00:17:20.948Z",
   "demands": [
     {
       "id": 1,
@@ -2808,6 +2808,144 @@
           "markerNo": ""
         }
       ]
+    },
+    {
+      "id": 22,
+      "coords": [
+        [
+          128.29401806180326,
+          37.03216087767994
+        ],
+        [
+          128.29339045793228,
+          37.03277516272277
+        ],
+        [
+          128.29390669350607,
+          37.03309081326144
+        ],
+        [
+          128.2973743781567,
+          37.03521047083882
+        ]
+      ],
+      "segs": [
+        {
+          "material": "PE",
+          "diameter": "63A",
+          "use": "supply",
+          "pressure": "저압",
+          "status": "planned",
+          "review": "target",
+          "pavement": "asphalt",
+          "section": 26,
+          "markerNo": ""
+        },
+        {
+          "material": "PE",
+          "diameter": "63A",
+          "use": "supply",
+          "pressure": "저압",
+          "status": "planned",
+          "review": "target",
+          "pavement": "asphalt",
+          "section": 26,
+          "markerNo": ""
+        },
+        {
+          "material": "PE",
+          "diameter": "63A",
+          "use": "supply",
+          "pressure": "저압",
+          "status": "planned",
+          "review": "target",
+          "pavement": "asphalt",
+          "section": 26,
+          "markerNo": ""
+        }
+      ]
+    },
+    {
+      "id": 24,
+      "coords": [
+        [
+          128.29390669350607,
+          37.03309081326144
+        ],
+        [
+          128.29412592896685,
+          37.03284534236944
+        ],
+        [
+          128.2944641639487,
+          37.03251724843854
+        ]
+      ],
+      "segs": [
+        {
+          "material": "PE",
+          "diameter": "63A",
+          "use": "supply",
+          "pressure": "저압",
+          "status": "planned",
+          "review": "target",
+          "pavement": "asphalt",
+          "section": 27,
+          "markerNo": ""
+        },
+        {
+          "material": "PE",
+          "diameter": "63A",
+          "use": "supply",
+          "pressure": "저압",
+          "status": "planned",
+          "review": "target",
+          "pavement": "asphalt",
+          "section": 27,
+          "markerNo": ""
+        }
+      ]
+    },
+    {
+      "id": 25,
+      "coords": [
+        [
+          128.29548429423076,
+          37.03384714754311
+        ],
+        [
+          128.29578228571097,
+          37.033570661940715
+        ],
+        [
+          128.29473198951914,
+          37.032905200687736
+        ]
+      ],
+      "segs": [
+        {
+          "material": "PE",
+          "diameter": "63A",
+          "use": "supply",
+          "pressure": "저압",
+          "status": "planned",
+          "review": "target",
+          "pavement": "asphalt",
+          "section": 28,
+          "markerNo": ""
+        },
+        {
+          "material": "PE",
+          "diameter": "63A",
+          "use": "supply",
+          "pressure": "저압",
+          "status": "planned",
+          "review": "target",
+          "pavement": "asphalt",
+          "section": 29,
+          "markerNo": ""
+        }
+      ]
     }
   ],
   "terminals": [
@@ -2907,11 +3045,6 @@
       "section": 20
     },
     {
-      "pipeId": 2,
-      "idx": 1,
-      "section": 25
-    },
-    {
       "pipeId": 12,
       "idx": 1,
       "section": 12
@@ -2935,6 +3068,41 @@
       "pipeId": 10,
       "idx": 2,
       "section": 15
+    },
+    {
+      "pipeId": 24,
+      "idx": 2,
+      "section": 27
+    },
+    {
+      "pipeId": 22,
+      "idx": 0,
+      "section": 26
+    },
+    {
+      "pipeId": 25,
+      "idx": 1,
+      "section": 28
+    },
+    {
+      "pipeId": 25,
+      "idx": 0,
+      "section": 29
+    },
+    {
+      "pipeId": 2,
+      "idx": 2,
+      "section": 25
+    },
+    {
+      "pipeId": 25,
+      "idx": 2,
+      "section": 29
+    },
+    {
+      "pipeId": 25,
+      "idx": 0,
+      "section": 28
     }
   ],
   "markerStyle": {
@@ -2946,8 +3114,8 @@
     "radius": 7
   },
   "view": {
-    "lon": 128.30122328451833,
-    "lat": 37.03418502238016,
-    "zoom": 17.64186794283343
+    "lon": 128.29568095479846,
+    "lat": 37.03321420041476,
+    "zoom": 18.781137686188785
   }
 }
