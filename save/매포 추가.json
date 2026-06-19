@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "savedAt": "2026-06-19T05:20:31.201Z",
+  "savedAt": "2026-06-19T05:27:53.073Z",
   "demands": [
     {
       "id": 1,
@@ -5953,11 +5953,6 @@
       "section": 12
     },
     {
-      "pipeId": 9,
-      "idx": 1,
-      "section": 14
-    },
-    {
       "pipeId": 17,
       "idx": 1,
       "section": 9
@@ -6068,11 +6063,6 @@
       "section": 34
     },
     {
-      "pipeId": 40,
-      "idx": 4,
-      "section": 35
-    },
-    {
       "pipeId": 37,
       "idx": 1,
       "section": 36
@@ -6153,11 +6143,6 @@
       "section": 26
     },
     {
-      "pipeId": 77,
-      "idx": 1,
-      "section": 27
-    },
-    {
       "pipeId": 75,
       "idx": 4,
       "section": 2
@@ -6171,6 +6156,31 @@
       "pipeId": 80,
       "idx": 1,
       "section": 40
+    },
+    {
+      "pipeId": 42,
+      "idx": 1,
+      "section": 35
+    },
+    {
+      "pipeId": 77,
+      "idx": 0,
+      "section": 27
+    },
+    {
+      "pipeId": 75,
+      "idx": 9,
+      "section": 11
+    },
+    {
+      "pipeId": 28,
+      "idx": 1,
+      "section": 12
+    },
+    {
+      "pipeId": 9,
+      "idx": 0,
+      "section": 14
     }
   ],
   "markerStyle": {
@@ -6182,8 +6192,8 @@
     "radius": 7
   },
   "view": {
-    "lon": 128.30079199457347,
-    "lat": 37.03504202503791,
-    "zoom": 19.416488834014284
+    "lon": 128.29997012209876,
+    "lat": 37.03532504440527,
+    "zoom": 18.012939968323987
   }
 }
