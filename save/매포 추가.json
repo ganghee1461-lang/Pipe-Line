@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "savedAt": "2026-06-19T02:15:02.396Z",
+  "savedAt": "2026-06-19T04:35:39.756Z",
   "demands": [
     {
       "id": 1,
@@ -2065,11 +2065,211 @@
       "address": "충청북도 단양군 매포읍 평동리 1125",
       "lon": 128.29839665445922,
       "lat": 37.034607851242
+    },
+    {
+      "id": 260,
+      "memo": "",
+      "query": "충청북도 단양군 매포읍 평동36길 26-3 (주택)",
+      "address": "충청북도 단양군 매포읍 평동리 572-4",
+      "lon": 128.29357907704016,
+      "lat": 37.032240487170995
+    },
+    {
+      "id": 261,
+      "memo": "",
+      "query": "충청북도 단양군 매포읍 평동36길 26-5 (주택)",
+      "address": "충청북도 단양군 매포읍 평동리 572-1",
+      "lon": 128.2935359672044,
+      "lat": 37.03238507069754
+    },
+    {
+      "id": 262,
+      "memo": "",
+      "query": "충청북도 단양군 매포읍 평동리 575",
+      "address": "충청북도 단양군 매포읍 평동리 575",
+      "lon": 128.29344550193224,
+      "lat": 37.03254317742528
+    },
+    {
+      "id": 263,
+      "memo": "",
+      "query": "충청북도 단양군 매포읍 평동리 574-1",
+      "address": "충청북도 단양군 매포읍 평동리 574-1",
+      "lon": 128.2937850348705,
+      "lat": 37.03266574310865
+    },
+    {
+      "id": 264,
+      "memo": "",
+      "query": "충청북도 단양군 매포읍 평동리 576",
+      "address": "충청북도 단양군 매포읍 평동리 576",
+      "lon": 128.29362307263767,
+      "lat": 37.03278606402236
+    },
+    {
+      "id": 265,
+      "memo": "",
+      "query": "충청북도 단양군 매포읍 평동21길 44 (주택)",
+      "address": "충청북도 단양군 매포읍 평동리 574-2",
+      "lon": 128.29346122856893,
+      "lat": 37.03296938643014
+    },
+    {
+      "id": 266,
+      "memo": "",
+      "query": "충청북도 단양군 매포읍 평동리 579-4",
+      "address": "충청북도 단양군 매포읍 평동리 579-4",
+      "lon": 128.29396243198556,
+      "lat": 37.03280763558237
+    },
+    {
+      "id": 267,
+      "memo": "",
+      "query": "충청북도 단양군 매포읍 평동21길 41",
+      "address": "충청북도 단양군 매포읍 평동리 579-2",
+      "lon": 128.29380021034675,
+      "lat": 37.0329596440623
+    },
+    {
+      "id": 268,
+      "memo": "",
+      "query": "충청북도 단양군 매포읍 평동리 580",
+      "address": "충청북도 단양군 매포읍 평동리 580",
+      "lon": 128.29428579758397,
+      "lat": 37.03250010542115
+    },
+    {
+      "id": 269,
+      "memo": "",
+      "query": "충청북도 단양군 매포읍 평동리 590",
+      "address": "충청북도 단양군 매포읍 평동리 590",
+      "lon": 128.29449908518876,
+      "lat": 37.0327361950218
+    },
+    {
+      "id": 270,
+      "memo": "",
+      "query": "충청북도 단양군 매포읍 평동36길 20-6 (주택)",
+      "address": "충청북도 단양군 매포읍 평동리 584-3",
+      "lon": 128.29418086948164,
+      "lat": 37.0328813496736
+    },
+    {
+      "id": 271,
+      "memo": "",
+      "query": "충청북도 단양군 매포읍 평동34길 5 (주택)",
+      "address": "충청북도 단양군 매포읍 평동리 584-1",
+      "lon": 128.29425599958972,
+      "lat": 37.03306746041193
+    },
+    {
+      "id": 272,
+      "memo": "",
+      "query": "충청북도 단양군 매포읍 평동21길 38",
+      "address": "충청북도 단양군 매포읍 평동리 585-6",
+      "lon": 128.29392601264493,
+      "lat": 37.03328027920659
+    },
+    {
+      "id": 273,
+      "memo": "",
+      "query": "충청북도 단양군 매포읍 평동21길 36 (주택)",
+      "address": "충청북도 단양군 매포읍 평동리 585-2",
+      "lon": 128.29429184580178,
+      "lat": 37.03348894712971
+    },
+    {
+      "id": 274,
+      "memo": "",
+      "query": "충청북도 단양군 매포읍 평동33길 12 (주택)",
+      "address": "충청북도 단양군 매포읍 평동리 645-6",
+      "lon": 128.29562050127103,
+      "lat": 37.0338759216647
+    },
+    {
+      "id": 275,
+      "memo": "",
+      "query": "충청북도 단양군 매포읍 평동리 645-8",
+      "address": "충청북도 단양군 매포읍 평동리 645-8",
+      "lon": 128.29543275248759,
+      "lat": 37.03360476257481
+    },
+    {
+      "id": 276,
+      "memo": "",
+      "query": "충청북도 단양군 매포읍 평동33길 9 (주택)",
+      "address": "충청북도 단양군 매포읍 평동리 645-7",
+      "lon": 128.29536711983164,
+      "lat": 37.03372115434826
+    },
+    {
+      "id": 277,
+      "memo": "",
+      "query": "충청북도 단양군 매포읍 평동34길 8 (주택)",
+      "address": "충청북도 단양군 매포읍 평동리 583-1",
+      "lon": 128.2945753893455,
+      "lat": 37.03326546512315
+    },
+    {
+      "id": 278,
+      "memo": "",
+      "query": "충청북도 단양군 매포읍 평동리 582",
+      "address": "충청북도 단양군 매포읍 평동리 582",
+      "lon": 128.29457899963833,
+      "lat": 37.03309762931252
+    },
+    {
+      "id": 279,
+      "memo": "",
+      "query": "충청북도 단양군 매포읍 평동리 1276",
+      "address": "충청북도 단양군 매포읍 평동리 1276",
+      "lon": 128.29552574177762,
+      "lat": 37.03325809897618
+    },
+    {
+      "id": 280,
+      "memo": "",
+      "query": "충청북도 단양군 매포읍 평동36길 10",
+      "address": "충청북도 단양군 매포읍 평동리 1277",
+      "lon": 128.29542354615037,
+      "lat": 37.03319468760489
+    },
+    {
+      "id": 281,
+      "memo": "",
+      "query": "충청북도 단양군 매포읍 평동34길 4-6",
+      "address": "충청북도 단양군 매포읍 평동리 1279",
+      "lon": 128.29518741702813,
+      "lat": 37.0330776323603
+    },
+    {
+      "id": 282,
+      "memo": "",
+      "query": "충청북도 단양군 매포읍 평동36길 12-1",
+      "address": "충청북도 단양군 매포읍 평동리 1282-1",
+      "lon": 128.29509415322744,
+      "lat": 37.03296579967083
+    },
+    {
+      "id": 283,
+      "memo": "",
+      "query": "충청북도 단양군 매포읍 평동36길 14",
+      "address": "충청북도 단양군 매포읍 평동리 1282",
+      "lon": 128.29495546499254,
+      "lat": 37.03288896542588
+    },
+    {
+      "id": 284,
+      "memo": "",
+      "query": "충청북도 단양군 매포읍 평동리 1283",
+      "address": "충청북도 단양군 매포읍 평동리 1283",
+      "lon": 128.2948202492799,
+      "lat": 37.03282765247637
     }
   ],
   "pipes": [
     {
-      "id": 44,
+      "id": 75,
       "coords": [
         [
           128.29982532150234,
@@ -2110,10 +2310,6 @@
         [
           128.30300584389101,
           37.03191328759851
-        ],
-        [
-          128.30307895357274,
-          37.03189849465835
         ]
       ],
       "segs": [
@@ -2215,17 +2411,6 @@
           "pavement": "asphalt",
           "section": 11,
           "markerNo": ""
-        },
-        {
-          "material": "PE",
-          "diameter": "63A",
-          "use": "supply",
-          "pressure": "저압",
-          "status": "planned",
-          "review": "target",
-          "pavement": "asphalt",
-          "section": 11,
-          "markerNo": ""
         }
       ]
     },
@@ -2237,8 +2422,8 @@
           37.03315334421437
         ],
         [
-          128.29578228571097,
-          37.033570661940715
+          128.29575902803617,
+          37.0335622548007
         ],
         [
           128.29725997847055,
@@ -3053,15 +3238,15 @@
       ]
     },
     {
-      "id": 26,
+      "id": 76,
       "coords": [
         [
-          128.29546677416747,
-          37.033850291848125
+          128.29547120828508,
+          37.03384371220265
         ],
         [
-          128.29578228571097,
-          37.033570661940715
+          128.29575902803617,
+          37.0335622548007
         ],
         [
           128.29473198951914,
@@ -3077,7 +3262,7 @@
           "status": "planned",
           "review": "target",
           "pavement": "asphalt",
-          "section": 26,
+          "section": 24,
           "markerNo": ""
         },
         {
@@ -3088,7 +3273,7 @@
           "status": "planned",
           "review": "target",
           "pavement": "asphalt",
-          "section": 27,
+          "section": 26,
           "markerNo": ""
         }
       ]
@@ -3700,7 +3885,7 @@
           "status": "planned",
           "review": "target",
           "pavement": "asphalt",
-          "section": 41,
+          "section": 51,
           "markerNo": ""
         },
         {
@@ -3711,7 +3896,7 @@
           "status": "planned",
           "review": "target",
           "pavement": "asphalt",
-          "section": 41,
+          "section": 51,
           "markerNo": ""
         },
         {
@@ -3722,7 +3907,7 @@
           "status": "planned",
           "review": "target",
           "pavement": "asphalt",
-          "section": 41,
+          "section": 51,
           "markerNo": ""
         }
       ]
@@ -3938,7 +4123,7 @@
           "status": "planned",
           "review": "target",
           "pavement": "asphalt",
-          "section": 41,
+          "section": 51,
           "markerNo": ""
         }
       ]
@@ -3968,7 +4153,7 @@
           "status": "planned",
           "review": "target",
           "pavement": "asphalt",
-          "section": 1,
+          "section": 55,
           "markerNo": ""
         },
         {
@@ -3979,7 +4164,7 @@
           "status": "planned",
           "review": "target",
           "pavement": "asphalt",
-          "section": 1,
+          "section": 55,
           "markerNo": ""
         }
       ]
@@ -4013,7 +4198,7 @@
           "status": "planned",
           "review": "target",
           "pavement": "asphalt",
-          "section": 1,
+          "section": 53,
           "markerNo": ""
         },
         {
@@ -4024,7 +4209,7 @@
           "status": "planned",
           "review": "target",
           "pavement": "asphalt",
-          "section": 1,
+          "section": 53,
           "markerNo": ""
         },
         {
@@ -4035,7 +4220,7 @@
           "status": "planned",
           "review": "target",
           "pavement": "asphalt",
-          "section": 1,
+          "section": 53,
           "markerNo": ""
         }
       ]
@@ -4073,7 +4258,7 @@
           "status": "planned",
           "review": "target",
           "pavement": "asphalt",
-          "section": 1,
+          "section": 52,
           "markerNo": ""
         },
         {
@@ -4084,7 +4269,7 @@
           "status": "planned",
           "review": "target",
           "pavement": "asphalt",
-          "section": 1,
+          "section": 52,
           "markerNo": ""
         },
         {
@@ -4095,7 +4280,7 @@
           "status": "planned",
           "review": "target",
           "pavement": "asphalt",
-          "section": 1,
+          "section": 52,
           "markerNo": ""
         },
         {
@@ -4106,285 +4291,24 @@
           "status": "planned",
           "review": "target",
           "pavement": "asphalt",
-          "section": 1,
+          "section": 52,
           "markerNo": ""
         }
       ]
     },
     {
-      "id": 62,
+      "id": 77,
       "coords": [
         [
-          128.30300584389101,
-          37.03191328759851
+          128.2942356879672,
+          37.0332908666029
         ],
         [
-          128.30299429611208,
-          37.03150010277906
-        ],
-        [
-          128.3025453865239,
-          37.0311953833008
-        ],
-        [
-          128.30202177672876,
-          37.0308399558357
+          128.29459083532953,
+          37.03295623222036
         ]
       ],
       "segs": [
-        {
-          "material": "PE",
-          "diameter": "63A",
-          "use": "supply",
-          "pressure": "저압",
-          "status": "planned",
-          "review": "target",
-          "pavement": "asphalt",
-          "section": 1,
-          "markerNo": ""
-        },
-        {
-          "material": "PE",
-          "diameter": "63A",
-          "use": "supply",
-          "pressure": "저압",
-          "status": "planned",
-          "review": "target",
-          "pavement": "asphalt",
-          "section": 1,
-          "markerNo": ""
-        },
-        {
-          "material": "PE",
-          "diameter": "63A",
-          "use": "supply",
-          "pressure": "저압",
-          "status": "planned",
-          "review": "target",
-          "pavement": "asphalt",
-          "section": 1,
-          "markerNo": ""
-        }
-      ]
-    },
-    {
-      "id": 63,
-      "coords": [
-        [
-          128.3025453865239,
-          37.0311953833008
-        ],
-        [
-          128.30410657876004,
-          37.029612625141255
-        ]
-      ],
-      "segs": [
-        {
-          "material": "PE",
-          "diameter": "63A",
-          "use": "supply",
-          "pressure": "저압",
-          "status": "planned",
-          "review": "target",
-          "pavement": "asphalt",
-          "section": 1,
-          "markerNo": ""
-        }
-      ]
-    },
-    {
-      "id": 64,
-      "coords": [
-        [
-          128.30299429611208,
-          37.03150010277906
-        ],
-        [
-          128.30315152978483,
-          37.03152334728513
-        ],
-        [
-          128.30448435062326,
-          37.03029954648906
-        ],
-        [
-          128.3047413369204,
-          37.03006357849671
-        ]
-      ],
-      "segs": [
-        {
-          "material": "PE",
-          "diameter": "63A",
-          "use": "supply",
-          "pressure": "저압",
-          "status": "planned",
-          "review": "target",
-          "pavement": "asphalt",
-          "section": 1,
-          "markerNo": ""
-        },
-        {
-          "material": "PE",
-          "diameter": "63A",
-          "use": "supply",
-          "pressure": "저압",
-          "status": "planned",
-          "review": "target",
-          "pavement": "asphalt",
-          "section": 1,
-          "markerNo": ""
-        },
-        {
-          "material": "PE",
-          "diameter": "63A",
-          "use": "supply",
-          "pressure": "저압",
-          "status": "planned",
-          "review": "target",
-          "pavement": "asphalt",
-          "section": 1,
-          "markerNo": ""
-        }
-      ]
-    },
-    {
-      "id": 65,
-      "coords": [
-        [
-          128.30315152978483,
-          37.03152334728513
-        ],
-        [
-          128.3041822838617,
-          37.03133739103714
-        ],
-        [
-          128.30463117114874,
-          37.031117806333356
-        ],
-        [
-          128.30555079916155,
-          37.03066794477432
-        ]
-      ],
-      "segs": [
-        {
-          "material": "PE",
-          "diameter": "63A",
-          "use": "supply",
-          "pressure": "저압",
-          "status": "planned",
-          "review": "target",
-          "pavement": "asphalt",
-          "section": 1,
-          "markerNo": ""
-        },
-        {
-          "material": "PE",
-          "diameter": "63A",
-          "use": "supply",
-          "pressure": "저압",
-          "status": "planned",
-          "review": "target",
-          "pavement": "asphalt",
-          "section": 1,
-          "markerNo": ""
-        },
-        {
-          "material": "PE",
-          "diameter": "63A",
-          "use": "supply",
-          "pressure": "저압",
-          "status": "planned",
-          "review": "target",
-          "pavement": "asphalt",
-          "section": 1,
-          "markerNo": ""
-        }
-      ]
-    },
-    {
-      "id": 66,
-      "coords": [
-        [
-          128.30463117114874,
-          37.031117806333356
-        ],
-        [
-          128.3028836501942,
-          37.03002638656871
-        ]
-      ],
-      "segs": [
-        {
-          "material": "PE",
-          "diameter": "63A",
-          "use": "supply",
-          "pressure": "저압",
-          "status": "planned",
-          "review": "target",
-          "pavement": "asphalt",
-          "section": 1,
-          "markerNo": ""
-        }
-      ]
-    },
-    {
-      "id": 67,
-      "coords": [
-        [
-          128.30448435062326,
-          37.03029954648906
-        ],
-        [
-          128.30392605120983,
-          37.029910161676284
-        ]
-      ],
-      "segs": [
-        {
-          "material": "PE",
-          "diameter": "63A",
-          "use": "supply",
-          "pressure": "저압",
-          "status": "planned",
-          "review": "target",
-          "pavement": "asphalt",
-          "section": 1,
-          "markerNo": ""
-        }
-      ]
-    },
-    {
-      "id": 68,
-      "coords": [
-        [
-          128.2944751926981,
-          37.03305924680063
-        ],
-        [
-          128.29467849078222,
-          37.032875918480414
-        ],
-        [
-          128.29473198951914,
-          37.032905200687736
-        ]
-      ],
-      "segs": [
-        {
-          "material": "PE",
-          "diameter": "63A",
-          "use": "supply",
-          "pressure": "저압",
-          "status": "planned",
-          "review": "target",
-          "pavement": "asphalt",
-          "section": 27,
-          "markerNo": ""
-        },
         {
           "material": "PE",
           "diameter": "63A",
@@ -4402,16 +4326,16 @@
       "id": 69,
       "coords": [
         [
-          128.29880684213725,
-          37.034602370898426
+          128.2988084211243,
+          37.034595175727006
         ],
         [
           128.29901855867743,
           37.034387489798505
         ],
         [
-          128.29923090365287,
-          37.03417197025925
+          128.29927659962848,
+          37.03413861308128
         ]
       ],
       "segs": [
@@ -4423,7 +4347,7 @@
           "status": "planned",
           "review": "target",
           "pavement": "asphalt",
-          "section": 1,
+          "section": 54,
           "markerNo": ""
         },
         {
@@ -4434,7 +4358,7 @@
           "status": "planned",
           "review": "target",
           "pavement": "asphalt",
-          "section": 1,
+          "section": 54,
           "markerNo": ""
         }
       ]
@@ -4460,7 +4384,7 @@
           "status": "planned",
           "review": "target",
           "pavement": "asphalt",
-          "section": 1,
+          "section": 54,
           "markerNo": ""
         }
       ]
@@ -4469,12 +4393,12 @@
       "id": 71,
       "coords": [
         [
-          128.2989764667435,
-          37.03395676902488
+          128.2989467039957,
+          37.03393909985488
         ],
         [
-          128.29998815635935,
-          37.03458544507666
+          128.29997679959092,
+          37.03457627481218
         ]
       ],
       "segs": [
@@ -4486,7 +4410,7 @@
           "status": "planned",
           "review": "target",
           "pavement": "asphalt",
-          "section": 1,
+          "section": 54,
           "markerNo": ""
         }
       ]
@@ -4757,6 +4681,46 @@
       "pipeId": 68,
       "idx": 0,
       "section": 27
+    },
+    {
+      "pipeId": 57,
+      "idx": 3,
+      "section": 51
+    },
+    {
+      "pipeId": 61,
+      "idx": 4,
+      "section": 52
+    },
+    {
+      "pipeId": 60,
+      "idx": 3,
+      "section": 53
+    },
+    {
+      "pipeId": 71,
+      "idx": 1,
+      "section": 54
+    },
+    {
+      "pipeId": 59,
+      "idx": 2,
+      "section": 55
+    },
+    {
+      "pipeId": 48,
+      "idx": 3,
+      "section": 1
+    },
+    {
+      "pipeId": 76,
+      "idx": 2,
+      "section": 26
+    },
+    {
+      "pipeId": 77,
+      "idx": 1,
+      "section": 27
     }
   ],
   "markerStyle": {
@@ -4768,8 +4732,8 @@
     "radius": 7
   },
   "view": {
-    "lon": 128.30130791696155,
-    "lat": 37.03267476415877,
-    "zoom": 17.518835062958726
+    "lon": 128.29516170036192,
+    "lat": 37.03313363029392,
+    "zoom": 19.616657833522893
   }
 }
