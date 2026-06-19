@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "savedAt": "2026-06-19T00:17:20.948Z",
+  "savedAt": "2026-06-19T00:44:30.222Z",
   "demands": [
     {
       "id": 1,
@@ -2229,8 +2229,8 @@
       "id": 3,
       "coords": [
         [
-          128.29688116511767,
-          37.03483111788417
+          128.29683768021312,
+          37.034885983639285
         ],
         [
           128.2977619027844,
@@ -2505,7 +2505,48 @@
       ]
     },
     {
-      "id": 12,
+      "id": 27,
+      "coords": [
+        [
+          128.29900703732957,
+          37.037025158233476
+        ],
+        [
+          128.29703453507508,
+          37.03579392672775
+        ],
+        [
+          128.29843012456348,
+          37.03443932017966
+        ]
+      ],
+      "segs": [
+        {
+          "material": "PE",
+          "diameter": "63A",
+          "use": "supply",
+          "pressure": "저압",
+          "status": "planned",
+          "review": "target",
+          "pavement": "asphalt",
+          "section": 30,
+          "markerNo": ""
+        },
+        {
+          "material": "PE",
+          "diameter": "63A",
+          "use": "supply",
+          "pressure": "저압",
+          "status": "planned",
+          "review": "target",
+          "pavement": "asphalt",
+          "section": 30,
+          "markerNo": ""
+        }
+      ]
+    },
+    {
+      "id": 28,
       "coords": [
         [
           128.29843012456348,
@@ -2838,7 +2879,7 @@
           "status": "planned",
           "review": "target",
           "pavement": "asphalt",
-          "section": 26,
+          "section": 29,
           "markerNo": ""
         },
         {
@@ -2849,7 +2890,7 @@
           "status": "planned",
           "review": "target",
           "pavement": "asphalt",
-          "section": 26,
+          "section": 29,
           "markerNo": ""
         },
         {
@@ -2860,7 +2901,7 @@
           "status": "planned",
           "review": "target",
           "pavement": "asphalt",
-          "section": 26,
+          "section": 29,
           "markerNo": ""
         }
       ]
@@ -2890,7 +2931,7 @@
           "status": "planned",
           "review": "target",
           "pavement": "asphalt",
-          "section": 27,
+          "section": 28,
           "markerNo": ""
         },
         {
@@ -2901,17 +2942,17 @@
           "status": "planned",
           "review": "target",
           "pavement": "asphalt",
-          "section": 27,
+          "section": 28,
           "markerNo": ""
         }
       ]
     },
     {
-      "id": 25,
+      "id": 26,
       "coords": [
         [
-          128.29548429423076,
-          37.03384714754311
+          128.29546677416747,
+          37.033850291848125
         ],
         [
           128.29578228571097,
@@ -2931,7 +2972,7 @@
           "status": "planned",
           "review": "target",
           "pavement": "asphalt",
-          "section": 28,
+          "section": 26,
           "markerNo": ""
         },
         {
@@ -2942,7 +2983,7 @@
           "status": "planned",
           "review": "target",
           "pavement": "asphalt",
-          "section": 29,
+          "section": 27,
           "markerNo": ""
         }
       ]
@@ -3103,6 +3144,36 @@
       "pipeId": 25,
       "idx": 0,
       "section": 28
+    },
+    {
+      "pipeId": 26,
+      "idx": 0,
+      "section": 26
+    },
+    {
+      "pipeId": 26,
+      "idx": 2,
+      "section": 27
+    },
+    {
+      "pipeId": 24,
+      "idx": 2,
+      "section": 28
+    },
+    {
+      "pipeId": 22,
+      "idx": 0,
+      "section": 29
+    },
+    {
+      "pipeId": 12,
+      "idx": 3,
+      "section": 12
+    },
+    {
+      "pipeId": 12,
+      "idx": 1,
+      "section": 30
     }
   ],
   "markerStyle": {
@@ -3114,8 +3185,8 @@
     "radius": 7
   },
   "view": {
-    "lon": 128.29568095479846,
-    "lat": 37.03321420041476,
-    "zoom": 18.781137686188785
+    "lon": 128.29872895900414,
+    "lat": 37.03606030062089,
+    "zoom": 18.532892867322243
   }
 }
