@@ -335,6 +335,7 @@ button { font-family: inherit; cursor: pointer; border: none; border-radius: 6px
 .di-meters b { color: var(--text); font-weight: 600; }
 .di-list-head { display: flex; justify-content: space-between; align-items: center; }
 .ms-size { width: 100%; display: block; margin-top: 4px; }
+.hint-text { margin-top: 6px; font-size: 10.5px; color: var(--muted); line-height: 1.45; }
 .di-sort { font-family: inherit; font-size: 11px; padding: 2px 4px; border: 1px solid var(--border); border-radius: 5px; background: var(--surface-2); color: var(--text-2); text-transform: none; letter-spacing: 0; }
 .di-sort-wrap { display: inline-flex; align-items: center; gap: 3px; }
 .di-sort-dir { font-size: 10px; line-height: 1; padding: 3px 5px; border: 1px solid var(--border); border-radius: 5px; background: var(--surface-2); color: var(--text-2); cursor: pointer; }

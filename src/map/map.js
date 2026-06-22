@@ -73,6 +73,60 @@ export function setViewState(s) {
   if (Number.isFinite(s.zoom)) v.setZoom(s.zoom);
 }
 
+// 현재 지도 화면을 고화질 PNG(Blob)로 — 패널/팝업(DOM)은 자동 제외, 지도 레이어만 합성.
+// scale=2 → 현재 화면의 2배 픽셀로 렌더링. WMS(소유지적/도시계획)가 켜져 있으면 캔버스가
+// tainted 되어 보안 제한으로 실패할 수 있다(reject).
+export function exportMapImage(scale = 2) {
+  return new Promise((resolve, reject) => {
+    const view = map.getView();
+    const size = map.getSize();
+    const resolution = view.getResolution();
+    const width = Math.round(size[0] * scale);
+    const height = Math.round(size[1] * scale);
+
+    map.once('rendercomplete', () => {
+      try {
+        const out = document.createElement('canvas');
+        out.width = width;
+        out.height = height;
+        const ctx = out.getContext('2d');
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, width, height);
+        map.getViewport()
+          .querySelectorAll('.ol-layer canvas, canvas.ol-layer')
+          .forEach((canvas) => {
+            if (!canvas.width) return;
+            const opacity = canvas.parentNode.style.opacity || canvas.style.opacity;
+            ctx.globalAlpha = opacity === '' ? 1 : Number(opacity);
+            const transform = canvas.style.transform;
+            if (transform) {
+              const m = transform.match(/^matrix\(([^(]*)\)$/);
+              if (m) CanvasRenderingContext2D.prototype.setTransform.apply(ctx, m[1].split(',').map(Number));
+            } else {
+              ctx.setTransform(1, 0, 0, 1, 0, 0);
+            }
+            ctx.drawImage(canvas, 0, 0);
+          });
+        ctx.globalAlpha = 1;
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+        out.toBlob((blob) => {
+          blob ? resolve(blob) : reject(new Error('보안 제한(소유지적도·도시계획 레이어를 끄고 다시 시도)'));
+        }, 'image/png');
+      } catch (err) {
+        reject(err);
+      } finally {
+        map.setSize(size);
+        view.setResolution(resolution);
+      }
+    });
+
+    // 더 높은 해상도로 렌더링하도록 일시적으로 크기/해상도 변경
+    map.setSize([width, height]);
+    const scaling = Math.min(width / size[0], height / size[1]);
+    view.setResolution(resolution / scaling);
+  });
+}
+
 // 디버그 편의
 if (import.meta.env.DEV) window.__map = map;
 export { getState };

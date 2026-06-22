@@ -2,7 +2,7 @@
 // 저장 = GitHub save/ 폴더에 커밋(/api/save). 목록·불러오기도 GitHub 경유(확인 후 대체).
 // 로컬 파일 내보내기/열기도 백업용으로 제공.
 import { exportProject, importProject } from '../state/store.js';
-import { getViewState, setViewState } from '../map/map.js';
+import { getViewState, setViewState, exportMapImage } from '../map/map.js';
 
 let nameInput, statusEl, ghListEl;
 
@@ -22,6 +22,7 @@ export function initSavePanel() {
   const importFile = document.getElementById('import-file');
   document.getElementById('import-btn').addEventListener('click', () => importFile.click());
   importFile.addEventListener('change', importFromFile);
+  document.getElementById('export-img-btn').addEventListener('click', exportImage);
 
   // Ctrl+S / Cmd+S → GitHub 저장
   window.addEventListener('keydown', (e) => {
@@ -105,6 +106,29 @@ async function deleteGithub(file) {
     listGithub();
   } catch (err) {
     status(`삭제 실패: ${err.message}`, true);
+  }
+}
+
+async function exportImage() {
+  const btn = document.getElementById('export-img-btn');
+  const statusBox = document.getElementById('export-img-status');
+  btn.disabled = true;
+  const prev = btn.textContent;
+  btn.textContent = '이미지 생성 중…';
+  try {
+    const blob = await exportMapImage(2);
+    const name = (nameInput.value || 'pipeline').trim();
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `${name}.png`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+    statusBox.textContent = '저장됨 ✓';
+  } catch (err) {
+    statusBox.textContent = `실패: ${err.message}`;
+  } finally {
+    btn.disabled = false;
+    btn.textContent = prev;
   }
 }
 
