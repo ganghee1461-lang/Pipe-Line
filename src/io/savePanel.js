@@ -3,6 +3,8 @@
 // 로컬 파일 내보내기/열기도 백업용으로 제공.
 import { exportProject, importProject } from '../state/store.js';
 import { getViewState, setViewState, exportMapImage } from '../map/map.js';
+import { legendEntries } from '../pipes/legend.js';
+import { DASH } from '../config/pipeStyles.js';
 
 let nameInput, statusEl, ghListEl;
 
@@ -109,14 +111,69 @@ async function deleteGithub(file) {
   }
 }
 
+// 범례를 캔버스 우상단에 그린다 (DOM이 아니라 직접 렌더 → 이미지에 포함)
+function roundRect(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r);
+  ctx.closePath();
+}
+function drawLegend(ctx, width, scale) {
+  const entries = legendEntries();
+  if (!entries.length) return;
+  const s = scale;
+  const pad = 11 * s, sw = 26 * s, gap = 9 * s, rowH = 17 * s;
+  const fs = 12 * s, titleFs = 12 * s, titleH = 22 * s;
+  ctx.font = `${fs}px "Noto Sans KR", sans-serif`;
+  let maxLabel = 0;
+  for (const e of entries) maxLabel = Math.max(maxLabel, ctx.measureText(e.label).width);
+  const boxW = pad * 2 + sw + gap + maxLabel;
+  const boxH = titleH + pad * 0.5 + entries.length * rowH + pad * 0.5;
+  const x = width - boxW - 14 * s;
+  const y = 14 * s;
+
+  roundRect(ctx, x, y, boxW, boxH, 8 * s);
+  ctx.fillStyle = 'rgba(255,255,255,0.95)';
+  ctx.fill();
+  ctx.lineWidth = 1 * s;
+  ctx.strokeStyle = 'rgba(0,0,0,0.18)';
+  ctx.stroke();
+
+  ctx.fillStyle = '#111827';
+  ctx.font = `700 ${titleFs}px "Noto Sans KR", sans-serif`;
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('범례', x + pad, y + titleH / 2);
+
+  let ry = y + titleH + pad * 0.5 + rowH / 2;
+  for (const e of entries) {
+    ctx.strokeStyle = e.color;
+    ctx.lineWidth = 3 * s;
+    ctx.setLineDash((DASH[e.dash] || []).map((v) => v * s));
+    ctx.beginPath();
+    ctx.moveTo(x + pad, ry);
+    ctx.lineTo(x + pad + sw, ry);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = '#1f2937';
+    ctx.font = `${fs}px "Noto Sans KR", sans-serif`;
+    ctx.fillText(e.label, x + pad + sw + gap, ry);
+    ry += rowH;
+  }
+}
+
 async function exportImage() {
   const btn = document.getElementById('export-img-btn');
   const statusBox = document.getElementById('export-img-status');
+  const withLegend = document.getElementById('export-legend').checked;
   btn.disabled = true;
   const prev = btn.textContent;
   btn.textContent = '이미지 생성 중…';
   try {
-    const blob = await exportMapImage(2);
+    const blob = await exportMapImage(withLegend ? drawLegend : null);
     const name = (nameInput.value || 'pipeline').trim();
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);

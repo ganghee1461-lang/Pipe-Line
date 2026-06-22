@@ -27,6 +27,24 @@ function dashCss(d) {
   return 'solid';
 }
 
+// 현재 범례 항목을 정렬된 배열로 반환 (이미지 내보내기에서 캔버스로 그릴 때 사용)
+export function legendEntries() {
+  const { pipes, ui } = getState();
+  const types = new Map();
+  for (const p of pipes) {
+    for (const a of p.segs) {
+      const k = legendGroup(a, ui.mode, ui.colorBy);
+      if (!types.has(k)) types.set(k, a);
+    }
+  }
+  return [...types.entries()]
+    .sort((a, b) => cmpKey(a[0], b[0]))
+    .map(([k, a]) => {
+      const s = pipeStyle(a, ui.mode, ui.colorBy);
+      return { label: k, color: s.color, dash: s.dash };
+    });
+}
+
 function render() {
   const { pipes, ui } = getState();
   const types = new Map(); // 라벨 -> 대표 attr

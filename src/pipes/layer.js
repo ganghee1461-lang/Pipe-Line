@@ -69,15 +69,14 @@ function styleFor(feature) {
     }
   }
 
-  // 선택(V)·꼭짓점(A) 모드: 점을 표시. A모드는 더 크고 채워진 핸들로 강조.
-  if (tool === 'vertex' || tool === 'select') {
-    const vtx = tool === 'vertex';
+  // 꼭짓점(A) 모드에서만 점 핸들 표시. 선택(V)·평상시엔 깔끔한 선만.
+  if (tool === 'vertex') {
     styles.push(new Style({
       geometry: new MultiPoint(cs),
       image: new Circle({
-        radius: vtx ? 6 : 4,
-        fill: new Fill({ color: vtx ? '#0f766e' : '#ffffff' }),
-        stroke: new Stroke({ color: vtx ? '#ffffff' : '#0f766e', width: vtx ? 2 : 1.5 }),
+        radius: 6,
+        fill: new Fill({ color: '#0f766e' }),
+        stroke: new Stroke({ color: '#ffffff', width: 2 }),
       }),
     }));
   }

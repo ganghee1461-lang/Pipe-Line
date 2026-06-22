@@ -73,16 +73,16 @@ export function setViewState(s) {
   if (Number.isFinite(s.zoom)) v.setZoom(s.zoom);
 }
 
-// 현재 지도 화면을 고화질 PNG(Blob)로 — 패널/팝업(DOM)은 자동 제외, 지도 레이어만 합성.
-// scale=2 → 현재 화면의 2배 픽셀로 렌더링. WMS(소유지적/도시계획)가 켜져 있으면 캔버스가
-// tainted 되어 보안 제한으로 실패할 수 있다(reject).
-export function exportMapImage(scale = 2) {
+// 지금 보이는 지도 화면을 그대로 PNG(Blob)로 — 리사이즈/줌 변경 없이 현재 캔버스를
+// device 해상도(보이는 그대로, HiDPI면 자동 고화질)로 합성. 패널/팝업(DOM)은 자동 제외.
+// drawOverlay(ctx, w, h, scale)로 범례 등을 덧그릴 수 있다.
+// WMS(소유지적/도시계획)가 켜져 있으면 캔버스가 tainted 되어 보안 제한으로 실패할 수 있다(reject).
+export function exportMapImage(drawOverlay = null) {
   return new Promise((resolve, reject) => {
-    const view = map.getView();
+    const dpr = window.devicePixelRatio || 1;
     const size = map.getSize();
-    const resolution = view.getResolution();
-    const width = Math.round(size[0] * scale);
-    const height = Math.round(size[1] * scale);
+    const width = Math.round(size[0] * dpr);
+    const height = Math.round(size[1] * dpr);
 
     map.once('rendercomplete', () => {
       try {
@@ -99,31 +99,24 @@ export function exportMapImage(scale = 2) {
             const opacity = canvas.parentNode.style.opacity || canvas.style.opacity;
             ctx.globalAlpha = opacity === '' ? 1 : Number(opacity);
             const transform = canvas.style.transform;
-            if (transform) {
-              const m = transform.match(/^matrix\(([^(]*)\)$/);
-              if (m) CanvasRenderingContext2D.prototype.setTransform.apply(ctx, m[1].split(',').map(Number));
-            } else {
-              ctx.setTransform(1, 0, 0, 1, 0, 0);
-            }
+            // 캔버스 transform(CSS px)을 dpr만큼 키워 device 해상도로 1:1 합성
+            let m = [1, 0, 0, 1, 0, 0];
+            const mm = transform && transform.match(/^matrix\(([^(]*)\)$/);
+            if (mm) m = mm[1].split(',').map(Number);
+            ctx.setTransform(m[0] * dpr, m[1] * dpr, m[2] * dpr, m[3] * dpr, m[4] * dpr, m[5] * dpr);
             ctx.drawImage(canvas, 0, 0);
           });
         ctx.globalAlpha = 1;
         ctx.setTransform(1, 0, 0, 1, 0, 0);
+        if (drawOverlay) drawOverlay(ctx, width, height, dpr);
         out.toBlob((blob) => {
           blob ? resolve(blob) : reject(new Error('보안 제한(소유지적도·도시계획 레이어를 끄고 다시 시도)'));
         }, 'image/png');
       } catch (err) {
         reject(err);
-      } finally {
-        map.setSize(size);
-        view.setResolution(resolution);
       }
     });
-
-    // 더 높은 해상도로 렌더링하도록 일시적으로 크기/해상도 변경
-    map.setSize([width, height]);
-    const scaling = Math.min(width / size[0], height / size[1]);
-    view.setResolution(resolution / scaling);
+    map.renderSync();
   });
 }
 

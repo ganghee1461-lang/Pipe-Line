@@ -168,8 +168,9 @@
 
           <section class="panel">
             <div class="panel-label">지도 이미지 내보내기</div>
-            <button id="export-img-btn" class="btn-ghost" style="width:100%">현재 화면 고화질 PNG 저장</button>
-            <div id="export-img-status" class="hint-text">패널·팝업은 빠지고 지도만 저장됩니다. (소유지적도·도시계획 레이어가 켜져 있으면 보안 제한으로 실패할 수 있어요)</div>
+            <label class="check-row" style="margin:0 0 6px"><input type="checkbox" id="export-legend" checked /> 범례 포함</label>
+            <button id="export-img-btn" class="btn-ghost" style="width:100%">지금 화면 그대로 PNG 저장</button>
+            <div id="export-img-status" class="hint-text">보이는 화면 그대로 저장됩니다(패널·팝업 제외). 구도는 지도를 직접 이동/확대해 잡으세요. (소유지적도·도시계획 레이어가 켜져 있으면 보안 제한으로 실패할 수 있어요)</div>
           </section>
         </div>
       </div>
