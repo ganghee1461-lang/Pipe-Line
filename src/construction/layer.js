@@ -195,6 +195,7 @@ function fillSigungu(sido) {
 
 // ── 클릭 팝업 ──
 const popup = document.getElementById('construction-popup');
+let anchorCoord = null;   // 팝업이 고정될 마커 지리좌표(EPSG:3857)
 
 function fmtDate(s) { return !s || s.length < 8 ? (s || '-') : `${s.slice(0, 4)}-${s.slice(4, 6)}-${s.slice(6, 8)}`; }
 function toDate(s) {
@@ -231,9 +232,9 @@ function durationText(start, end) {
 }
 function esc(s) { return String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
 
-function hidePopup() { popup.classList.add('hidden'); popup.innerHTML = ''; selectFeature(null); }
+function hidePopup() { popup.classList.add('hidden'); popup.innerHTML = ''; anchorCoord = null; selectFeature(null); }
 
-function showPopup(pixel, c) {
+function showPopup(c) {
   const today = todayStr();
   const st = statusOf(c, today);
   const dd = dday(c.end);
@@ -263,18 +264,22 @@ function showPopup(pixel, c) {
     </div>
     <div class="pp-body">${rows.join('')}</div>`;
   popup.classList.remove('hidden');
-  placePopup(pixel);
+  anchorCoord = c.coord;     // 마커 지리좌표에 고정 → 지도 이동 시 따라감
+  positionPopup();
   popup.querySelector('.pp-close').onclick = hidePopup;
 }
 
-// 팝업이 지도 화면 밖으로 나가지 않게 좌표 보정 (모바일 좁은 화면 대비)
-function placePopup(pixel) {
+// 앵커(마커 좌표) → 현재 화면 픽셀로 변환해 팝업 위치 갱신. 화면 밖으로 안 나가게 보정.
+function positionPopup() {
+  if (!anchorCoord) return;
+  const px = map.getPixelFromCoordinate(anchorCoord);
+  if (!px) return;
   const size = map.getSize() || [window.innerWidth, window.innerHeight];
   const pw = popup.offsetWidth || 280;
   const ph = popup.offsetHeight || 220;
-  let left = pixel[0] + 14;
-  let top = pixel[1];
-  if (left + pw > size[0] - 6) left = pixel[0] - pw - 14;  // 오른쪽 넘치면 왼쪽으로
+  let left = px[0] + 14;
+  let top = px[1];
+  if (left + pw > size[0] - 6) left = px[0] - pw - 14;  // 오른쪽 넘치면 왼쪽으로
   if (left < 6) left = 6;
   if (top + ph > size[1] - 6) top = Math.max(6, size[1] - ph - 6);
   if (top < 6) top = 6;
@@ -337,7 +342,12 @@ export function initConstruction() {
     const f = featureAt(evt.pixel);
     if (!f) { hidePopup(); return; }
     selectFeature(f);
-    showPopup(evt.pixel, f.get('c'));
+    showPopup(f.get('c'));
+  });
+
+  // 지도 이동/확대 시 팝업을 마커 위치에 계속 고정
+  map.on('postrender', () => {
+    if (anchorCoord && !popup.classList.contains('hidden')) positionPopup();
   });
 }
 
