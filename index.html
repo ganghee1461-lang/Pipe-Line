@@ -35,6 +35,7 @@
         <button data-tab="demands" class="active">수요처</button>
         <button data-tab="pipes">배관</button>
         <button data-tab="construction">공사현황</button>
+        <button data-tab="permits">건축인허가</button>
         <button data-tab="layers">디자인</button>
         <button data-tab="io">저장</button>
       </nav>
@@ -128,6 +129,29 @@
               <select id="cnstr-sido" class="cf-sel"><option value="">시도 전체</option></select>
               <select id="cnstr-sigungu" class="cf-sel"><option value="">시군구 전체</option></select>
             </div>
+          </section>
+        </div>
+
+        <!-- 건축인허가 탭 (건축HUB, 세움터) -->
+        <div class="tab-pane hidden" data-tab="permits">
+          <section class="panel">
+            <label class="switch-row cf-toggle">
+              <input type="checkbox" id="bp-toggle" /> 🏗 건축인허가 표시
+            </label>
+            <div class="cf-row">
+              <input id="bp-sigungu" class="cf-year" style="width:96px" placeholder="시군구코드" value="11680" />
+              <input id="bp-bjdong" class="cf-year" style="width:110px" placeholder="법정동코드(선택)" />
+            </div>
+            <div class="cf-row">
+              <input id="bp-rows" type="number" class="cf-year" style="width:72px" value="100" min="1" max="300" title="조회 건수" />
+              <button id="bp-search" class="btn-primary">조회</button>
+            </div>
+            <label class="check-row"><input type="checkbox" id="bp-ongoing" /> 공사중만 (착공O·사용승인X)</label>
+            <div id="bp-status" class="hint-text">시군구코드 넣고 조회 → 주소를 좌표로 변환해 지도에 표시합니다.</div>
+          </section>
+          <section class="panel">
+            <div class="panel-label">시군구코드 예시</div>
+            <div class="hint-text">서울 강남구 <b>11680</b> · 종로구 <b>11110</b> · 송파구 <b>11710</b> / 부산 해운대구 <b>26350</b> / 성남 분당구 <b>41135</b>. 법정동코드는 비우면 시군구 전체(건수 많으면 조회수↓).</div>
           </section>
         </div>
 
@@ -307,6 +331,7 @@
       <div id="parcel-popup" class="hidden"></div>
       <div id="marker-popup" class="hidden"></div>
       <div id="construction-popup" class="hidden"></div>
+      <div id="permit-popup" class="hidden"></div>
     </main>
   </div>
 

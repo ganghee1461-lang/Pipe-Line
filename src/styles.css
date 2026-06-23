@@ -268,7 +268,7 @@ button { font-family: inherit; cursor: pointer; border: none; border-radius: 6px
 .ma-chip b { color: var(--text); }
 
 /* ── 필지 팝업 ── */
-#parcel-popup, #construction-popup {
+#parcel-popup, #construction-popup, #permit-popup {
   position: absolute; z-index: 25; background: rgba(255, 255, 255, 0.98);
   border: 1px solid var(--border); border-radius: 10px; min-width: 220px; max-width: 290px;
   box-shadow: var(--shadow-md); overflow: hidden;
@@ -355,7 +355,7 @@ button { font-family: inherit; cursor: pointer; border: none; border-radius: 6px
 .cf-sel:disabled { opacity: 0.55; }
 
 /* 공사현황 팝업: 상태 뱃지 + 진행률 막대 */
-#construction-popup .pp-bar > strong { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#construction-popup .pp-bar > strong, #permit-popup .pp-bar > strong { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .cf-badge { flex: none; font-size: 10px; font-weight: 700; padding: 1px 7px; border-radius: 10px; color: #fff; }
 .pp-prog-row { padding: 4px 0; border-bottom: 1px solid var(--border-soft); }
 .pp-prog-head { display: flex; justify-content: space-between; font-size: 12px; }
