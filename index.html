@@ -138,6 +138,16 @@
               <input type="range" id="road-opacity" min="10" max="100" value="80" />
             </div>
           </section>
+
+          <section class="panel">
+            <div class="panel-label">건설공사현황 (생활안전지도)</div>
+            <div class="layer-row">
+              <label class="switch-row">
+                <input type="checkbox" id="cnstr-toggle" /> 🚧 건설공사현황 표시
+              </label>
+            </div>
+            <div id="cnstr-status" class="hint-text">전국 건설공사 위치·준공예정일. 켜면 데이터를 불러옵니다(5만여 건이라 잠시 걸릴 수 있어요).</div>
+          </section>
         </div>
 
         <!-- 저장 탭 -->
@@ -266,6 +276,7 @@
 
       <div id="parcel-popup" class="hidden"></div>
       <div id="marker-popup" class="hidden"></div>
+      <div id="construction-popup" class="hidden"></div>
     </main>
   </div>
 
