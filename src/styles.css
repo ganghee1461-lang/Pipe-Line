@@ -353,6 +353,16 @@ button { font-family: inherit; cursor: pointer; border: none; border-radius: 6px
 .cf-unit { font-size: 11px; color: var(--muted); }
 .cf-sel { width: 100%; font-family: inherit; font-size: 12px; padding: 6px 8px; margin-bottom: 6px; border: 1px solid var(--border); border-radius: 6px; background: var(--surface-2); color: var(--text); }
 .cf-sel:disabled { opacity: 0.55; }
+
+/* 공사현황 팝업: 상태 뱃지 + 진행률 막대 */
+#construction-popup .pp-bar > strong { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cf-badge { flex: none; font-size: 10px; font-weight: 700; padding: 1px 7px; border-radius: 10px; color: #fff; }
+.pp-prog-row { padding: 4px 0; border-bottom: 1px solid var(--border-soft); }
+.pp-prog-head { display: flex; justify-content: space-between; font-size: 12px; }
+.pp-prog-head span { color: var(--muted); }
+.pp-prog-head b { font-weight: 500; }
+.cf-prog { height: 7px; margin-top: 4px; background: var(--surface-2); border-radius: 4px; overflow: hidden; }
+.cf-prog > i { display: block; height: 100%; background: #ea580c; border-radius: 4px; }
 .di-sort { font-family: inherit; font-size: 11px; padding: 2px 4px; border: 1px solid var(--border); border-radius: 5px; background: var(--surface-2); color: var(--text-2); text-transform: none; letter-spacing: 0; }
 .di-sort-wrap { display: inline-flex; align-items: center; gap: 3px; }
 .di-sort-dir { font-size: 10px; line-height: 1; padding: 3px 5px; border: 1px solid var(--border); border-radius: 5px; background: var(--surface-2); color: var(--text-2); cursor: pointer; }

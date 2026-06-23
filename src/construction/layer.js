@@ -197,37 +197,71 @@ function fillSigungu(sido) {
 const popup = document.getElementById('construction-popup');
 
 function fmtDate(s) { return !s || s.length < 8 ? (s || '-') : `${s.slice(0, 4)}-${s.slice(4, 6)}-${s.slice(6, 8)}`; }
+function toDate(s) {
+  if (!s || s.length < 8) return null;
+  const d = new Date(+s.slice(0, 4), +s.slice(4, 6) - 1, +s.slice(6, 8));
+  return isNaN(d.getTime()) ? null : d;
+}
 function dday(end) {
-  if (!end || end.length < 8) return '';
-  const d = new Date(+end.slice(0, 4), +end.slice(4, 6) - 1, +end.slice(6, 8));
-  if (isNaN(d.getTime())) return '';
+  const d = toDate(end);
+  if (!d) return '';
   const diff = Math.ceil((d.getTime() - Date.now()) / 86400000);
   if (diff > 0) return `D-${diff}`;
   if (diff === 0) return 'D-day';
   return `준공 ${-diff}일 경과`;
+}
+function statusOf(c, today) {
+  if (!c.end || c.end.length < 8) return { label: '미상', color: '#6b7280' };
+  if (c.end < today) return { label: '준공완료', color: '#16a34a' };
+  if (c.start && c.start.length >= 8 && c.start > today) return { label: '착공예정', color: '#2563eb' };
+  return { label: '진행중', color: '#ea580c' };
+}
+function progressPct(start, end) {
+  const s = toDate(start), e = toDate(end);
+  if (!s || !e || e <= s) return null;
+  const p = (Date.now() - s.getTime()) / (e.getTime() - s.getTime()) * 100;
+  return Math.max(0, Math.min(100, Math.round(p)));
+}
+function durationText(start, end) {
+  const s = toDate(start), e = toDate(end);
+  if (!s || !e || e < s) return '';
+  const months = (e.getFullYear() - s.getFullYear()) * 12 + (e.getMonth() - s.getMonth());
+  const y = Math.floor(months / 12), m = months % 12;
+  return [y ? `${y}년` : '', m ? `${m}개월` : ''].filter(Boolean).join(' ') || '1개월 미만';
 }
 function esc(s) { return String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
 
 function hidePopup() { popup.classList.add('hidden'); popup.innerHTML = ''; selectFeature(null); }
 
 function showPopup(pixel, c) {
+  const today = todayStr();
+  const st = statusOf(c, today);
   const dd = dday(c.end);
-  const rows = [
-    ['구분', c.kind || '-'],
-    ['지역', [c.sido, c.sigungu].filter(Boolean).join(' ') || '-'],
-    ['착공일', fmtDate(c.start)],
-    ['준공예정', `${fmtDate(c.end)}${dd ? ` · ${dd}` : ''}`],
-    ['주소', c.addr || '-'],
-    c.owner ? ['발주자', c.owner] : null,
-  ].filter(Boolean);
+  const pct = progressPct(c.start, c.end);
+  const dur = durationText(c.start, c.end);
+  const region = [c.sido, c.sigungu].filter(Boolean).join(' ');
+  const hasRoad = c.addrRn && c.addrRn.trim() && c.addrRn.trim() !== (c.addr || '').trim();
+
+  const rows = [];
+  rows.push(`<div class="pp-row"><span>구분</span><b>${esc(c.kind || '-')}</b></div>`);
+  if (region) rows.push(`<div class="pp-row"><span>지역</span><b>${esc(region)}</b></div>`);
+  rows.push(`<div class="pp-row"><span>착공일</span><b>${fmtDate(c.start)}</b></div>`);
+  rows.push(`<div class="pp-row"><span>준공예정</span><b>${fmtDate(c.end)}${dd ? ` · ${dd}` : ''}</b></div>`);
+  if (dur) rows.push(`<div class="pp-row"><span>공사기간</span><b>${dur}</b></div>`);
+  if (pct != null && st.label === '진행중') {
+    rows.push(`<div class="pp-prog-row"><div class="pp-prog-head"><span>진행률</span><b>약 ${pct}%</b></div><div class="cf-prog"><i style="width:${pct}%"></i></div></div>`);
+  }
+  rows.push(`<div class="pp-row"><span>주소</span><b>${esc(c.addr || '-')}</b></div>`);
+  if (hasRoad) rows.push(`<div class="pp-row"><span>도로명</span><b>${esc(c.addrRn)}</b></div>`);
+  if (c.owner) rows.push(`<div class="pp-row"><span>발주자</span><b>${esc(c.owner)}</b></div>`);
+
   popup.innerHTML = `
     <div class="pp-bar" style="color:#c2410c">
       <strong title="${esc(c.name)}">🚧 ${esc(c.name) || '건설공사'}</strong>
+      <span class="cf-badge" style="background:${st.color}">${st.label}</span>
       <button class="pp-close">✕</button>
     </div>
-    <div class="pp-body">
-      ${rows.map(([k, v]) => `<div class="pp-row"><span>${k}</span><b>${esc(v)}</b></div>`).join('')}
-    </div>`;
+    <div class="pp-body">${rows.join('')}</div>`;
   popup.classList.remove('hidden');
   placePopup(pixel);
   popup.querySelector('.pp-close').onclick = hidePopup;
