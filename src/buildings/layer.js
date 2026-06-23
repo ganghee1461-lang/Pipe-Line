@@ -28,9 +28,14 @@ const COARSE = typeof window !== 'undefined' &&
   (window.matchMedia?.('(pointer: coarse)').matches || 'ontouchstart' in window || (navigator.maxTouchPoints || 0) > 0);
 const HIT_TOL = COARSE ? 18 : 6;
 
-let records = [];           // { rec, feature, coord:[lon,lat] }
+let records = [];           // { rec, feature, lonlat:[lon,lat] }
 let ongoingOnly = false;
+let recentOnly = true;
+let areaName = '';          // 조회 지역명(서울 강남구 삼성동)
+const RECENT_YEARS = 5;
 const geoCache = new Map(); // addr -> {x,y} | null
+
+function shortRegion(addr) { return String(addr || '').trim().split(/\s+/).slice(0, 3).join(' '); }
 
 const setStatus = (t) => { const el = document.getElementById('bp-status'); if (el) el.textContent = t; };
 
@@ -58,33 +63,61 @@ async function geocodeAddr(addr, type) {
   return out;
 }
 
+const recentKey = (r) => (r.pmsDay || '') + (r.stcnsDay || '');
+
 async function runQuery() {
   const sigunguCd = document.getElementById('bp-sigungu')?.value.trim();
   const bjdongCd = document.getElementById('bp-bjdong')?.value.trim() || '';
-  const numOfRows = Math.min(300, Math.max(1, Number(document.getElementById('bp-rows')?.value) || 100));
-  if (!sigunguCd) { setStatus('시군구코드를 입력하세요 (예: 11680 강남구)'); return; }
+  const cap = Math.min(300, Math.max(1, Number(document.getElementById('bp-rows')?.value) || 100));
+  if (!sigunguCd || !bjdongCd) { setStatus('지역을 먼저 선택하세요 — 📍 버튼을 누르세요'); return; }
 
-  setStatus('조회 중…');
-  const { items, total, error } = await fetchBuildingPermits({ sigunguCd, bjdongCd, numOfRows });
-  if (error) { setStatus(`조회 실패: ${error}`); return; }
-  if (!items.length) { setStatus('결과 없음 (코드/조건 확인)'); src.clear(); records = []; return; }
+  const tag = areaName ? `[${areaName}] ` : '';
+  setStatus(`${tag}조회 중…`);
+  const PAGE = 100, MAX_PAGES = 8;
 
-  setStatus(`${items.length}건 조회 (전체 ${total.toLocaleString()}) · 주소→좌표 변환 중…`);
+  // 1) 전체 건수 확인
+  const head = await fetchBuildingPermits({ sigunguCd, bjdongCd, numOfRows: 1, pageNo: 1 });
+  if (head.error) { setStatus(`조회 실패: ${head.error}`); return; }
+  const total = head.total;
+  if (!total) { setStatus(`${tag}결과 없음`); src.clear(); records = []; return; }
+
+  // 2) 최근 건은 등록순 뒤쪽 페이지에 있음 → 마지막 MAX_PAGES 페이지만 수집
+  const totalPages = Math.max(1, Math.ceil(total / PAGE));
+  const pageNos = [];
+  for (let p = Math.max(1, totalPages - MAX_PAGES + 1); p <= totalPages; p++) pageNos.push(p);
+  const all = [];
+  await mapLimit(pageNos, 4, async (p) => {
+    const r = await fetchBuildingPermits({ sigunguCd, bjdongCd, numOfRows: PAGE, pageNo: p });
+    if (r.items) all.push(...r.items);
+  });
+
+  // 3) 허가일 최신순 정렬 + (옵션) 최근 N년만
+  let list = all.sort((a, b) => recentKey(b).localeCompare(recentKey(a)));
+  if (recentOnly) {
+    const cut = String(new Date().getFullYear() - RECENT_YEARS);
+    list = list.filter((r) => (r.pmsDay && r.pmsDay.slice(0, 4) >= cut) || (r.stcnsDay && r.stcnsDay.slice(0, 4) >= cut));
+  }
+  list = list.slice(0, cap);
+  if (!list.length) {
+    setStatus(`${tag}최근 ${RECENT_YEARS}년 내 건 없음 (전체 ${total.toLocaleString()}건) · '최근 5년만' 끄고 다시`);
+    src.clear(); records = [];
+    return;
+  }
+
+  // 4) 주소 → 좌표 (지번주소 지오코딩)
+  setStatus(`${tag}${list.length}건 · 주소→좌표 변환 중…`);
   records = [];
   let done = 0, ok = 0;
-  await mapLimit(items, 4, async (rec) => {
-    const road = rec.addrRoad, jibun = rec.addr;
-    let coord = null;
-    if (road) coord = await geocodeAddr(road, 'road');
-    if (!coord && jibun) coord = await geocodeAddr(jibun, 'parcel');
+  await mapLimit(list, 4, async (rec) => {
+    const coord = rec.addr ? await geocodeAddr(rec.addr, 'parcel') : null;
     done++;
     if (coord) { records.push({ rec, lonlat: [coord.x, coord.y] }); ok++; }
-    setStatus(`주소 변환 중… ${done}/${items.length} (성공 ${ok})`);
+    setStatus(`${tag}주소 변환 중… ${done}/${list.length} (성공 ${ok})`);
   });
 
   rebuild();
   const lls = records.map((r) => r.lonlat);
-  if (lls.length) fitToLonLats(lls, { maxZoom: 15 });
+  if (lls.length) fitToLonLats(lls, { maxZoom: 16 });
   applyFilterStatus();
 }
 
@@ -112,7 +145,8 @@ function applyStyles() {
 
 function applyFilterStatus() {
   const shown = applyStyles();
-  setStatus(`표시 중 ${shown}건 / 좌표변환 ${records.length}건 · 마커 클릭 시 상세`);
+  const tag = areaName ? `[${areaName}] ` : '';
+  setStatus(`${tag}표시 ${shown}건 / 좌표 ${records.length}건 · 마커 클릭 시 상세`);
 }
 
 // ── 팝업 (마커 위치 고정) ──
@@ -183,28 +217,33 @@ export function initBuildingPermits() {
   const toggle = document.getElementById('bp-toggle');
   const searchBtn = document.getElementById('bp-search');
   const ongoing = document.getElementById('bp-ongoing');
-  if (!searchBtn) return;
+  const recent = document.getElementById('bp-recent');
+  const hereBtn = document.getElementById('bp-here');
+  if (!hereBtn) return;
 
   toggle?.addEventListener('change', (e) => { layer.setVisible(e.target.checked); if (!e.target.checked) hidePopup(); });
 
-  // 지도 중심의 필지를 조회해 법정동코드(PNU 앞 10자리) 자동 입력
-  document.getElementById('bp-here')?.addEventListener('click', async () => {
+  // 지도 중심 필지조회로 법정동코드(PNU 앞 10자리)·지역명 확보 후 바로 조회
+  hereBtn.addEventListener('click', async () => {
     const c = map.getView().getCenter();
     if (!c) return;
-    setStatus('지도 중심 동네 확인 중…');
+    if (toggle && !toggle.checked) { toggle.checked = true; layer.setVisible(true); }
+    setStatus('지도 중심 지역 확인 중…');
     const [lon, lat] = toLonLat(c);
     const p = await getParcel(lon, lat).catch(() => null);
-    if (!p || !p.pnu || p.pnu.length < 10) { setStatus('동네를 못 찾았어요 — 지도를 더 확대한 뒤 다시 누르세요'); return; }
-    const sgg = p.pnu.slice(0, 5), bjd = p.pnu.slice(5, 10);
-    document.getElementById('bp-sigungu').value = sgg;
-    document.getElementById('bp-bjdong').value = bjd;
-    setStatus(`법정동 ${sgg}-${bjd} (${p.jibun || ''}) 설정됨 · '조회'를 누르세요`);
-  });
-
-  searchBtn.addEventListener('click', () => {
-    if (toggle && !toggle.checked) { toggle.checked = true; layer.setVisible(true); }
+    if (!p || !p.pnu || p.pnu.length < 10) { setStatus('지역을 못 찾았어요 — 지도를 더 확대한 뒤 다시 누르세요'); return; }
+    document.getElementById('bp-sigungu').value = p.pnu.slice(0, 5);
+    document.getElementById('bp-bjdong').value = p.pnu.slice(5, 10);
+    areaName = shortRegion(p.jibun);
     runQuery();
   });
+
+  searchBtn?.addEventListener('click', () => {
+    if (toggle && !toggle.checked) { toggle.checked = true; layer.setVisible(true); }
+    areaName = '';
+    runQuery();
+  });
+  recent?.addEventListener('change', () => { recentOnly = recent.checked; });
   ongoing?.addEventListener('change', () => { ongoingOnly = ongoing.checked; applyFilterStatus(); });
 
   map.on('singleclick', (evt) => {

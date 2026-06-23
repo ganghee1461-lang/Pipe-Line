@@ -138,21 +138,24 @@
             <label class="switch-row cf-toggle">
               <input type="checkbox" id="bp-toggle" /> 🏗 건축인허가 표시
             </label>
-            <button id="bp-here" class="btn-ghost" style="width:100%">📍 지도 중심 동네로 코드 자동입력</button>
-            <div class="cf-row">
-              <input id="bp-sigungu" class="cf-year" style="width:96px" placeholder="시군구코드" value="11680" />
-              <input id="bp-bjdong" class="cf-year" style="width:96px" placeholder="법정동코드" value="10300" />
+            <button id="bp-here" class="btn-primary" style="width:100%">📍 지도 중심 지역 조회</button>
+            <div class="cf-row" style="margin-top:8px">
+              <label class="check-row" style="margin:0"><input type="checkbox" id="bp-recent" checked /> 최근 5년만</label>
+              <label class="check-row" style="margin:0"><input type="checkbox" id="bp-ongoing" /> 공사중만</label>
             </div>
-            <div class="cf-row">
-              <input id="bp-rows" type="number" class="cf-year" style="width:72px" value="100" min="1" max="300" title="조회 건수" />
-              <button id="bp-search" class="btn-primary">조회</button>
-            </div>
-            <label class="check-row"><input type="checkbox" id="bp-ongoing" /> 공사중만 (착공O·사용승인X)</label>
-            <div id="bp-status" class="hint-text">법정동 단위 조회 → 주소를 좌표로 변환해 지도에 표시합니다.</div>
+            <div id="bp-status" class="hint-text">보고 싶은 동네로 지도를 옮긴 뒤 위 버튼을 누르면, 그 지역의 건축인허가를 최신순으로 지도에 표시합니다.</div>
           </section>
           <section class="panel">
-            <div class="panel-label">사용법</div>
-            <div class="hint-text"><b>법정동코드가 필수</b>예요(시군구만으론 결과 없음). 모르면 지도를 보고싶은 동네로 옮긴 뒤 <b>📍 지도 중심 동네</b> 버튼을 누르면 코드가 자동으로 채워집니다. (예: 강남 삼성동 11680 / 10300)</div>
+            <details>
+              <summary class="panel-label" style="cursor:pointer">코드 직접 입력 (고급)</summary>
+              <div class="cf-row" style="margin-top:8px">
+                <input id="bp-sigungu" class="cf-year" style="width:96px" placeholder="시군구코드" value="11680" />
+                <input id="bp-bjdong" class="cf-year" style="width:96px" placeholder="법정동코드" value="10300" />
+                <button id="bp-search" class="btn-ghost">조회</button>
+              </div>
+              <input id="bp-rows" type="hidden" value="100" />
+              <div class="hint-text">법정동 단위. 예: 강남 삼성동 11680 / 10300</div>
+            </details>
           </section>
         </div>
 
