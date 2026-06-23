@@ -131,15 +131,19 @@ function esc(s) { return String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp
 
 function showPopup(coord3857, r) {
   const st = statusOf(r);
+  const stcns = r.stcnsDay
+    ? fmtDate(r.stcnsDay)
+    : (r.schedDay ? `${fmtDate(r.schedDay)} (예정)` : '-');
+  const area = Number(r.totArea) > 0 ? `${Number(r.totArea).toLocaleString()} ㎡` : null;
   const rows = [
-    ['용도', r.purpose || '-'],
-    ['구분', r.archGb || '-'],
+    r.purpose ? ['용도', r.purpose] : null,
+    r.archGb ? ['구분', r.archGb] : null,
     ['허가일', fmtDate(r.pmsDay)],
-    ['착공일', fmtDate(r.stcnsDay)],
+    ['착공일', stcns],
     ['사용승인', fmtDate(r.useAprDay)],
-    r.totArea ? ['연면적', `${Number(r.totArea).toLocaleString()} ㎡`] : null,
-    r.hhldCnt && r.hhldCnt !== '0' ? ['세대수', r.hhldCnt] : null,
-    ['주소', r.addrRoad || r.addr || '-'],
+    area ? ['연면적', area] : null,
+    Number(r.hhldCnt) > 0 ? ['세대수', `${r.hhldCnt}세대`] : null,
+    ['주소', r.addr || '-'],
   ].filter(Boolean);
   popup.innerHTML = `
     <div class="pp-bar" style="color:#15803d">

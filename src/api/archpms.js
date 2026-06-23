@@ -9,18 +9,19 @@ const str = (v) => (v == null ? '' : String(v).trim());
 
 function normalize(r) {
   return {
-    pk: str(r.mgmBldrgstPk) || `${str(r.sigunguCd)}-${str(r.bjdongCd)}-${str(r.bun)}-${str(r.ji)}-${str(r.bldNm)}`,
+    pk: str(r.mgmPmsrgstPk) || `${str(r.sigunguCd)}${str(r.bjdongCd)}-${str(r.bun)}-${str(r.ji)}`,
     name: str(r.bldNm),
-    addr: str(r.platPlc),       // 지번주소
-    addrRoad: str(r.newPlatPlc), // 도로명주소
+    addr: str(r.platPlc),          // 지번주소(기본개요엔 도로명 없음)
+    addrRoad: '',
     purpose: str(r.mainPurpsCdNm), // 주용도
-    archGb: str(r.archGbCdNm),   // 건축구분(신축/증축/…)
-    pmsDay: str(r.pmsDay),       // 허가일 YYYYMMDD
-    stcnsDay: str(r.stcnsDay),   // 착공일
-    useAprDay: str(r.useAprDay), // 사용승인일
-    totArea: str(r.totArea),     // 연면적
-    archArea: str(r.archArea),   // 건축면적
-    hhldCnt: str(r.hhldCnt),     // 세대수
+    archGb: str(r.archGbCdNm),     // 건축구분(신축/증축/…)
+    pmsDay: str(r.archPmsDay),     // 건축허가일 YYYYMMDD
+    stcnsDay: str(r.realStcnsDay), // 실제착공일
+    schedDay: str(r.stcnsSchedDay), // 착공예정일
+    useAprDay: str(r.useAprDay),   // 사용승인일
+    totArea: str(r.totArea),       // 연면적
+    archArea: str(r.archArea),     // 건축면적
+    hhldCnt: str(r.hhldCnt),       // 세대수
   };
 }
 
