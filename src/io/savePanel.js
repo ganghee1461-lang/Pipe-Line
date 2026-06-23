@@ -121,7 +121,7 @@ function roundRect(ctx, x, y, w, h, r) {
   ctx.arcTo(x, y, x + w, y, r);
   ctx.closePath();
 }
-function drawLegend(ctx, width, scale) {
+function drawLegend(ctx, width, height, scale) {
   const entries = legendEntries();
   if (!entries.length) return;
   const s = scale;
