@@ -138,12 +138,16 @@
             <label class="switch-row cf-toggle">
               <input type="checkbox" id="bp-toggle" /> 🏗 건축인허가 표시
             </label>
-            <button id="bp-here" class="btn-primary" style="width:100%">📍 지도 중심 지역 조회</button>
+            <div class="cf-row">
+              <input id="bp-region" class="cf-year" style="flex:1;width:auto" placeholder="지역 입력 (예: 강남구 삼성동)" />
+              <button id="bp-go" class="btn-primary">조회</button>
+            </div>
+            <button id="bp-here" class="btn-ghost" style="width:100%;margin-top:6px">📍 또는 지금 지도 중심으로</button>
             <div class="cf-row" style="margin-top:8px">
               <label class="check-row" style="margin:0"><input type="checkbox" id="bp-recent" checked /> 최근 5년만</label>
               <label class="check-row" style="margin:0"><input type="checkbox" id="bp-ongoing" /> 공사중만</label>
             </div>
-            <div id="bp-status" class="hint-text">보고 싶은 동네로 지도를 옮긴 뒤 위 버튼을 누르면, 그 지역의 건축인허가를 최신순으로 지도에 표시합니다.</div>
+            <div id="bp-status" class="hint-text">지역명만 입력하고 조회하면, 코드는 자동 변환해 그 동네 건축인허가를 최신순으로 보여줍니다. (동까지 넣으면 더 정확)</div>
           </section>
           <section class="panel">
             <details>

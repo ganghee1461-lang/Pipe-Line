@@ -65,6 +65,31 @@ async function geocodeAddr(addr, type) {
 
 const recentKey = (r) => (r.pmsDay || '') + (r.stcnsDay || '');
 
+// 좌표(lon,lat) → 필지조회로 법정동코드·지역명 확보 후 조회
+async function resolveAndQuery(lon, lat, nameHint) {
+  const toggle = document.getElementById('bp-toggle');
+  if (toggle && !toggle.checked) { toggle.checked = true; layer.setVisible(true); }
+  const p = await getParcel(lon, lat).catch(() => null);
+  if (!p || !p.pnu || p.pnu.length < 10) { setStatus('지역을 못 찾았어요 — 동까지 넣거나 지도를 확대해 보세요'); return; }
+  document.getElementById('bp-sigungu').value = p.pnu.slice(0, 5);
+  document.getElementById('bp-bjdong').value = p.pnu.slice(5, 10);
+  areaName = shortRegion(p.jibun || nameHint);
+  await runQuery();
+}
+
+// 입력한 지역명 → 지오코딩 → resolveAndQuery
+async function searchByName(text) {
+  if (!text) { setStatus('지역을 입력하세요 (예: 강남구 삼성동)'); return; }
+  setStatus(`'${text}' 위치 검색 중…`);
+  let g = await geocode(text, 'parcel').catch(() => null);
+  if (!g || !Number.isFinite(g.x)) g = await geocode(text, 'road').catch(() => null);
+  if (!g || !Number.isFinite(g.x) || !Number.isFinite(g.y)) {
+    setStatus(`'${text}' 를 못 찾았어요 — 시/구/동을 더 정확히 입력하세요`);
+    return;
+  }
+  await resolveAndQuery(g.x, g.y, g.address || text);
+}
+
 async function runQuery() {
   const sigunguCd = document.getElementById('bp-sigungu')?.value.trim();
   const bjdongCd = document.getElementById('bp-bjdong')?.value.trim() || '';
@@ -223,19 +248,19 @@ export function initBuildingPermits() {
 
   toggle?.addEventListener('change', (e) => { layer.setVisible(e.target.checked); if (!e.target.checked) hidePopup(); });
 
-  // 지도 중심 필지조회로 법정동코드(PNU 앞 10자리)·지역명 확보 후 바로 조회
-  hereBtn.addEventListener('click', async () => {
+  // 지역명 입력 → 조회
+  const regionInput = document.getElementById('bp-region');
+  const goBtn = document.getElementById('bp-go');
+  goBtn?.addEventListener('click', () => searchByName(regionInput?.value.trim()));
+  regionInput?.addEventListener('keydown', (e) => { if (e.key === 'Enter') searchByName(regionInput.value.trim()); });
+
+  // 지도 중심으로 조회
+  hereBtn.addEventListener('click', () => {
     const c = map.getView().getCenter();
     if (!c) return;
-    if (toggle && !toggle.checked) { toggle.checked = true; layer.setVisible(true); }
     setStatus('지도 중심 지역 확인 중…');
     const [lon, lat] = toLonLat(c);
-    const p = await getParcel(lon, lat).catch(() => null);
-    if (!p || !p.pnu || p.pnu.length < 10) { setStatus('지역을 못 찾았어요 — 지도를 더 확대한 뒤 다시 누르세요'); return; }
-    document.getElementById('bp-sigungu').value = p.pnu.slice(0, 5);
-    document.getElementById('bp-bjdong').value = p.pnu.slice(5, 10);
-    areaName = shortRegion(p.jibun);
-    runQuery();
+    resolveAndQuery(lon, lat, '');
   });
 
   searchBtn?.addEventListener('click', () => {
