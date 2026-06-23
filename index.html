@@ -34,6 +34,7 @@
       <nav id="tabs">
         <button data-tab="demands" class="active">수요처</button>
         <button data-tab="pipes">배관</button>
+        <button data-tab="construction">공사현황</button>
         <button data-tab="layers">디자인</button>
         <button data-tab="io">저장</button>
       </nav>
@@ -91,6 +92,45 @@
           </section>
         </div>
 
+        <!-- 공사현황 탭 (생활안전지도 건설공사현황) -->
+        <div class="tab-pane hidden" data-tab="construction">
+          <section class="panel">
+            <label class="switch-row cf-toggle">
+              <input type="checkbox" id="cnstr-toggle" /> 🚧 지도에 공사현황 표시
+            </label>
+            <div id="cnstr-status" class="hint-text">켜면 전국 건설공사 데이터를 불러옵니다 (약 5만 건, 최초 1회 로딩).</div>
+          </section>
+
+          <section class="panel" id="cnstr-filter-panel">
+            <div class="panel-label di-list-head">
+              <span>필터</span>
+              <button id="cnstr-reset" class="cf-reset" title="필터 초기화">초기화</button>
+            </div>
+
+            <div class="cf-field">
+              <span class="cf-lab">구분</span>
+              <div class="cf-kinds" id="cnstr-kinds"><span class="cf-empty">데이터 로딩 후 표시</span></div>
+            </div>
+
+            <div class="cf-field">
+              <span class="cf-lab">준공</span>
+              <label class="check-row"><input type="checkbox" id="cnstr-ongoing" /> 진행중만 (준공 예정)</label>
+              <div class="cf-row">
+                <input type="number" id="cnstr-year-min" class="cf-year" placeholder="시작" min="1900" max="2100" />
+                <span class="cf-tilde">~</span>
+                <input type="number" id="cnstr-year-max" class="cf-year" placeholder="끝" min="1900" max="2100" />
+                <span class="cf-unit">준공연도</span>
+              </div>
+            </div>
+
+            <div class="cf-field">
+              <span class="cf-lab">지역</span>
+              <select id="cnstr-sido" class="cf-sel"><option value="">시도 전체</option></select>
+              <select id="cnstr-sigungu" class="cf-sel"><option value="">시군구 전체</option></select>
+            </div>
+          </section>
+        </div>
+
         <!-- 디자인 탭 (마커 스타일 + 레이어) -->
         <div class="tab-pane hidden" data-tab="layers">
           <section class="panel">
@@ -137,16 +177,6 @@
               </label>
               <input type="range" id="road-opacity" min="10" max="100" value="80" />
             </div>
-          </section>
-
-          <section class="panel">
-            <div class="panel-label">건설공사현황 (생활안전지도)</div>
-            <div class="layer-row">
-              <label class="switch-row">
-                <input type="checkbox" id="cnstr-toggle" /> 🚧 건설공사현황 표시
-              </label>
-            </div>
-            <div id="cnstr-status" class="hint-text">전국 건설공사 위치·준공예정일. 켜면 데이터를 불러옵니다(5만여 건이라 잠시 걸릴 수 있어요).</div>
           </section>
         </div>
 
