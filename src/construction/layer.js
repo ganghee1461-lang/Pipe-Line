@@ -47,6 +47,11 @@ const src = new VectorSource();
 const layer = new VectorLayer({ source: src, zIndex: 6, visible: false });
 map.addLayer(layer);
 
+// 터치(모바일)는 손가락이 두꺼워 작은 마커를 정확히 못 맞히므로 히트 영역을 넉넉히.
+const COARSE = typeof window !== 'undefined' &&
+  (window.matchMedia?.('(pointer: coarse)').matches || 'ontouchstart' in window || (navigator.maxTouchPoints || 0) > 0);
+const HIT_TOL = COARSE ? 18 : 6;
+
 // ── 주소 앞부분으로 시도/시군구 분류 ──
 // 애매한 꼬리("…일원")는 안 쓰고, 표준화된 앞부분(시도·시군구)만 사용.
 const SIDO = new Set([
@@ -224,14 +229,28 @@ function showPopup(pixel, c) {
       ${rows.map(([k, v]) => `<div class="pp-row"><span>${k}</span><b>${esc(v)}</b></div>`).join('')}
     </div>`;
   popup.classList.remove('hidden');
-  popup.style.left = `${pixel[0] + 14}px`;
-  popup.style.top = `${pixel[1]}px`;
+  placePopup(pixel);
   popup.querySelector('.pp-close').onclick = hidePopup;
+}
+
+// 팝업이 지도 화면 밖으로 나가지 않게 좌표 보정 (모바일 좁은 화면 대비)
+function placePopup(pixel) {
+  const size = map.getSize() || [window.innerWidth, window.innerHeight];
+  const pw = popup.offsetWidth || 280;
+  const ph = popup.offsetHeight || 220;
+  let left = pixel[0] + 14;
+  let top = pixel[1];
+  if (left + pw > size[0] - 6) left = pixel[0] - pw - 14;  // 오른쪽 넘치면 왼쪽으로
+  if (left < 6) left = 6;
+  if (top + ph > size[1] - 6) top = Math.max(6, size[1] - ph - 6);
+  if (top < 6) top = 6;
+  popup.style.left = `${left}px`;
+  popup.style.top = `${top}px`;
 }
 
 function featureAt(pixel) {
   let hit = null;
-  map.forEachFeatureAtPixel(pixel, (f, l) => { if (l === layer) { hit = f; return true; } }, { hitTolerance: 5 });
+  map.forEachFeatureAtPixel(pixel, (f, l) => { if (l === layer) { hit = f; return true; } }, { hitTolerance: HIT_TOL });
   return hit;
 }
 
