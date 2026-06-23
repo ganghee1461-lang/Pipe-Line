@@ -138,20 +138,21 @@
             <label class="switch-row cf-toggle">
               <input type="checkbox" id="bp-toggle" /> 🏗 건축인허가 표시
             </label>
+            <button id="bp-here" class="btn-ghost" style="width:100%">📍 지도 중심 동네로 코드 자동입력</button>
             <div class="cf-row">
               <input id="bp-sigungu" class="cf-year" style="width:96px" placeholder="시군구코드" value="11680" />
-              <input id="bp-bjdong" class="cf-year" style="width:110px" placeholder="법정동코드(선택)" />
+              <input id="bp-bjdong" class="cf-year" style="width:96px" placeholder="법정동코드" value="10300" />
             </div>
             <div class="cf-row">
               <input id="bp-rows" type="number" class="cf-year" style="width:72px" value="100" min="1" max="300" title="조회 건수" />
               <button id="bp-search" class="btn-primary">조회</button>
             </div>
             <label class="check-row"><input type="checkbox" id="bp-ongoing" /> 공사중만 (착공O·사용승인X)</label>
-            <div id="bp-status" class="hint-text">시군구코드 넣고 조회 → 주소를 좌표로 변환해 지도에 표시합니다.</div>
+            <div id="bp-status" class="hint-text">법정동 단위 조회 → 주소를 좌표로 변환해 지도에 표시합니다.</div>
           </section>
           <section class="panel">
-            <div class="panel-label">시군구코드 예시</div>
-            <div class="hint-text">서울 강남구 <b>11680</b> · 종로구 <b>11110</b> · 송파구 <b>11710</b> / 부산 해운대구 <b>26350</b> / 성남 분당구 <b>41135</b>. 법정동코드는 비우면 시군구 전체(건수 많으면 조회수↓).</div>
+            <div class="panel-label">사용법</div>
+            <div class="hint-text"><b>법정동코드가 필수</b>예요(시군구만으론 결과 없음). 모르면 지도를 보고싶은 동네로 옮긴 뒤 <b>📍 지도 중심 동네</b> 버튼을 누르면 코드가 자동으로 채워집니다. (예: 강남 삼성동 11680 / 10300)</div>
           </section>
         </div>
 

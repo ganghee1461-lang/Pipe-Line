@@ -5,11 +5,11 @@ import VectorLayer from 'ol/layer/Vector.js';
 import VectorSource from 'ol/source/Vector.js';
 import Feature from 'ol/Feature.js';
 import Point from 'ol/geom/Point.js';
-import { fromLonLat } from 'ol/proj.js';
+import { fromLonLat, toLonLat } from 'ol/proj.js';
 import { Style, RegularShape, Fill, Stroke } from 'ol/style.js';
 import { map, fitToLonLats } from '../map/map.js';
 import { fetchBuildingPermits } from '../api/archpms.js';
-import { geocode } from '../api/vworld.js';
+import { geocode, getParcel } from '../api/vworld.js';
 
 const GREEN = 'rgba(22,163,74,0.92)';
 const baseStyle = new Style({
@@ -186,6 +186,21 @@ export function initBuildingPermits() {
   if (!searchBtn) return;
 
   toggle?.addEventListener('change', (e) => { layer.setVisible(e.target.checked); if (!e.target.checked) hidePopup(); });
+
+  // 지도 중심의 필지를 조회해 법정동코드(PNU 앞 10자리) 자동 입력
+  document.getElementById('bp-here')?.addEventListener('click', async () => {
+    const c = map.getView().getCenter();
+    if (!c) return;
+    setStatus('지도 중심 동네 확인 중…');
+    const [lon, lat] = toLonLat(c);
+    const p = await getParcel(lon, lat).catch(() => null);
+    if (!p || !p.pnu || p.pnu.length < 10) { setStatus('동네를 못 찾았어요 — 지도를 더 확대한 뒤 다시 누르세요'); return; }
+    const sgg = p.pnu.slice(0, 5), bjd = p.pnu.slice(5, 10);
+    document.getElementById('bp-sigungu').value = sgg;
+    document.getElementById('bp-bjdong').value = bjd;
+    setStatus(`법정동 ${sgg}-${bjd} (${p.jibun || ''}) 설정됨 · '조회'를 누르세요`);
+  });
+
   searchBtn.addEventListener('click', () => {
     if (toggle && !toggle.checked) { toggle.checked = true; layer.setVisible(true); }
     runQuery();
