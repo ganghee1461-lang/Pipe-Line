@@ -10,8 +10,6 @@ import { map } from './map.js';
 import { possLayer } from './wms.js';
 import { pipeSource } from '../pipes/layer.js';
 import { isMarkerAt } from '../demands/markers.js';
-import { isConstructionAt } from '../construction/layer.js';
-import { isPermitAt } from '../buildings/layer.js';
 import { VWORLD } from '../config/vworld.js';
 import { getState, addDemand } from '../state/store.js';
 import { getParcel, getPossession, reverseGeocode, isPublicLand } from '../api/vworld.js';
@@ -41,8 +39,6 @@ export function initParcelClick() {
   map.on('singleclick', async (evt) => {
     if (getState().ui.tool !== 'select') return;     // 작도/꼭짓점 편집 중엔 조회 안 함
     if (isMarkerAt(evt.pixel)) return;               // 마커 클릭은 마커 팝업이 처리
-    if (isConstructionAt(evt.pixel)) return;         // 공사현황 마커는 공사 팝업이 처리
-    if (isPermitAt(evt.pixel)) return;               // 건축인허가 마커는 인허가 팝업이 처리
     let onPipe = false;
     map.forEachFeatureAtPixel(
       evt.pixel,

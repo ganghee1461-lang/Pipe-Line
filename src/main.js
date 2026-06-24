@@ -20,8 +20,6 @@ import { initSectionLabels } from './pipes/sectionLabels.js';
 import { initSavePanel } from './io/savePanel.js';
 import { initTabs } from './ui/tabs.js';
 import { initMarkerStyle } from './demands/markerStyle.js';
-import { initConstruction } from './construction/layer.js';
-import { initBuildingPermits } from './buildings/layer.js';
 
 // 기능 모듈 초기화
 initTabs();
@@ -31,8 +29,6 @@ initSearch();
 initList();
 initLayerPanel();
 initParcelClick();
-initConstruction();
-initBuildingPermits();
 
 // 배관 작도/편집 (2단계)
 initPipeLayer();

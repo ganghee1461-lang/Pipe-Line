@@ -11,18 +11,6 @@ export default defineConfig({
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/vw/, ''),
       },
-      // 생활안전지도 건설공사현황 API (운영은 functions/safemap/ 가 같은 역할)
-      '/safemap': {
-        target: 'https://safemap.go.kr',
-        changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/safemap/, ''),
-      },
-      // 공공데이터포털 건축HUB 등 (운영은 functions/datago/ 가 같은 역할)
-      '/datago': {
-        target: 'https://apis.data.go.kr',
-        changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/datago/, ''),
-      },
     },
   },
   build: {
