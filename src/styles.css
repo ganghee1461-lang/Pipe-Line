@@ -339,6 +339,8 @@ button { font-family: inherit; cursor: pointer; border: none; border-radius: 6px
 
 /* ── 공사현황 필터 ── */
 .cf-toggle { font-size: 13px; font-weight: 600; }
+.layer-settings { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border-soft); display: flex; flex-direction: column; gap: 4px; }
+.layer-settings.hidden { display: none; }
 .cf-reset { background: var(--surface-2); border: 1px solid var(--border-soft); border-radius: 5px; padding: 2px 8px; font-size: 11px; color: var(--text-2); cursor: pointer; }
 .cf-reset:hover { color: var(--text); }
 .cf-field { margin-top: 10px; }

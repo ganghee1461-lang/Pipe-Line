@@ -22,9 +22,9 @@ function baseStyleFor(kind) {
   if (!baseCache.has(kind)) {
     baseCache.set(kind, new Style({
       image: new RegularShape({
-        points: 4, radius: 6, angle: Math.PI / 4,
+        points: 4, radius: 9, angle: Math.PI / 4,
         fill: new Fill({ color: colorFor(kind) }),
-        stroke: new Stroke({ color: '#ffffff', width: 1.1 }),
+        stroke: new Stroke({ color: '#ffffff', width: 1.6 }),
       }),
     }));
   }
@@ -34,9 +34,9 @@ function selStyleFor(kind) {
   if (!selCache.has(kind)) {
     selCache.set(kind, new Style({
       image: new RegularShape({
-        points: 4, radius: 9, angle: Math.PI / 4,
+        points: 4, radius: 13, angle: Math.PI / 4,
         fill: new Fill({ color: colorFor(kind) }),
-        stroke: new Stroke({ color: '#1d4ed8', width: 2.5 }),
+        stroke: new Stroke({ color: '#1d4ed8', width: 3 }),
       }),
     }));
   }
@@ -300,6 +300,7 @@ export function initConstruction() {
   toggle.addEventListener('change', async (e) => {
     const on = e.target.checked;
     layer.setVisible(on);
+    document.getElementById('cnstr-settings')?.classList.toggle('hidden', !on); // ON일 때만 설정 표시
     if (on) await ensureLoaded();
     else hidePopup();
   });

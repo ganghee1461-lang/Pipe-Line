@@ -13,10 +13,10 @@ import { geocode, getParcel } from '../api/vworld.js';
 
 const GREEN = 'rgba(22,163,74,0.92)';
 const baseStyle = new Style({
-  image: new RegularShape({ points: 4, radius: 6, angle: 0, fill: new Fill({ color: GREEN }), stroke: new Stroke({ color: '#fff', width: 1.1 }) }),
+  image: new RegularShape({ points: 4, radius: 9, angle: 0, fill: new Fill({ color: GREEN }), stroke: new Stroke({ color: '#fff', width: 1.6 }) }),
 });
 const selStyle = new Style({
-  image: new RegularShape({ points: 4, radius: 9, angle: 0, fill: new Fill({ color: GREEN }), stroke: new Stroke({ color: '#1d4ed8', width: 2.5 }) }),
+  image: new RegularShape({ points: 4, radius: 13, angle: 0, fill: new Fill({ color: GREEN }), stroke: new Stroke({ color: '#1d4ed8', width: 3 }) }),
 });
 const HIDDEN = new Style();
 
@@ -246,7 +246,12 @@ export function initBuildingPermits() {
   const hereBtn = document.getElementById('bp-here');
   if (!hereBtn) return;
 
-  toggle?.addEventListener('change', (e) => { layer.setVisible(e.target.checked); if (!e.target.checked) hidePopup(); });
+  toggle?.addEventListener('change', (e) => {
+    const on = e.target.checked;
+    layer.setVisible(on);
+    document.getElementById('bp-settings')?.classList.toggle('hidden', !on); // ON일 때만 설정 표시
+    if (!on) hidePopup();
+  });
 
   // 지역명 입력 → 조회
   const regionInput = document.getElementById('bp-region');

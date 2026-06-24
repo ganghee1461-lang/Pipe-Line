@@ -34,8 +34,6 @@
       <nav id="tabs">
         <button data-tab="demands" class="active">수요처</button>
         <button data-tab="pipes">배관</button>
-        <button data-tab="construction">공사현황</button>
-        <button data-tab="permits">건축인허가</button>
         <button data-tab="layers">디자인</button>
         <button data-tab="io">저장</button>
       </nav>
@@ -93,76 +91,6 @@
           </section>
         </div>
 
-        <!-- 공사현황 탭 (생활안전지도 건설공사현황) -->
-        <div class="tab-pane hidden" data-tab="construction">
-          <section class="panel">
-            <label class="switch-row cf-toggle">
-              <input type="checkbox" id="cnstr-toggle" /> 🚧 지도에 공사현황 표시
-            </label>
-            <div id="cnstr-status" class="hint-text">켜면 전국 건설공사 데이터를 불러옵니다 (약 5만 건, 최초 1회 로딩).</div>
-          </section>
-
-          <section class="panel" id="cnstr-filter-panel">
-            <div class="panel-label di-list-head">
-              <span>필터</span>
-              <button id="cnstr-reset" class="cf-reset" title="필터 초기화">초기화</button>
-            </div>
-
-            <div class="cf-field">
-              <span class="cf-lab">구분</span>
-              <div class="cf-kinds" id="cnstr-kinds"><span class="cf-empty">데이터 로딩 후 표시</span></div>
-            </div>
-
-            <div class="cf-field">
-              <span class="cf-lab">준공</span>
-              <label class="check-row"><input type="checkbox" id="cnstr-ongoing" /> 진행중만 (준공 예정)</label>
-              <div class="cf-row">
-                <input type="number" id="cnstr-year-min" class="cf-year" placeholder="시작" min="1900" max="2100" />
-                <span class="cf-tilde">~</span>
-                <input type="number" id="cnstr-year-max" class="cf-year" placeholder="끝" min="1900" max="2100" />
-                <span class="cf-unit">준공연도</span>
-              </div>
-            </div>
-
-            <div class="cf-field">
-              <span class="cf-lab">지역</span>
-              <select id="cnstr-sido" class="cf-sel"><option value="">시도 전체</option></select>
-              <select id="cnstr-sigungu" class="cf-sel"><option value="">시군구 전체</option></select>
-            </div>
-          </section>
-        </div>
-
-        <!-- 건축인허가 탭 (건축HUB, 세움터) -->
-        <div class="tab-pane hidden" data-tab="permits">
-          <section class="panel">
-            <label class="switch-row cf-toggle">
-              <input type="checkbox" id="bp-toggle" /> 🏗 건축인허가 표시
-            </label>
-            <div class="cf-row">
-              <input id="bp-region" class="cf-year" style="flex:1;width:auto" placeholder="지역 입력 (예: 강남구 삼성동)" />
-              <button id="bp-go" class="btn-primary">조회</button>
-            </div>
-            <button id="bp-here" class="btn-ghost" style="width:100%;margin-top:6px">📍 또는 지금 지도 중심으로</button>
-            <div class="cf-row" style="margin-top:8px">
-              <label class="check-row" style="margin:0"><input type="checkbox" id="bp-recent" checked /> 최근 5년만</label>
-              <label class="check-row" style="margin:0"><input type="checkbox" id="bp-ongoing" /> 공사중만</label>
-            </div>
-            <div id="bp-status" class="hint-text">지역명만 입력하고 조회하면, 코드는 자동 변환해 그 동네 건축인허가를 최신순으로 보여줍니다. (동까지 넣으면 더 정확)</div>
-          </section>
-          <section class="panel">
-            <details>
-              <summary class="panel-label" style="cursor:pointer">코드 직접 입력 (고급)</summary>
-              <div class="cf-row" style="margin-top:8px">
-                <input id="bp-sigungu" class="cf-year" style="width:96px" placeholder="시군구코드" value="11680" />
-                <input id="bp-bjdong" class="cf-year" style="width:96px" placeholder="법정동코드" value="10300" />
-                <button id="bp-search" class="btn-ghost">조회</button>
-              </div>
-              <input id="bp-rows" type="hidden" value="100" />
-              <div class="hint-text">법정동 단위. 예: 강남 삼성동 11680 / 10300</div>
-            </details>
-          </section>
-        </div>
-
         <!-- 디자인 탭 (마커 스타일 + 레이어) -->
         <div class="tab-pane hidden" data-tab="layers">
           <section class="panel">
@@ -208,6 +136,64 @@
                 <input type="checkbox" id="road-toggle" /> 도시계획도로
               </label>
               <input type="range" id="road-opacity" min="10" max="100" value="80" />
+            </div>
+          </section>
+
+          <!-- 공사현황 레이어 (생활안전지도) -->
+          <section class="panel">
+            <label class="switch-row cf-toggle">
+              <input type="checkbox" id="cnstr-toggle" /> 🚧 공사현황 (생활안전지도)
+            </label>
+            <div id="cnstr-settings" class="layer-settings hidden">
+              <div id="cnstr-status" class="hint-text">켜면 전국 건설공사 데이터를 불러옵니다 (약 5만 건, 최초 1회).</div>
+              <div class="cf-field">
+                <span class="cf-lab">구분</span>
+                <div class="cf-kinds" id="cnstr-kinds"><span class="cf-empty">데이터 로딩 후 표시</span></div>
+              </div>
+              <div class="cf-field">
+                <span class="cf-lab">준공</span>
+                <label class="check-row"><input type="checkbox" id="cnstr-ongoing" /> 진행중만 (준공 예정)</label>
+                <div class="cf-row">
+                  <input type="number" id="cnstr-year-min" class="cf-year" placeholder="시작" min="1900" max="2100" />
+                  <span class="cf-tilde">~</span>
+                  <input type="number" id="cnstr-year-max" class="cf-year" placeholder="끝" min="1900" max="2100" />
+                  <span class="cf-unit">준공연도</span>
+                </div>
+              </div>
+              <div class="cf-field">
+                <span class="cf-lab">지역</span>
+                <select id="cnstr-sido" class="cf-sel"><option value="">시도 전체</option></select>
+                <select id="cnstr-sigungu" class="cf-sel"><option value="">시군구 전체</option></select>
+              </div>
+              <button id="cnstr-reset" class="btn-ghost" style="width:100%">필터 초기화</button>
+            </div>
+          </section>
+
+          <!-- 건축인허가 레이어 (건축HUB) -->
+          <section class="panel">
+            <label class="switch-row cf-toggle">
+              <input type="checkbox" id="bp-toggle" /> 🏗 건축인허가 (건축HUB)
+            </label>
+            <div id="bp-settings" class="layer-settings hidden">
+              <div class="cf-row">
+                <input id="bp-region" class="cf-year" style="flex:1;width:auto" placeholder="지역 입력 (예: 강남구 삼성동)" />
+                <button id="bp-go" class="btn-primary">조회</button>
+              </div>
+              <button id="bp-here" class="btn-ghost" style="width:100%;margin-top:6px">📍 또는 지금 지도 중심으로</button>
+              <div class="cf-row" style="margin-top:8px">
+                <label class="check-row" style="margin:0"><input type="checkbox" id="bp-recent" checked /> 최근 5년만</label>
+                <label class="check-row" style="margin:0"><input type="checkbox" id="bp-ongoing" /> 공사중만</label>
+              </div>
+              <div id="bp-status" class="hint-text">지역명 입력 후 조회하면 코드 자동변환해 최신순으로 표시.</div>
+              <details>
+                <summary class="panel-label" style="cursor:pointer;font-size:10px">코드 직접 입력 (고급)</summary>
+                <div class="cf-row" style="margin-top:8px">
+                  <input id="bp-sigungu" class="cf-year" style="width:96px" placeholder="시군구코드" value="11680" />
+                  <input id="bp-bjdong" class="cf-year" style="width:96px" placeholder="법정동코드" value="10300" />
+                  <button id="bp-search" class="btn-ghost">조회</button>
+                </div>
+                <input id="bp-rows" type="hidden" value="100" />
+              </details>
             </div>
           </section>
         </div>
