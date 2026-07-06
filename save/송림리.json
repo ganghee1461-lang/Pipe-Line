@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "savedAt": "2026-07-06T01:48:32.469Z",
+  "savedAt": "2026-07-06T03:58:51.009Z",
   "demands": [
     {
       "id": 1,
@@ -1620,8 +1620,8 @@
           "status": "planned",
           "review": "target",
           "pavement": "asphalt",
-          "section": 1,
-          "markerNo": ""
+          "section": 2,
+          "markerNo": 21
         }
       ]
     },
@@ -1646,8 +1646,8 @@
           "status": "planned",
           "review": "target",
           "pavement": "asphalt",
-          "section": 1,
-          "markerNo": ""
+          "section": 2,
+          "markerNo": 6
         }
       ]
     }
@@ -1694,12 +1694,12 @@
     "borderColor": "#b91c1c",
     "shape": "circle",
     "border": "solid",
-    "showNum": false,
+    "showNum": true,
     "radius": 10
   },
   "view": {
-    "lon": 127.42822144267194,
-    "lat": 36.93142289443668,
-    "zoom": 18.279668044120907
+    "lon": 127.4269447223704,
+    "lat": 36.93088514120345,
+    "zoom": 19.35385802882497
   }
 }
