@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "savedAt": "2026-07-08T07:34:49.225Z",
+  "savedAt": "2026-07-08T07:39:40.338Z",
   "demands": [
     {
       "id": 1,
@@ -1688,6 +1688,10 @@
       "id": 10,
       "coords": [
         [
+          128.29842071756315,
+          37.03379812871019
+        ],
+        [
           128.29852979284465,
           37.033684708369634
         ],
@@ -1701,6 +1705,17 @@
         ]
       ],
       "segs": [
+        {
+          "material": "PE",
+          "diameter": "63A",
+          "use": "supply",
+          "pressure": "저압",
+          "status": "planned",
+          "review": "target",
+          "pavement": "asphalt",
+          "section": 15,
+          "markerNo": ""
+        },
         {
           "material": "PE",
           "diameter": "63A",
@@ -2087,11 +2102,6 @@
       "section": 1
     },
     {
-      "pipeId": 10,
-      "idx": 2,
-      "section": 15
-    },
-    {
       "pipeId": 12,
       "idx": 2,
       "section": 12
@@ -2125,6 +2135,16 @@
       "pipeId": 31,
       "idx": 2,
       "section": 6
+    },
+    {
+      "pipeId": 10,
+      "idx": 1,
+      "section": 14
+    },
+    {
+      "pipeId": 10,
+      "idx": 0,
+      "section": 15
     }
   ],
   "markerStyle": {
@@ -2136,8 +2156,8 @@
     "radius": 7
   },
   "view": {
-    "lon": 128.3004303242662,
-    "lat": 37.03331262194075,
-    "zoom": 19.60266964838876
+    "lon": 128.29890743169454,
+    "lat": 37.03383109585839,
+    "zoom": 19.087553509967613
   }
 }
