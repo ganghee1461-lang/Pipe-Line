@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "savedAt": "2026-07-06T06:43:58.444Z",
+  "savedAt": "2026-07-08T00:50:07.545Z",
   "demands": [
     {
       "id": 1,
@@ -660,6 +660,10 @@
           36.930621163595404
         ],
         [
+          127.42650047637848,
+          36.93057471391239
+        ],
+        [
           127.42649327571486,
           36.93054312627288
         ]
@@ -795,6 +799,17 @@
           "review": "target",
           "pavement": "asphalt",
           "section": 2,
+          "markerNo": ""
+        },
+        {
+          "material": "PE",
+          "diameter": "90A",
+          "use": "supply",
+          "pressure": "저압",
+          "status": "planned",
+          "review": "target",
+          "pavement": "asphalt",
+          "section": 1,
           "markerNo": ""
         },
         {
@@ -1641,56 +1656,15 @@
       ]
     },
     {
-      "id": 41,
+      "id": 43,
       "coords": [
         [
-          127.4265110649732,
-          36.930621163595404
+          127.42650047637848,
+          36.93057471391239
         ],
         [
-          127.42630636933517,
-          36.93064079308776
-        ],
-        [
-          127.42629076893422,
-          36.93064228910356
-        ]
-      ],
-      "segs": [
-        {
-          "material": "PE",
-          "diameter": "63A",
-          "use": "supply",
-          "pressure": "저압",
-          "status": "planned",
-          "review": "target",
-          "pavement": "asphalt",
-          "section": 1,
-          "markerNo": ""
-        },
-        {
-          "material": "PE",
-          "diameter": "63A",
-          "use": "supply",
-          "pressure": "저압",
-          "status": "planned",
-          "review": "target",
-          "pavement": "asphalt",
-          "section": 1,
-          "markerNo": ""
-        }
-      ]
-    },
-    {
-      "id": 42,
-      "coords": [
-        [
-          127.42630636933517,
-          36.93064079308776
-        ],
-        [
-          127.4263014977703,
-          36.930613880305785
+          127.42637365749924,
+          36.930595156829924
         ]
       ],
       "segs": [
