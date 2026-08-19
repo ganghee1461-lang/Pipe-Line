@@ -17,6 +17,12 @@ export default defineConfig({
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/datago/, ''),
       },
+      // OSM Overpass (운영은 functions/osm/ 가 같은 역할)
+      '/osm': {
+        target: 'https://overpass-api.de',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/osm/, ''),
+      },
     },
   },
   build: {

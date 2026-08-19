@@ -60,7 +60,12 @@ export async function runAutoRoute(source = 'osm') {
     setStatus(`도로 조회 실패: ${err.message}`);
     return;
   }
-  if (!lines.length) { setStatus('이 영역에서 도로를 찾지 못했습니다. 다른 출처로 시도해 보세요.'); return; }
+  if (!lines.length) {
+    setStatus(source === 'vworld'
+      ? '이 영역에서 도로를 찾지 못했습니다 (VWorld 도로중심선 미제공 지역일 수 있음) — OSM으로 시도해 보세요.'
+      : '이 영역에서 도로를 찾지 못했습니다. 지도를 도로가 있는 곳으로 옮겨 보세요.');
+    return;
+  }
 
   setStatus(`도로 ${lines.length}개 · 경로 계산 중…`);
   await new Promise((r) => setTimeout(r)); // 상태 표시 갱신
