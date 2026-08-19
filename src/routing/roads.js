@@ -13,15 +13,34 @@
 const BASE = (import.meta.env.VITE_ROADS_URL || '/roads').replace(/\/+$/, '');
 export const ROADS_READY = !!BASE;
 
+// 폴백 순서: 같은 출처 프록시 → R2 직접. 어느 쪽이 왜 실패했는지 그대로 노출한다.
+const R2_DIRECT = 'https://pub-e3ded0c9aba24c7d8513e0b7a266b91a.r2.dev';
+const SOURCES = [...new Set([BASE, R2_DIRECT])];
+let activeBase = null;      // 성공한 출처 (이후 파일도 여기서)
 let manifestPromise = null;
 const fileCache = new Map(); // code → lines
 
+async function tryFetchJson(url) {
+  const r = await fetch(url);
+  if (!r.ok) throw new Error(`HTTP ${r.status}`);
+  return r.json();
+}
+
 function loadManifest() {
   if (!manifestPromise) {
-    manifestPromise = fetch(`${BASE}/manifest.json`)
-      .then((r) => { if (!r.ok) throw new Error(`manifest HTTP ${r.status}`); return r.json(); })
-      .then((j) => j.entries || [])
-      .catch((e) => { manifestPromise = null; throw new Error(`도로 목록을 못 받았습니다: ${e.message}`); });
+    manifestPromise = (async () => {
+      const errs = [];
+      for (const base of SOURCES) {
+        try {
+          const j = await tryFetchJson(`${base}/manifest.json`);
+          activeBase = base;
+          return j.entries || [];
+        } catch (e) {
+          errs.push(`${base} → ${e.message}`);
+        }
+      }
+      throw new Error(`도로 목록 실패 [v2] ${errs.join(' / ')}`);
+    })().catch((e) => { manifestPromise = null; throw e; });
   }
   return manifestPromise;
 }
@@ -41,18 +60,14 @@ function linesFromGeoJSON(gj) {
 
 async function loadFile(code) {
   if (fileCache.has(code)) return fileCache.get(code);
-  const r = await fetch(`${BASE}/${code}.json`);
-  if (!r.ok) throw new Error(`${code} HTTP ${r.status}`);
-  const lines = linesFromGeoJSON(await r.json());
+  const gj = await tryFetchJson(`${activeBase || BASE}/${code}.json`);
+  const lines = linesFromGeoJSON(gj);
   fileCache.set(code, lines);
   return lines;
 }
 
 // bbox와 겹치는 시군구 파일만 받아 도로선을 모아 반환
 export async function fetchRoads(bbox, onProgress) {
-  if (!ROADS_READY) {
-    throw new Error('도로 데이터 주소가 설정되지 않았습니다 (VITE_ROADS_URL).');
-  }
   const entries = await loadManifest();
   const need = entries.filter((e) => overlaps(bbox, e.bbox));
   if (!need.length) return [];
