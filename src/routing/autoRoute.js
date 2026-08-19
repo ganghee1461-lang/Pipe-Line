@@ -13,7 +13,52 @@ const SUPPLY_DIA = '110A';
 const INLET_DIA = '63A';
 const MARGIN = 300; // 마커/기존관 bbox 여유(m)
 
+const SOURCE_STEP = 8;    // 기존관 위 분기 가능 지점 간격(m)
+const MAX_SOURCE_PTS = 4000;
+
 const setStatus = (t) => { const el = document.getElementById('ar-status'); if (el) el.textContent = t; };
+
+// ── 진행 오버레이 (계산 중 조작 차단) ──
+function openOverlay(title) {
+  let el = document.getElementById('probe-overlay');
+  if (!el) { el = document.createElement('div'); el.id = 'probe-overlay'; document.body.appendChild(el); }
+  el.innerHTML = `
+    <div class="pb-box">
+      <div class="pb-title">${title}</div>
+      <div class="pb-phase" id="pb-phase">준비 중…</div>
+      <div class="pb-bar"><i id="pb-fill"></i></div>
+      <div class="pb-meta"><span id="pb-count"></span><span id="pb-time">0.0초</span></div>
+    </div>`;
+  el.classList.remove('hidden');
+  return performance.now();
+}
+const closeOverlay = () => document.getElementById('probe-overlay')?.classList.add('hidden');
+function phase(text, pct, count, t0) {
+  const p = document.getElementById('pb-phase'); if (p) p.textContent = text;
+  const f = document.getElementById('pb-fill'); if (f && pct != null) f.style.width = `${pct}%`;
+  const c = document.getElementById('pb-count'); if (c) c.textContent = count || '';
+  const t = document.getElementById('pb-time'); if (t && t0) t.textContent = `${((performance.now() - t0) / 1000).toFixed(1)}초`;
+}
+const tick = () => new Promise((r) => setTimeout(r));
+
+// 기존관 위를 일정 간격으로 촘촘히 샘플링 → 기존관 '아무 지점'에서도 분기 가능
+function existingPipePoints(pipes) {
+  const pts = [];
+  for (const p of pipes) {
+    for (let i = 0; i < p.segs.length; i++) {
+      if (p.segs[i].status !== 'existing') continue;
+      const a = fromLonLat(p.coords[i]);
+      const b = fromLonLat(p.coords[i + 1]);
+      const len = Math.hypot(b[0] - a[0], b[1] - a[1]);
+      const n = Math.max(1, Math.ceil(len / SOURCE_STEP));
+      for (let k = 0; k <= n; k++) {
+        pts.push([a[0] + ((b[0] - a[0]) * k) / n, a[1] + ((b[1] - a[1]) * k) / n]);
+        if (pts.length >= MAX_SOURCE_PTS) return pts;
+      }
+    }
+  }
+  return pts;
+}
 
 const DEFAULT_ATTR = {
   material: 'PE', diameter: SUPPLY_DIA, use: 'supply', pressure: '저압',
@@ -48,30 +93,30 @@ export async function runAutoRoute({ inlet = false } = {}) {
     return;
   }
 
-  // 공급원: 기존관(existing) 세그먼트의 꼭짓점
-  const sourcePts = [];
-  for (const p of pipes) {
-    for (let i = 0; i < p.segs.length; i++) {
-      if (p.segs[i].status !== 'existing') continue;
-      sourcePts.push(fromLonLat(p.coords[i]), fromLonLat(p.coords[i + 1]));
-    }
-  }
+  // 공급원: 기존관을 일정 간격으로 샘플링 → 기존관 어느 지점에서든 분기 가능
+  const sourcePts = existingPipePoints(pipes);
 
+  const t0 = openOverlay('공급관 자동 연결');
+  phase('도로 데이터 불러오는 중…', 10, '', t0);
+  await tick();
   setStatus('도로 데이터 불러오는 중…');
   let lines;
   try {
     lines = await fetchRoads(dataBBox(targets), (d, t) => setStatus(`도로 데이터 불러오는 중… ${d}/${t}`));
   } catch (err) {
+    closeOverlay();
     setStatus(`도로 조회 실패: ${err.message}`);
     return;
   }
   if (!lines.length) {
+    closeOverlay();
     setStatus('이 지역의 도로 데이터가 없습니다 (해당 시군구를 R2에 올렸는지 확인).');
     return;
   }
 
+  phase(`도로망 구성 중… (도로 ${lines.length.toLocaleString()}개)`, 40, '', t0);
   setStatus(`도로 ${lines.length.toLocaleString()}개 · 경로 계산 중…`);
-  await new Promise((r) => setTimeout(r));
+  await tick();
 
   // 도로망 그래프 + 마커/기존관 스냅 → 최소 연결망
   const segs = toSegments(lines.map((ln) => ln.map((c) => fromLonLat(c))));
@@ -81,8 +126,13 @@ export async function runAutoRoute({ inlet = false } = {}) {
   const termIds = markerPts.map((_, i) => idAt(i)).map((v) => (v === undefined ? -1 : v));
   const srcIds = sourcePts.map((_, i) => idAt(markerPts.length + i)).map((v) => (v === undefined ? -1 : v));
 
+  phase(`최소 연결 경로 계산 중… (수요처 ${targets.length}곳)`, 70, '', t0);
+  await tick();
   const { used, unreachable } = buildNetwork(g.adj, srcIds, termIds);
   const mains = edgesToPolylines(used, g.coords);
+
+  phase('배관 생성 중…', 90, '', t0);
+  await tick();
 
   // 공급관 + (선택)참조용 인입관 생성 — 전체를 히스토리 한 칸으로
   beginBatch();
@@ -118,6 +168,7 @@ export async function runAutoRoute({ inlet = false } = {}) {
     }
   } finally {
     endBatch();
+    closeOverlay();
   }
 
   setStatus(
@@ -136,7 +187,7 @@ export function initAutoRoute() {
     btn.disabled = true;
     const inlet = document.getElementById('ar-inlet')?.checked === true;
     try { await runAutoRoute({ inlet }); }
-    catch (err) { setStatus(`실패: ${err.message}`); }
-    finally { btn.disabled = false; }
+    catch (err) { closeOverlay(); setStatus(`실패: ${err.message}`); }
+    finally { closeOverlay(); btn.disabled = false; }
   });
 }
