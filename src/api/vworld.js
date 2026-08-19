@@ -103,6 +103,42 @@ export async function getParcel(lon, lat) {
   };
 }
 
+// ── 3-b. 영역 내 필지 일괄 조회 (BBOX) ──
+// 라우팅용. 점 조회를 수백 번 하는 대신 한 번에 받아온다. size 최대 1000이라 페이징.
+// 반환: [{ pnu, jibun, jimok, geometry }]
+export async function getParcelsInBox([minLon, minLat, maxLon, maxLat], maxPages = 5) {
+  if (IS_MOCK) return [];
+  const out = [];
+  const seen = new Set();
+  for (let page = 1; page <= maxPages; page++) {
+    const qs = withKey({
+      service: 'data', request: 'GetFeature', data: VWORLD.layers.parcel,
+      geomfilter: `BOX(${minLon},${minLat},${maxLon},${maxLat})`,
+      columns: 'pnu,jibun', geometry: 'true', attribute: 'true',
+      size: '1000', page: String(page), crs: 'EPSG:4326',
+    });
+    const gf = await call(`${base().data}?${qs}`);
+    if (gf?.response?.status !== 'OK') break;
+    const feats = gf.response.result?.featureCollection?.features || [];
+    for (const f of feats) {
+      const p = f.properties || {};
+      const pnu = String(p.pnu || '');
+      if (!pnu || seen.has(pnu)) continue;
+      seen.add(pnu);
+      const jibun = String(p.jibun || '');
+      out.push({
+        pnu,
+        jibun,
+        // JIBUN "868-1 도" 형태에서 지목만 (산번지 접두 제거)
+        jimok: jibun.replace(/[0-9\-\s]/g, '').replace(/^산/, ''),
+        geometry: f.geometry || null,
+      });
+    }
+    if (feats.length < 1000) break; // 마지막 페이지
+  }
+  return out;
+}
+
 // ── 4. 소유 속성 (PNU → 소유구분/지목/면적) ──
 export async function getPossession(pnu) {
   if (IS_MOCK) return mock.getPossession(pnu);

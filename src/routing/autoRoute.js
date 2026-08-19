@@ -1,40 +1,63 @@
-// ── 도로 따라 수요처 자동 연결 (OSM 기반) ──
-// 공급관: 기존관(status:'existing')을 공급원으로, 도로망 위에서 수요처들을 최소 연장으로 연결.
-// 인입관: 이미 있는 공급관(직접 그린 것 포함)에서 각 수요처 '필지 경계까지'만 연결.
-//         남의 토지를 가로지르지 않도록 필지 폴리곤을 받아 최근접 구간을 고른다.
-// 공급관/인입관은 각각 켜고 끌 수 있고, 전체가 히스토리 한 칸(Ctrl+Z 한 번)으로 되돌아간다.
+// ── 토지(소유구분) 기반 수요처 자동 연결 ──
+// 도로 중심선 대신 "지날 수 있는 땅" 위에서 경로를 찾는다.
+//   공유지(국·도·시·군유) → 통행 가능 (지목 도/구면 더 싸게)
+//   사유지               → 비싸게 (지상권 협의 필요, 짧게만)
+//   공원·학교 등 시설    → 차단
+// 경로 중 '수요처 필지 안'은 인입관, 나머지는 공급관으로 나눠 생성한다.
+// 전체가 히스토리 한 칸이라 Ctrl+Z 한 번에 되돌아간다.
 import { fromLonLat, toLonLat } from 'ol/proj.js';
 import { map } from '../map/map.js';
 import { getState, addPipe, updateDemand, beginBatch, endBatch } from '../state/store.js';
-import { fetchRoads } from './roads.js';
-import { toSegments, buildGraph, buildNetwork, edgesToPolylines } from './graph.js';
-import { getParcel } from '../api/vworld.js';
-import { ringsOf, nearestSupplyToRings, segsNear } from './inlet.js';
+import { getParcelsInBox, getPossession, isPublicLand } from '../api/vworld.js';
+import { costOf, COST, rasterize, pointInRings, nearestOpen, fieldFrom, tracePath, simplify, toCell } from './landGraph.js';
 
-const SUPPLY_DIA = '110A'; // 공급관 고정 관경
-const INLET_DIA = '63A';   // 인입관 고정 관경
-const INLET_SEARCH_R = 400; // 인입관 부착점 탐색 반경(m)
+const SUPPLY_DIA = '110A';
+const INLET_DIA = '63A';
+const MARGIN = 150;        // 마커 bbox 여유(m)
+const CELL = 4;            // 격자 한 칸(m)
+const MAX_CELLS = 400000;  // 격자 상한 (넘으면 셀을 키움)
+const CONCURRENCY = 8;
 
 const setStatus = (t) => { const el = document.getElementById('ar-status'); if (el) el.textContent = t; };
 
-function viewBBox(margin = 300) {
-  const e = map.getView().calculateExtent(map.getSize());
-  const [a, b] = [toLonLat([e[0] - margin, e[1] - margin]), toLonLat([e[2] + margin, e[3] + margin])];
-  return [a[0], a[1], b[0], b[1]];
-}
-
-// 마커/기존 배관을 모두 포함하는 bbox (화면 밖 수요처도 놓치지 않도록)
-function dataBBox(demands, margin = 300) {
-  const pts = demands.filter((d) => Number.isFinite(d.lon)).map((d) => fromLonLat([d.lon, d.lat]));
-  for (const p of getState().pipes) for (const c of p.coords) pts.push(fromLonLat(c));
-  if (!pts.length) return viewBBox(margin);
-  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-  for (const [x, y] of pts) {
-    minX = Math.min(minX, x); maxX = Math.max(maxX, x);
-    minY = Math.min(minY, y); maxY = Math.max(maxY, y);
+// ── 진행 오버레이 ──
+let cancelled = false;
+function openOverlay(title) {
+  cancelled = false;
+  let el = document.getElementById('probe-overlay');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'probe-overlay';
+    document.body.appendChild(el);
   }
-  const [lo, hi] = [toLonLat([minX - margin, minY - margin]), toLonLat([maxX + margin, maxY + margin])];
-  return [lo[0], lo[1], hi[0], hi[1]];
+  el.innerHTML = `
+    <div class="pb-box">
+      <div class="pb-title">${title}</div>
+      <div class="pb-phase" id="pb-phase">준비 중…</div>
+      <div class="pb-bar"><i id="pb-fill"></i></div>
+      <div class="pb-meta"><span id="pb-count"></span><span id="pb-time">0.0초</span></div>
+      <button class="pb-cancel" id="pb-cancel">중단</button>
+    </div>`;
+  el.classList.remove('hidden');
+  document.getElementById('pb-cancel').onclick = () => { cancelled = true; };
+  return performance.now();
+}
+function closeOverlay() { document.getElementById('probe-overlay')?.classList.add('hidden'); }
+function phase(t) { const e = document.getElementById('pb-phase'); if (e) e.textContent = t; }
+function progress(done, total, t0) {
+  const f = document.getElementById('pb-fill');
+  if (f) f.style.width = `${total ? Math.round((done / total) * 100) : 0}%`;
+  const c = document.getElementById('pb-count');
+  if (c) c.textContent = total ? `${done.toLocaleString()} / ${total.toLocaleString()}` : '';
+  const t = document.getElementById('pb-time');
+  if (t) t.textContent = `${((performance.now() - t0) / 1000).toFixed(1)}초`;
+}
+const tick = () => new Promise((r) => setTimeout(r));
+
+async function mapLimit(arr, limit, fn) {
+  let i = 0;
+  async function worker() { for (let k = i++; k < arr.length; k = i++) { if (cancelled) return; await fn(arr[k], k); } }
+  await Promise.all(Array.from({ length: Math.min(limit, arr.length) }, worker));
 }
 
 const DEFAULT_ATTR = {
@@ -48,183 +71,205 @@ const lenOf = (ll) => {
   return s;
 };
 
-// 현재 상태의 공급관(use:'supply') 폴리라인 — 인입관 부착 대상
-function supplyPolylines() {
-  const out = [];
-  for (const p of getState().pipes) {
-    let run = null;
-    for (let i = 0; i < p.segs.length; i++) {
-      if (p.segs[i].use !== 'supply') { run = null; continue; }
-      if (!run) { run = [fromLonLat(p.coords[i])]; out.push(run); }
-      run.push(fromLonLat(p.coords[i + 1]));
-    }
+// 마커들을 감싸는 영역 (화면과 무관)
+function targetExtent(targets) {
+  const pts = targets.map((d) => fromLonLat([d.lon, d.lat]));
+  for (const p of getState().pipes) for (const c of p.coords) pts.push(fromLonLat(c));
+  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+  for (const [x, y] of pts) {
+    minX = Math.min(minX, x); maxX = Math.max(maxX, x);
+    minY = Math.min(minY, y); maxY = Math.max(maxY, y);
   }
-  return out;
-}
-
-// 동시 실행 제한 (필지 조회용)
-async function mapLimit(arr, limit, fn) {
-  let i = 0;
-  async function worker() { for (let k = i++; k < arr.length; k = i++) await fn(arr[k], k); }
-  await Promise.all(Array.from({ length: Math.min(limit, arr.length) }, worker));
-}
-
-// ── 1) 공급관 생성 ──
-async function buildSupply(targets) {
-  const sourcePts = [];
-  for (const p of getState().pipes) {
-    for (let i = 0; i < p.segs.length; i++) {
-      if (p.segs[i].status !== 'existing') continue;
-      sourcePts.push(fromLonLat(p.coords[i]), fromLonLat(p.coords[i + 1]));
-    }
-  }
-
-  setStatus('도로 데이터 불러오는 중…');
-  let lines;
-  try {
-    lines = await fetchRoads(dataBBox(targets));
-  } catch (err) {
-    setStatus(`도로 조회 실패: ${err.message}`);
-    return null;
-  }
-  if (!lines.length) {
-    setStatus('이 영역에서 도로를 찾지 못했습니다. 지도를 도로가 있는 곳으로 옮겨 보세요.');
-    return null;
-  }
-
-  setStatus(`도로 ${lines.length}개 · 경로 계산 중…`);
-  await new Promise((r) => setTimeout(r));
-
-  const segs = toSegments(lines.map((ln) => ln.map((c) => fromLonLat(c))));
-  const markerPts = targets.map((d) => fromLonLat([d.lon, d.lat]));
-  const g = buildGraph(segs, [...markerPts, ...sourcePts]);
-  const idAt = (i) => { const s = g.snaps[i]; return s ? g.idOf(s.point) : undefined; };
-  const termIds = markerPts.map((_, i) => idAt(i)).map((v) => (v === undefined ? -1 : v));
-  const srcIds = sourcePts.map((_, i) => idAt(markerPts.length + i)).map((v) => (v === undefined ? -1 : v));
-
-  const { used, unreachable } = buildNetwork(g.adj, srcIds, termIds);
-  const mains = edgesToPolylines(used, g.coords);
-
-  let total = 0;
-  for (const line of mains) {
-    if (line.length < 2) continue;
-    total += lenOf(line);
-    const coords = line.map((c) => toLonLat(c));
-    addPipe({
-      coords,
-      segs: Array.from({ length: coords.length - 1 }, () => ({ ...DEFAULT_ATTR, use: 'supply', diameter: SUPPLY_DIA })),
-    });
-  }
-  return { count: mains.length, total, unreachable: unreachable.length, hasSource: srcIds.some((v) => v >= 0) };
-}
-
-// ── 2) 인입관 생성 (공급관 → 필지 경계) ──
-async function buildInlets(targets) {
-  const supply = supplyPolylines();
-  if (!supply.length) {
-    setStatus('인입관을 뽑을 공급관이 없습니다. 공급관을 먼저 그리거나 함께 생성하세요.');
-    return null;
-  }
-
-  setStatus(`필지 경계 조회 중… 0/${targets.length}`);
-  const parcels = new Array(targets.length).fill(null);
-  let done = 0;
-  await mapLimit(targets, 5, async (d, i) => {
-    try {
-      const p = await getParcel(d.lon, d.lat);
-      if (p?.geometry) parcels[i] = ringsOf(p.geometry, (c) => fromLonLat(c));
-    } catch { /* 실패는 아래에서 직선 폴백 */ }
-    done++;
-    if (done % 5 === 0 || done === targets.length) setStatus(`필지 경계 조회 중… ${done}/${targets.length}`);
-  });
-
-  let made = 0, total = 0;
-  const notes = []; // 특이사항(필지 못 찾음 → 마커까지 직선)
-  targets.forEach((d, i) => {
-    const marker = fromLonLat([d.lon, d.lat]);
-    const near = segsNear(supply, marker, INLET_SEARCH_R);
-    if (!near.length) return;
-
-    const rings = parcels[i];
-    let from = null, to = null, fallback = false;
-    if (rings && rings.length) {
-      const r = nearestSupplyToRings(near, rings);
-      if (r) { from = r.from; to = r.to; }
-    }
-    if (!from) {
-      // 필지를 못 받았으면 마커까지 직선으로 (특이사항 기록)
-      let best = null;
-      for (const s of near) {
-        const pr = projectPoint(marker, s.a, s.b);
-        if (!best || pr.dist < best.dist) best = pr;
-      }
-      if (!best) return;
-      from = best.point; to = marker; fallback = true;
-    }
-
-    const dist = Math.hypot(from[0] - to[0], from[1] - to[1]);
-    if (dist < 0.5) return; // 이미 붙어 있음
-    total += dist;
-    made++;
-    addPipe({
-      coords: [toLonLat(from), toLonLat(to)], // 공급관 → 필지(마커) 방향
-      segs: [{ ...DEFAULT_ATTR, use: 'inlet', diameter: INLET_DIA, markerNo: String(i + 1) }],
-    });
-    if (fallback) {
-      notes.push(i + 1);
-      const memo = (d.memo || '').trim();
-      const tag = '[자동연결] 필지 경계를 확인하지 못해 마커까지 직선으로 연결 — 토지 통과 여부 확인 필요';
-      if (!memo.includes(tag)) updateDemand(d.id, { memo: memo ? `${memo}\n${tag}` : tag });
-    }
-  });
-  return { made, total, notes };
-}
-
-function projectPoint(p, a, b) {
-  const vx = b[0] - a[0], vy = b[1] - a[1];
-  const len2 = vx * vx + vy * vy;
-  let t = len2 ? ((p[0] - a[0]) * vx + (p[1] - a[1]) * vy) / len2 : 0;
-  t = Math.max(0, Math.min(1, t));
-  const q = [a[0] + vx * t, a[1] + vy * t];
-  return { point: q, dist: Math.hypot(p[0] - q[0], p[1] - q[1]) };
+  return [minX - MARGIN, minY - MARGIN, maxX + MARGIN, maxY + MARGIN];
 }
 
 export async function runAutoRoute({ supply = true, inlet = true } = {}) {
-  const { demands } = getState();
+  const { demands, pipes } = getState();
   const targets = demands.filter((d) => Number.isFinite(d.lon) && Number.isFinite(d.lat));
   if (!targets.length) { setStatus('연결할 수요처가 없습니다.'); return; }
   if (!supply && !inlet) { setStatus('공급관·인입관 중 하나는 켜야 합니다.'); return; }
 
-  // 전체를 히스토리 한 칸으로 묶어 Ctrl+Z 한 번에 되돌리기
-  beginBatch();
+  const t0 = openOverlay('토지 기반 자동 연결');
   try {
-    const parts = [];
-    let total = 0;
+    const ext = targetExtent(targets);
+    const [lo, hi] = [toLonLat([ext[0], ext[1]]), toLonLat([ext[2], ext[3]])];
 
-    if (supply) {
-      const s = await buildSupply(targets);
-      if (!s) return; // 상태 메시지는 buildSupply가 설정
-      total += s.total;
-      parts.push(`공급관 ${s.count}개`);
-      if (s.unreachable) parts.push(`못 이은 수요처 ${s.unreachable}곳`);
-      if (!s.hasSource) parts.push('기존관 없어 최소연결');
-    }
+    // 1) 영역 내 필지 일괄 조회
+    phase('필지 조회 중…');
+    await tick();
+    const raw = await getParcelsInBox([lo[0], lo[1], hi[0], hi[1]]);
+    if (cancelled) { setStatus('중단됨'); return; }
+    if (!raw.length) { setStatus('이 영역의 필지를 받지 못했습니다 (VWorld 키·범위를 확인하세요).'); return; }
 
-    if (inlet) {
-      const r = await buildInlets(targets);
-      if (r) {
-        total += r.total;
-        parts.push(`인입관 ${r.made}개`);
-        if (r.notes.length) parts.push(`필지 미확인 ${r.notes.length}곳(메모 기록)`);
-      } else if (!supply) {
-        return; // 공급관도 안 만들었고 인입관도 실패 → 메시지 유지
+    // 2) 소유구분 조회
+    phase(`소유구분 조회 중… (필지 ${raw.length.toLocaleString()}개)`);
+    await tick();
+    const own = new Map();
+    let done = 0;
+    await mapLimit(raw, CONCURRENCY, async (p) => {
+      const o = await getPossession(p.pnu).catch(() => null);
+      own.set(p.pnu, o ? isPublicLand(o.code, o.name) : null);
+      done++;
+      if (done % 20 === 0 || done === raw.length) progress(done, raw.length, t0);
+    });
+    if (cancelled) { setStatus('중단됨'); return; }
+
+    // 3) 격자 래스터화
+    phase('통행 가능 구역 계산 중…');
+    await tick();
+    let cell = CELL;
+    while (((ext[2] - ext[0]) / cell) * ((ext[3] - ext[1]) / cell) > MAX_CELLS) cell *= 1.5;
+
+    const parcels = raw.map((p) => ({
+      pnu: p.pnu,
+      rings: ringsOf(p.geometry),
+      cost: costOf({ jimok: p.jimok, isPublic: own.get(p.pnu) }),
+      isPublic: own.get(p.pnu),
+    }));
+    // 수요처가 속한 필지는 목적지이므로 통행 허용
+    const targetParcel = new Map(); // demand index → parcel index
+    targets.forEach((d, di) => {
+      const pt = fromLonLat([d.lon, d.lat]);
+      for (let pi = 0; pi < parcels.length; pi++) {
+        if (parcels[pi].rings.length && pointInRings(pt, parcels[pi].rings)) {
+          targetParcel.set(di, pi);
+          if (!parcels[pi].cost) parcels[pi].cost = COST.otherPublic; // 차단이었어도 목적지는 진입 허용
+          break;
+        }
+      }
+    });
+
+    const r = rasterize(parcels, ext, cell);
+
+    // 4) 공급원: 기존관 꼭짓점, 없으면 가장 '싼 땅'에 있는 수요처
+    const startIdxs = [];
+    for (const p of pipes) {
+      for (let i = 0; i < p.segs.length; i++) {
+        if (p.segs[i].status !== 'existing') continue;
+        for (const c of [p.coords[i], p.coords[i + 1]]) {
+          const o = nearestOpen(r, fromLonLat(c));
+          if (o) startIdxs.push(o.idx);
+        }
       }
     }
+    const markerCells = targets.map((d) => nearestOpen(r, fromLonLat([d.lon, d.lat])));
+    if (!startIdxs.length) {
+      const first = markerCells.find(Boolean);
+      if (!first) { setStatus('통행 가능한 땅을 찾지 못했습니다.'); return; }
+      startIdxs.push(first.idx);
+    }
 
-    setStatus(`완료 — ${parts.join(' · ')} · 총 ${Math.round(total).toLocaleString()}m (Ctrl+Z로 되돌리기)`);
-  } finally {
+    // 5) 순차적으로 가장 가까운 수요처를 흡수 (경로 재사용 → 총 연장 최소화)
+    phase('경로 계산 중…');
+    await tick();
+    const connected = new Set(startIdxs);
+    const remaining = new Set(markerCells.map((c, i) => (c ? i : -1)).filter((i) => i >= 0));
+    const paths = [];        // { di, pts }
+    const unreachable = [];
+    let step = 0;
+    const totalSteps = remaining.size;
+
+    while (remaining.size) {
+      if (cancelled) break;
+      const { dist, prev } = fieldFrom(r, [...connected]);
+      let best = -1, bestD = Infinity;
+      for (const di of remaining) {
+        const d = dist[markerCells[di].idx];
+        if (d < bestD) { bestD = d; best = di; }
+      }
+      if (best < 0 || !Number.isFinite(bestD)) { unreachable.push(...remaining); break; }
+      const pts = tracePath(r, prev, markerCells[best].idx);
+      for (let i = 0; i < pts.length; i++) {
+        const [x, y] = pts[i];
+        const [gx, gy] = toCell(r, [x, y]);
+        connected.add(gy * r.w + gx);
+      }
+      paths.push({ di: best, pts });
+      remaining.delete(best);
+      step++;
+      progress(step, totalSteps, t0);
+      if (step % 5 === 0) await tick();
+    }
+
+    // 6) 경로를 공급관/인입관으로 나눠 생성
+    phase('배관 생성 중…');
+    await tick();
+    beginBatch();
+    let supplyLen = 0, inletLen = 0, supplyN = 0, inletN = 0;
+    const reviewed = [];
+
+    for (const { di, pts } of paths) {
+      const pi = targetParcel.get(di);
+      const rings = pi !== undefined ? parcels[pi].rings : null;
+      // 경로를 '수요처 필지 밖(공급관)' / '안(인입관)'으로 분할
+      let cut = pts.length;
+      if (rings && rings.length) {
+        for (let i = 0; i < pts.length; i++) {
+          if (pointInRings(pts[i], rings)) { cut = i; break; }
+        }
+      }
+      const head = simplify(pts.slice(0, Math.max(2, cut + 1)), cell * 0.8);
+      const tail = cut < pts.length ? simplify(pts.slice(Math.max(0, cut - 1)), cell * 0.8) : [];
+
+      if (supply && head.length >= 2) {
+        const coords = head.map((c) => toLonLat(c));
+        supplyLen += lenOf(head); supplyN++;
+        addPipe({ coords, segs: Array.from({ length: coords.length - 1 }, () => ({ ...DEFAULT_ATTR, use: 'supply', diameter: SUPPLY_DIA })) });
+      }
+      if (inlet && tail.length >= 2) {
+        const coords = tail.map((c) => toLonLat(c));
+        inletLen += lenOf(tail); inletN++;
+        addPipe({ coords, segs: Array.from({ length: coords.length - 1 }, () => ({ ...DEFAULT_ATTR, use: 'inlet', diameter: INLET_DIA, markerNo: String(di + 1) })) });
+      }
+
+      // 사유지를 지나야 했는지 검사 → 검토 표시
+      let crossesPrivate = false;
+      for (const p of pts) {
+        const [gx, gy] = toCell(r, p);
+        const oi = r.owner[gy * r.w + gx];
+        if (oi >= 0 && oi !== pi && parcels[oi].isPublic === false) { crossesPrivate = true; break; }
+      }
+      if (crossesPrivate) {
+        reviewed.push(di + 1);
+        const d = targets[di];
+        const tag = '[자동연결] 사유지 통과 구간 있음 — 지상권 검토 필요';
+        const memo = (d.memo || '').trim();
+        if (!memo.includes(tag)) updateDemand(d.id, { memo: memo ? `${memo}\n${tag}` : tag });
+      }
+    }
+    for (const di of unreachable) {
+      const d = targets[di];
+      const tag = '[자동연결] 통행 가능한 경로를 찾지 못함 — 검토 필요';
+      const memo = (d.memo || '').trim();
+      if (!memo.includes(tag)) updateDemand(d.id, { memo: memo ? `${memo}\n${tag}` : tag });
+    }
     endBatch();
+
+    const total = Math.round(supplyLen + inletLen);
+    setStatus(
+      `완료 — 공급관 ${supplyN}개 ${Math.round(supplyLen).toLocaleString()}m · 인입관 ${inletN}개 ${Math.round(inletLen).toLocaleString()}m · 총 ${total.toLocaleString()}m`
+      + (reviewed.length ? ` · 사유지 통과 ${reviewed.length}곳(메모)` : '')
+      + (unreachable.length ? ` · 경로없음 ${unreachable.length}곳` : '')
+      + (cancelled ? ' [중단됨]' : '') + ' · Ctrl+Z로 되돌리기'
+    );
+  } catch (err) {
+    setStatus(`실패: ${err.message}`);
+  } finally {
+    closeOverlay();
   }
+}
+
+// GeoJSON → 3857 링 배열
+function ringsOf(geometry) {
+  if (!geometry) return [];
+  const out = [];
+  const push = (ring) => {
+    const pts = ring.map((c) => fromLonLat(c));
+    if (pts.length >= 3) out.push(pts);
+  };
+  if (geometry.type === 'Polygon') geometry.coordinates.forEach(push);
+  else if (geometry.type === 'MultiPolygon') geometry.coordinates.forEach((poly) => poly.forEach(push));
+  return out;
 }
 
 export function initAutoRoute() {
