@@ -144,6 +144,11 @@
         <div class="tab-pane hidden" data-tab="io">
           <section class="panel">
             <div class="panel-label">GitHub 저장</div>
+            <div class="row" style="margin-top:0">
+              <select id="save-folder" class="di-sort" style="flex:1"></select>
+              <button id="folder-new" class="btn-ghost" title="새 폴더 만들기">+폴더</button>
+              <button id="folder-del" class="btn-ghost" title="선택 폴더 삭제">🗑</button>
+            </div>
             <div class="row">
               <input type="text" id="save-name" placeholder="파일 이름" />
               <button id="save-btn" class="btn-primary">저장</button>
@@ -152,7 +157,7 @@
           </section>
 
           <section class="panel">
-            <div class="panel-label">불러오기 (GitHub save/)</div>
+            <div class="panel-label">불러오기 <span id="gh-folder-label"></span></div>
             <button id="gh-list-btn" class="btn-ghost" style="width:100%">목록 새로고침</button>
             <ul id="gh-list"></ul>
           </section>

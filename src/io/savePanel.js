@@ -6,7 +6,8 @@ import { getViewState, setViewState, exportMapImage } from '../map/map.js';
 import { legendEntries } from '../pipes/legend.js';
 import { DASH } from '../config/pipeStyles.js';
 
-let nameInput, statusEl, ghListEl;
+let nameInput, statusEl, ghListEl, folderSel;
+let currentFolder = ''; // '' = 루트
 
 // 프로젝트 데이터 + 현재 편집 시점(지도 위치/줌)
 function projectData() {
@@ -17,9 +18,13 @@ export function initSavePanel() {
   nameInput = document.getElementById('save-name');
   statusEl = document.getElementById('save-status');
   ghListEl = document.getElementById('gh-list');
+  folderSel = document.getElementById('save-folder');
 
   document.getElementById('save-btn').addEventListener('click', saveToGithub);
   document.getElementById('gh-list-btn').addEventListener('click', listGithub);
+  document.getElementById('folder-new').addEventListener('click', newFolder);
+  document.getElementById('folder-del').addEventListener('click', delFolder);
+  folderSel.addEventListener('change', () => { currentFolder = folderSel.value; listGithub(); });
   document.getElementById('export-btn').addEventListener('click', exportFile);
   const importFile = document.getElementById('import-file');
   document.getElementById('import-btn').addEventListener('click', () => importFile.click());
@@ -34,12 +39,70 @@ export function initSavePanel() {
     }
   });
 
-  listGithub();
+  loadFolders();
 }
 
 function status(msg, isErr = false) {
   statusEl.textContent = msg;
   statusEl.classList.toggle('err', isErr);
+}
+
+// 폴더 목록을 받아 드롭다운 채우고 현재 폴더의 파일 목록 표시
+async function loadFolders() {
+  try {
+    const r = await fetch('/api/save');
+    const j = await r.json().catch(() => ({}));
+    const folders = j.folders || [];
+    folderSel.innerHTML = folders.map((f) => `<option value="${esc(f)}">📁 ${esc(f)}</option>`).join('')
+      + '<option value="">· (루트)</option>';
+    if (folders.length && !folders.includes(currentFolder)) currentFolder = folders[0];
+    else if (!folders.length) currentFolder = '';
+    folderSel.value = currentFolder;
+  } catch {
+    folderSel.innerHTML = '<option value="">· (루트)</option>';
+    currentFolder = '';
+  }
+  listGithub();
+}
+
+async function newFolder() {
+  const name = (prompt('새 폴더 이름 (예: 제천)') || '').trim();
+  if (!name) return;
+  status('폴더 생성 중…');
+  try {
+    const r = await fetch('/api/save', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ mkdir: name }),
+    });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(j.error || `HTTP ${r.status}`);
+    currentFolder = j.folder || name;
+    status(`폴더 생성됨: ${currentFolder}`);
+    await loadFolders();
+    folderSel.value = currentFolder;
+  } catch (err) {
+    status(`폴더 생성 실패: ${err.message}`, true);
+  }
+}
+
+async function delFolder() {
+  if (!currentFolder) { status('루트(기타)는 삭제할 수 없어요.', true); return; }
+  if (!confirm(`'${currentFolder}' 폴더와 그 안의 저장 파일을 모두 삭제할까요?`)) return;
+  status('폴더 삭제 중…');
+  try {
+    const r = await fetch(`/api/save?folder=${encodeURIComponent(currentFolder)}&rmdir=1`, { method: 'DELETE' });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(j.error || `HTTP ${r.status}`);
+    status(`폴더 삭제됨: ${currentFolder}`);
+    currentFolder = '';
+    await loadFolders();
+  } catch (err) {
+    status(`폴더 삭제 실패: ${err.message}`, true);
+  }
+}
+
+function folderQuery(prefix = '?') {
+  return currentFolder ? `${prefix}folder=${encodeURIComponent(currentFolder)}` : '';
 }
 
 async function saveToGithub() {
@@ -50,7 +113,7 @@ async function saveToGithub() {
     const r = await fetch('/api/save', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, data: projectData() }),
+      body: JSON.stringify({ folder: currentFolder, name, data: projectData() }),
     });
     const j = await r.json().catch(() => ({}));
     if (!r.ok) throw new Error(j.error || `HTTP ${r.status}`);
@@ -62,13 +125,15 @@ async function saveToGithub() {
 }
 
 async function listGithub() {
+  const label = document.getElementById('gh-folder-label');
+  if (label) label.textContent = currentFolder ? `(${currentFolder})` : '(루트)';
   ghListEl.innerHTML = '<li class="sv-empty">불러오는 중…</li>';
   try {
-    const r = await fetch('/api/save');
+    const r = await fetch(`/api/save${folderQuery('?')}`);
     const j = await r.json().catch(() => ({}));
     if (!r.ok) throw new Error(j.error || `HTTP ${r.status}`);
     const files = j.files || [];
-    if (!files.length) { ghListEl.innerHTML = '<li class="sv-empty">save/ 폴더에 저장 파일 없음</li>'; return; }
+    if (!files.length) { ghListEl.innerHTML = '<li class="sv-empty">이 폴더에 저장 파일 없음</li>'; return; }
     ghListEl.innerHTML = files
       .map((f) => `<li class="sv-row">
         <span class="sv-name" title="${esc(f)}">${esc(f)}</span>
@@ -86,7 +151,7 @@ async function listGithub() {
 async function loadGithub(file) {
   if (!confirm(`'${file}' 을(를) 불러올까요?\n현재 작업 내용이 대체됩니다.`)) return;
   try {
-    const r = await fetch(`/api/save?file=${encodeURIComponent(file)}`);
+    const r = await fetch(`/api/save?file=${encodeURIComponent(file)}${folderQuery('&')}`);
     if (!r.ok) throw new Error(`HTTP ${r.status}`);
     const data = await r.json();
     importProject(data);
@@ -101,7 +166,7 @@ async function loadGithub(file) {
 async function deleteGithub(file) {
   if (!confirm(`'${file}' 을(를) 삭제할까요?`)) return;
   try {
-    const r = await fetch(`/api/save?file=${encodeURIComponent(file)}`, { method: 'DELETE' });
+    const r = await fetch(`/api/save?file=${encodeURIComponent(file)}${folderQuery('&')}`, { method: 'DELETE' });
     const j = await r.json().catch(() => ({}));
     if (!r.ok) throw new Error(j.error || `HTTP ${r.status}`);
     status(`삭제됨: ${file}`);
