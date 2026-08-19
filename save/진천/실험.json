@@ -1,0 +1,20 @@
+{
+  "version": 1,
+  "savedAt": "2026-08-19T11:05:07.687Z",
+  "demands": [],
+  "pipes": [],
+  "terminals": [],
+  "markerStyle": {
+    "color": "transparent",
+    "borderColor": "#b91c1c",
+    "shape": "circle",
+    "border": "solid",
+    "showNum": true,
+    "radius": 10
+  },
+  "view": {
+    "lon": 127,
+    "lat": 37.55,
+    "zoom": 12
+  }
+}
