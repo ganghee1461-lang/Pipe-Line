@@ -11,6 +11,12 @@ export default defineConfig({
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/vw/, ''),
       },
+      // 공공데이터포털 건축HUB (운영은 functions/datago/ 가 같은 역할)
+      '/datago': {
+        target: 'https://apis.data.go.kr',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/datago/, ''),
+      },
     },
   },
   build: {
