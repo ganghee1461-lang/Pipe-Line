@@ -39,6 +39,7 @@ export function initSavePanel() {
     }
   });
 
+  initClipboard();
   loadFolders();
 }
 
@@ -55,12 +56,13 @@ async function loadFolders() {
     const folders = j.folders || [];
     folderSel.innerHTML = folders.map((f) => `<option value="${esc(f)}">📁 ${esc(f)}</option>`).join('')
       + '<option value="">· (루트)</option>';
-    if (folders.length && !folders.includes(currentFolder)) currentFolder = folders[0];
-    else if (!folders.length) currentFolder = '';
+    if (folders.length && !folders.includes(currentFolder) && currentFolder !== '') currentFolder = folders[0];
     folderSel.value = currentFolder;
+    renderFolderTargets(folders);
   } catch {
     folderSel.innerHTML = '<option value="">· (루트)</option>';
     currentFolder = '';
+    renderFolderTargets([]);
   }
   listGithub();
 }
@@ -135,7 +137,7 @@ async function listGithub() {
     const files = j.files || [];
     if (!files.length) { ghListEl.innerHTML = '<li class="sv-empty">이 폴더에 저장 파일 없음</li>'; return; }
     ghListEl.innerHTML = files
-      .map((f) => `<li class="sv-row">
+      .map((f) => `<li class="sv-row" draggable="true" data-f="${esc(f)}">
         <span class="sv-name" title="${esc(f)}">${esc(f)}</span>
         <button class="gh-load" data-f="${esc(f)}">열기</button>
         <button class="gh-del" data-f="${esc(f)}" title="삭제">🗑</button>
@@ -143,9 +145,95 @@ async function listGithub() {
       .join('');
     ghListEl.querySelectorAll('.gh-load').forEach((b) => { b.onclick = () => loadGithub(b.dataset.f); });
     ghListEl.querySelectorAll('.gh-del').forEach((b) => { b.onclick = () => deleteGithub(b.dataset.f); });
+    bindRowInteractions();
   } catch (err) {
     ghListEl.innerHTML = `<li class="sv-empty">목록 실패 (${esc(String(err.message || err))})</li>`;
   }
+}
+
+// ── 파일 이동 (드래그앤드롭 / 잘라내기·붙여넣기) ──
+let clipboard = null;   // { file, folder } 잘라낸 파일
+let selectedRow = null; // 선택된 파일명 (Ctrl+X 대상)
+
+function bindRowInteractions() {
+  ghListEl.querySelectorAll('.sv-row').forEach((row) => {
+    const f = row.dataset.f;
+    // 행 클릭 = 선택 (Ctrl+X 대상 지정)
+    row.addEventListener('click', (e) => {
+      if (e.target.closest('button')) return;
+      ghListEl.querySelectorAll('.sv-row').forEach((r) => r.classList.remove('sel'));
+      row.classList.add('sel');
+      selectedRow = f;
+    });
+    row.addEventListener('dragstart', (e) => {
+      e.dataTransfer.setData('text/plain', JSON.stringify({ file: f, folder: currentFolder }));
+      e.dataTransfer.effectAllowed = 'move';
+      row.classList.add('dragging');
+    });
+    row.addEventListener('dragend', () => row.classList.remove('dragging'));
+  });
+}
+
+// 폴더 목록(드롭 대상) 렌더 — 드래그해서 폴더 위에 놓으면 이동
+function renderFolderTargets(folders) {
+  const wrap = document.getElementById('folder-targets');
+  if (!wrap) return;
+  wrap.innerHTML = folders.map((f) => `<button class="fd-target ${f === currentFolder ? 'cur' : ''}" data-t="${esc(f)}">📁 ${esc(f)}</button>`).join('')
+    + `<button class="fd-target ${currentFolder === '' ? 'cur' : ''}" data-t="">· 루트</button>`;
+
+  wrap.querySelectorAll('.fd-target').forEach((btn) => {
+    const to = btn.dataset.t;
+    btn.addEventListener('click', () => { currentFolder = to; folderSel.value = to; loadFolders(); });
+    btn.addEventListener('dragover', (e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; btn.classList.add('over'); });
+    btn.addEventListener('dragleave', () => btn.classList.remove('over'));
+    btn.addEventListener('drop', async (e) => {
+      e.preventDefault();
+      btn.classList.remove('over');
+      try {
+        const { file, folder } = JSON.parse(e.dataTransfer.getData('text/plain') || '{}');
+        if (file) await moveFile(file, folder, to);
+      } catch { /* 잘못된 드롭 데이터 무시 */ }
+    });
+  });
+}
+
+async function moveFile(file, fromFolder, toFolder) {
+  if ((fromFolder || '') === (toFolder || '')) return;
+  status(`이동 중… ${file}`);
+  try {
+    const r = await fetch(`/api/save${fromFolder ? `?folder=${encodeURIComponent(fromFolder)}` : ''}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ move: { file, to: toFolder } }),
+    });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(j.error || `HTTP ${r.status}`);
+    status(`이동됨: ${j.path}`);
+    listGithub();
+  } catch (err) {
+    status(`이동 실패: ${err.message}`, true);
+  }
+}
+
+// Ctrl+X 잘라내기 / Ctrl+V 현재 폴더에 붙여넣기
+function initClipboard() {
+  window.addEventListener('keydown', (e) => {
+    const t = e.target;
+    if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT')) return;
+    if (!(e.ctrlKey || e.metaKey)) return;
+    if (e.key === 'x' || e.key === 'X') {
+      if (!selectedRow) return;
+      e.preventDefault();
+      clipboard = { file: selectedRow, folder: currentFolder };
+      status(`잘라냄: ${clipboard.file} — 폴더 이동 후 Ctrl+V`);
+    } else if (e.key === 'v' || e.key === 'V') {
+      if (!clipboard) return;
+      e.preventDefault();
+      const { file, folder } = clipboard;
+      clipboard = null;
+      moveFile(file, folder, currentFolder);
+    }
+  });
 }
 
 async function loadGithub(file) {

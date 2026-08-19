@@ -84,6 +84,41 @@ export async function onRequest(context) {
         return json({ ok: true, folder: f });
       }
 
+      // 파일 이동 (폴더 간): 원본 읽기 → 대상에 쓰기 → 원본 삭제
+      if (body?.move) {
+        const { file, to } = body.move;
+        const f = String(file || '').trim();
+        const dst = clean(to);
+        if (!f) return json({ error: '이동할 파일이 필요합니다.' }, 400);
+        const from = `save/${folder ? folder + '/' : ''}${f}`;
+        const dest = `save/${dst ? dst + '/' : ''}${f}`;
+        if (from === dest) return json({ ok: true, path: dest });
+
+        const g = await fetch(`${base}/${enc(from)}?ref=${BRANCH}`, { headers });
+        if (!g.ok) return json({ error: `원본 없음 HTTP ${g.status}` }, g.status);
+        const src = await g.json();
+
+        // 대상에 이미 같은 이름이 있으면 갱신(sha 필요)
+        let dstSha;
+        const dg = await fetch(`${base}/${enc(dest)}?ref=${BRANCH}`, { headers });
+        if (dg.ok) dstSha = (await dg.json()).sha;
+
+        const put = await fetch(`${base}/${enc(dest)}`, {
+          method: 'PUT',
+          headers: { ...headers, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message: `move: ${from} → ${dest}`, content: src.content.replace(/\s/g, ''), branch: BRANCH, sha: dstSha }),
+        });
+        if (!put.ok) return json({ error: `이동 실패(쓰기) HTTP ${put.status}` }, 502);
+
+        const del = await fetch(`${base}/${enc(from)}`, {
+          method: 'DELETE',
+          headers: { ...headers, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message: `move: remove ${from}`, sha: src.sha, branch: BRANCH }),
+        });
+        if (!del.ok) return json({ error: `이동 실패(원본 삭제) HTTP ${del.status}` }, 502);
+        return json({ ok: true, path: dest });
+      }
+
       const name = clean(body?.name);
       if (!name) return json({ error: '파일 이름이 필요합니다.' }, 400);
       const p = `save/${folder ? folder + '/' : ''}${name}.json`;

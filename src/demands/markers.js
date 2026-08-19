@@ -159,12 +159,32 @@ function applyFilter() {
 }
 
 // ── 마커 클릭 팝업 (선택 + 메모 + 스타일) ──
+// 팝업은 마커 좌표(3857)에 고정 — 지도를 이동/확대해도 마커를 따라간다(필지 팝업과 동일 방식).
 const popup = document.getElementById('marker-popup');
+let popupAnchor = null;
 
 function esc(s) {
   return String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 }
-function hidePopup() { popup.classList.add('hidden'); popup.innerHTML = ''; }
+function hidePopup() { popup.classList.add('hidden'); popup.innerHTML = ''; popupAnchor = null; }
+
+// 앵커(마커 좌표) → 화면 픽셀로 변환해 팝업 위치 갱신. 화면 밖으로 나가지 않게 보정.
+function positionPopup() {
+  if (!popupAnchor) return;
+  const px = map.getPixelFromCoordinate(popupAnchor);
+  if (!px) return;
+  const size = map.getSize() || [window.innerWidth, window.innerHeight];
+  const pw = popup.offsetWidth || 230;
+  const ph = popup.offsetHeight || 240;
+  let left = px[0] + 14;
+  let top = px[1];
+  if (left + pw > size[0] - 6) left = px[0] - pw - 14; // 오른쪽 넘치면 왼쪽에
+  if (left < 6) left = 6;
+  if (top + ph > size[1] - 6) top = Math.max(6, size[1] - ph - 6);
+  if (top < 6) top = 6;
+  popup.style.left = `${left}px`;
+  popup.style.top = `${top}px`;
+}
 
 function meterRowHtml(m, idx) {
   const isCustom = !METER_GRADES.includes(Number(m.grade));
@@ -213,7 +233,7 @@ function renderMeters(d) {
   });
 }
 
-function showPopup(pixel, d, num) {
+function showPopup(anchor, d, num) {
   popup.innerHTML = `
     <div class="mp-bar">
       <b>#${num ?? d.id}</b>
@@ -229,8 +249,8 @@ function showPopup(pixel, d, num) {
       </div>
     </div>`;
   popup.classList.remove('hidden');
-  popup.style.left = `${pixel[0] + 14}px`;
-  popup.style.top = `${pixel[1]}px`;
+  popupAnchor = anchor;
+  positionPopup();
 
   popup.querySelector('.mp-close').onclick = hidePopup;
   const memo = popup.querySelector('.mp-memo');
@@ -269,7 +289,12 @@ export function initMarkers() {
     }
     const d = f.get('demand');
     setUI({ selectedDemandId: d.id });
-    showPopup(evt.pixel, d, f.get('num'));
+    showPopup(f.getGeometry().getCoordinates(), d, f.get('num'));
+  });
+
+  // 지도 이동/확대 시 팝업을 마커 위치에 계속 고정
+  map.on('postrender', () => {
+    if (popupAnchor && !popup.classList.contains('hidden')) positionPopup();
   });
 
   // 지도에서 선택된 마커를 Del/Backspace로 삭제 (입력 중·배관선분 선택 중이 아닐 때)
