@@ -23,6 +23,7 @@ import { pipeSource, setHoveredSeg } from './layer.js';
 import { reconcileSegs } from './util.js';
 import {
   getState, subscribe, addPipe, extendPipe, setPipeGeometry, removeSegs, insertVertex,
+  beginBatch, endBatch,
   selectSeg, selectSegs, toggleSeg, addSegsToSelection, clearSegSelection,
   setTool, undo, redo, segKey, toggleTerminal,
 } from '../state/store.js';
@@ -32,7 +33,8 @@ let activeTool = null;
 let ctrlDown = false;
 
 // 꼭짓점 편집 상태
-let selVertex = null;     // { id, idx } 클릭 선택된 점
+let selVertex = null;     // { id, idx } 클릭 선택된 점(대표)
+let selVertices = [];     // Shift+드래그로 다중 선택된 점들 [{id, idx}]
 let hoverCoord = null;    // 마우스 근처 점(3857)
 let draggingCoord = null; // 드래그 중인 점(3857)
 let modifying = false;
@@ -63,6 +65,14 @@ function nearestVertexInfo(pixel) {
 
 function showVertexHighlight() {
   hoverSrc.clear();
+  // 다중 선택된 점들 먼저 표시
+  for (const v of selVertices) {
+    const p = getState().pipes.find((x) => x.id === v.id);
+    if (!p || !p.coords[v.idx]) continue;
+    const f = new Feature(new Point(fromLonLat(p.coords[v.idx])));
+    f.set('sel', true);
+    hoverSrc.addFeature(f);
+  }
   let coord = null;
   let sel = false;
   if (draggingCoord) { coord = draggingCoord; sel = true; }
@@ -126,12 +136,13 @@ function applyTool() {
     map.addInteraction(snap); // 작도는 스냅으로 연결 편의
   } else if (tool === 'vertex') {
     map.addInteraction(modify); // 자석(Snap) 없음 — 미세 이동 자유
+    map.addInteraction(dragBox); // Shift+드래그로 꼭짓점 다중 선택
   } else if (tool === 'select') {
     map.addInteraction(dragBox);
   }
 
   // 모드 떠나면 꼭짓점 편집 상태 초기화 + 선택 해제(작도/꼭짓점 진입 시 V선택 초기화)
-  if (tool !== 'vertex') { selVertex = null; hoverCoord = null; draggingCoord = null; }
+  if (tool !== 'vertex') { selVertex = null; selVertices = []; hoverCoord = null; draggingCoord = null; }
   if (tool !== 'select') clearSegSelection();
   hoverSrc.clear();
   showVertexHighlight();
@@ -312,6 +323,8 @@ function distToSeg(pt, a, b) {
 function onClick(evt) {
   const tool = getState().ui.tool;
   if (tool === 'vertex') {
+    const oe0 = evt.originalEvent;
+    if (!(oe0 && oe0.shiftKey)) selVertices = [];   // 일반 클릭 = 다중선택 해제
     const v = nearestVertexInfo(evt.pixel);
     selVertex = v ? { id: v.id, idx: v.idx } : null;
     hoverCoord = v ? v.coord : null;
@@ -350,7 +363,15 @@ function onKey(e) {
     case 'Delete':
     case 'Backspace': {
       if (getState().ui.tool === 'vertex') {
-        if (selVertex) {
+        if (selVertices.length) {
+          e.preventDefault();
+          // 같은 배관 안에서는 뒤쪽 인덱스부터 지워야 앞 인덱스가 밀리지 않는다
+          const list = [...selVertices].sort((a, b) => b.id - a.id || b.idx - a.idx);
+          beginBatch();
+          try { for (const v of list) deleteVertex(v.id, v.idx); } finally { endBatch(); }
+          selVertices = []; selVertex = null; hoverCoord = null;
+          showVertexHighlight();
+        } else if (selVertex) {
           e.preventDefault();
           deleteVertex(selVertex.id, selVertex.idx);
           selVertex = null; hoverCoord = null;
@@ -431,6 +452,21 @@ export function initPipeTools() {
   dragBox = new DragBox({ condition: shiftKeyOnly });
   dragBox.on('boxend', () => {
     const ext = dragBox.getGeometry().getExtent();
+    if (getState().ui.tool === 'vertex') {
+      // 박스 안의 꼭짓점을 모두 선택
+      const picked = [];
+      for (const p of getState().pipes) {
+        p.coords.forEach((c, idx) => {
+          const xy = fromLonLat(c);
+          if (xy[0] >= ext[0] && xy[0] <= ext[2] && xy[1] >= ext[1] && xy[1] <= ext[3]) picked.push({ id: p.id, idx });
+        });
+      }
+      const seen = new Set(selVertices.map((v) => `${v.id}:${v.idx}`));
+      for (const v of picked) if (!seen.has(`${v.id}:${v.idx}`)) selVertices.push(v);
+      selVertex = null;
+      showVertexHighlight();
+      return;
+    }
     const keys = [];
     pipeSource.forEachFeatureIntersectingExtent(ext, (f) => {
       const p = f.get('pipe');

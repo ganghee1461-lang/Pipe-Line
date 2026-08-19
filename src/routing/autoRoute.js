@@ -41,29 +41,55 @@ function phase(text, pct, count, t0) {
 }
 const tick = () => new Promise((r) => setTimeout(r));
 
-// 기존관 위를 일정 간격으로 촘촘히 샘플링 → 기존관 '아무 지점'에서도 분기 가능
-function existingPipePoints(pipes) {
-  const pts = [];
+// 기존관을 연속 구간(폴리라인)으로 뽑고, 도로와의 연결 지점을 늘리려 촘촘히 나눈다.
+// 기존관 자체가 그래프 간선이 되므로 도로 데이터와 어긋나도 그대로 활용된다.
+function existingPipeLines(pipes) {
+  const out = [];
   for (const p of pipes) {
+    let run = null;
     for (let i = 0; i < p.segs.length; i++) {
-      if (p.segs[i].status !== 'existing') continue;
+      if (p.segs[i].status !== 'existing') { run = null; continue; }
       const a = fromLonLat(p.coords[i]);
       const b = fromLonLat(p.coords[i + 1]);
+      if (!run) { run = [a]; out.push(run); }
+      // 8m 간격으로 잘게 나눠 도로와 붙을 지점을 확보
       const len = Math.hypot(b[0] - a[0], b[1] - a[1]);
       const n = Math.max(1, Math.ceil(len / SOURCE_STEP));
-      for (let k = 0; k <= n; k++) {
-        pts.push([a[0] + ((b[0] - a[0]) * k) / n, a[1] + ((b[1] - a[1]) * k) / n]);
-        if (pts.length >= MAX_SOURCE_PTS) return pts;
+      for (let k = 1; k <= n; k++) {
+        run.push([a[0] + ((b[0] - a[0]) * k) / n, a[1] + ((b[1] - a[1]) * k) / n]);
       }
     }
   }
-  return pts;
+  return out.filter((l) => l.length >= 2);
 }
 
 const DEFAULT_ATTR = {
   material: 'PE', diameter: SUPPLY_DIA, use: 'supply', pressure: '저압',
   status: 'planned', review: 'target', pavement: 'asphalt', section: 1, markerNo: '',
 };
+
+// 도로 형상을 따라온 폴리라인의 불필요한 꼭짓점 제거 (Douglas-Peucker).
+// 갈래는 별도 폴리라인으로 나뉘어 있어 분기점(양 끝)은 항상 보존된다.
+function simplify(pts, tol) {
+  if (pts.length < 3) return pts;
+  const keep = new Uint8Array(pts.length);
+  keep[0] = keep[pts.length - 1] = 1;
+  const stack = [[0, pts.length - 1]];
+  while (stack.length) {
+    const [i, j] = stack.pop();
+    if (j <= i + 1) continue;
+    const a = pts[i], b = pts[j];
+    const vx = b[0] - a[0], vy = b[1] - a[1];
+    const len = Math.hypot(vx, vy) || 1;
+    let far = -1, farD = tol;
+    for (let k = i + 1; k < j; k++) {
+      const d = Math.abs((pts[k][0] - a[0]) * vy - (pts[k][1] - a[1]) * vx) / len;
+      if (d > farD) { farD = d; far = k; }
+    }
+    if (far > 0) { keep[far] = 1; stack.push([i, far], [far, j]); }
+  }
+  return pts.filter((_, i) => keep[i]);
+}
 
 const lenOf = (ll) => {
   let s = 0;
@@ -94,8 +120,8 @@ export async function runAutoRoute({ supply = true, inlet = false } = {}) {
     return;
   }
 
-  // 공급원: 기존관을 일정 간격으로 샘플링 → 기존관 어느 지점에서든 분기 가능
-  const sourcePts = existingPipePoints(pipes);
+  // 공급원: 기존관 자체를 그래프에 편입 (아래 buildGraph에 전달)
+  const existingLines = existingPipeLines(pipes);
 
   const t0 = openOverlay('자동 연결');
   phase('도로 데이터 불러오는 중…', 10, '', t0);
@@ -122,17 +148,13 @@ export async function runAutoRoute({ supply = true, inlet = false } = {}) {
   // 도로망 그래프 + 마커/기존관 스냅 → 최소 연결망
   const segs = toSegments(lines.map((ln) => ln.map((c) => fromLonLat(c))));
   const markerPts = targets.map((d) => fromLonLat([d.lon, d.lat]));
-  const g = buildGraph(segs, [...markerPts, ...sourcePts]);
+  const g = buildGraph(segs, markerPts, existingLines);
 
   // 수요처마다 스냅 후보 여러 곳 → 총 연장이 가장 짧아지는 곳을 알고리즘이 고른다
   const groups = markerPts.map((_, i) => (g.snapSets[i] || [])
     .map((s) => ({ id: g.idOf(s.point), extra: s.dist }))
     .filter((c) => c.id !== undefined));
-  const srcIds = sourcePts.map((_, i) => {
-    const s = g.snaps[markerPts.length + i];
-    const id = s ? g.idOf(s.point) : undefined;
-    return id === undefined ? -1 : id;
-  });
+  const srcIds = g.sourceIds; // 기존관 위 노드들
 
   phase(`최소 연결 경로 계산 중… (수요처 ${targets.length}곳)`, 70, '', t0);
   await tick();
@@ -140,7 +162,9 @@ export async function runAutoRoute({ supply = true, inlet = false } = {}) {
 
   // 어떤 수요처/공급원에도 닿지 않는 막다른 곁가지 제거
   const keep = new Set([...chosen.filter((v) => v >= 0), ...srcIds.filter((v) => v >= 0)]);
-  const mains = edgesToPolylines(pruneLeaves(used, keep), g.coords);
+  const pruned = pruneLeaves(used, keep);
+  for (const e of g.freeEdges) pruned.delete(e); // 이미 있는 기존관은 다시 그리지 않음
+  const mains = edgesToPolylines(pruned, g.coords);
 
   // 연결 못 한 수요처 번호 (표시용)
   const missNos = [];
@@ -154,8 +178,11 @@ export async function runAutoRoute({ supply = true, inlet = false } = {}) {
   beginBatch();
   let total = 0, count = 0, inletN = 0, inletLen = 0;
   try {
-    for (const line of (supply ? mains : [])) {
-      if (line.length < 2) continue;
+    // 인입관을 쓸 땐 분기 지점이 필요해 촘촘히, 공급관만이면 꼭짓점을 줄여 깔끔하게
+    const tol = inlet ? 1.0 : 4.0;
+    for (const raw of (supply ? mains : [])) {
+      if (raw.length < 2) continue;
+      const line = simplify(raw, tol);
       total += lenOf(line);
       count++;
       const coords = line.map((c) => toLonLat(c));

@@ -107,8 +107,9 @@ function nearestSegs(p, segs, index, k = 3, maxDist = 80) {
 // points: [[x,y], ...] 연결 대상(마커/기존관). 반환: { adj, nodes, snaps }
 const WELD_TOL = 3;    // 끊어진 도로 끝점을 이어 붙일 허용 오차(m)
 const CANDIDATES = 3;  // 마커당 스냅 후보 도로 수
+const EXISTING_SNAP_MAX = 150; // 기존관에 직접 붙일 수 있는 최대 거리(m)
 
-export function buildGraph(segs, points) {
+export function buildGraph(segs, points, existingLines = []) {
   const index = buildIndex(segs);
   const splits = new Map(); // segIdx → [{t, point}]
 
@@ -155,6 +156,15 @@ export function buildGraph(segs, points) {
   });
   const snaps = snapSets.map((l) => l[0] || null); // 기존 호환(가장 가까운 곳)
 
+  // 기존관 정점 → 가장 가까운 도로에 스냅점 등록 (연결선을 만들기 위해)
+  const exSnaps = existingLines.map((ln) => ln.map((pt) => {
+    const s2 = nearestSeg(pt, segs, index);
+    if (!s2) return null;
+    if (!splits.has(s2.segIdx)) splits.set(s2.segIdx, []);
+    splits.get(s2.segIdx).push({ t: s2.t, point: s2.point });
+    return { point: s2.point, dist: s2.dist };
+  }));
+
   const nodes = new Map(); // key → id
   const coords = [];       // id → [x,y]
   const adj = [];          // id → [{to, w}]
@@ -180,12 +190,58 @@ export function buildGraph(segs, points) {
     for (let k = 0; k < pts.length - 1; k++) link(nodeId(pts[k].point), nodeId(pts[k + 1].point));
   });
 
+  // ── 기존관 편입 ──
+  // 기존관을 도로에 억지로 스냅시키면, 관이 도로 데이터와 조금만 어긋나도
+  // 엉뚱한 도로에 붙어 크게 우회한다. 그래서 기존관 자체를 그래프의 간선으로 넣고
+  // (이미 깔려 있으니 이동 비용 0), 도로와는 실제 거리만큼의 연결선으로 잇는다.
+  const freeEdges = new Set();
+  const sourceIds = [];
+  const ekey = (a, b) => (a < b ? `${a}|${b}` : `${b}|${a}`);
+
+  existingLines.forEach((ln, li) => {
+    let prevId = -1;
+    ln.forEach((pt, vi) => {
+      const id = nodeId(pt);
+      sourceIds.push(id);
+      if (prevId >= 0 && prevId !== id) {
+        adj[prevId].push({ to: id, w: 0.001 });   // 기존관 따라 이동 = 사실상 무료
+        adj[id].push({ to: prevId, w: 0.001 });
+        freeEdges.add(ekey(prevId, id));          // 이미 있는 관이므로 다시 그리지 않음
+      }
+      prevId = id;
+      // 도로와의 연결선 (실제 거리만큼 비용, 사용되면 새 배관으로 그려짐)
+      const sn = exSnaps[li] && exSnaps[li][vi];
+      if (sn) {
+        const rid = nodes.get(nkey(sn.point[0], sn.point[1]));
+        if (rid !== undefined && rid !== id) link(id, rid);
+      }
+    });
+  });
+
+  // 수요처가 기존관에 바로 붙을 수 있도록, 기존관 위 지점도 스냅 후보에 추가한다.
+  // (이게 없으면 기존관이 코앞이어도 도로까지 나갔다 오는 우회가 생긴다)
+  if (sourceIds.length) {
+    points.forEach((p, pi) => {
+      let bestId = -1, bestD = Infinity;
+      for (const id of sourceIds) {
+        const c = coords[id];
+        const d = Math.hypot(p[0] - c[0], p[1] - c[1]);
+        if (d < bestD) { bestD = d; bestId = id; }
+      }
+      if (bestId >= 0 && bestD <= EXISTING_SNAP_MAX) {
+        snapSets[pi] = [...(snapSets[pi] || []), { point: coords[bestId], dist: bestD }];
+      }
+    });
+  }
+
   return {
     adj,
     coords,
     idOf: (pt) => nodes.get(nkey(pt[0], pt[1])),
     snaps,    // points와 같은 순서 (가장 가까운 후보)
-    snapSets, // points와 같은 순서, 후보 목록
+    snapSets, // points와 같은 순서, 후보 목록(도로 + 기존관)
+    freeEdges,  // 기존관 구간 (그리지 않음)
+    sourceIds,  // 기존관 위 노드 = 공급원
   };
 }
 
