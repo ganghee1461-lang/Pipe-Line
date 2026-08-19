@@ -45,7 +45,8 @@ export async function onRequest(context) {
   };
   if (token) headers.Authorization = `Bearer ${token}`;
   const base = `https://api.github.com/repos/${OWNER}/${REPO}/contents`;
-  const folder = clean(url.searchParams.get('folder'));
+  const queryFolder = clean(url.searchParams.get('folder'));
+  const folder = queryFolder; // GET/DELETE용 (POST는 본문 folder를 우선해 아래서 재정의)
 
   try {
     if (request.method === 'GET') {
@@ -73,6 +74,8 @@ export async function onRequest(context) {
     if (request.method === 'POST') {
       if (!token) return json({ error: 'GITHUB_TOKEN 미설정 — Cloudflare 환경변수에 토큰을 추가하세요.' }, 500);
       const body = await request.json().catch(() => null);
+      // 저장 위치는 본문의 folder를 우선(쿼리스트링은 이동 API용 fallback)
+      const folder = body && body.folder != null ? clean(body.folder) : queryFolder;
 
       // 폴더 생성
       if (body?.mkdir) {
