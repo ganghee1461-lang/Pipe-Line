@@ -192,6 +192,40 @@ export function buildNetwork(adj, sourceIds, terminalIds) {
   return { used, unreachable };
 }
 
+// ── 막다른 가지 치기 ──
+// 어떤 수요처/공급원에도 닿지 않는 말단 간선을 반복적으로 제거한다.
+// (경로를 합치는 과정에서 생기는, 아무도 쓰지 않는 곁가지 제거)
+export function pruneLeaves(used, keepIds) {
+  const edges = new Set(used);
+  const nb = new Map(); // node → Set(node)
+  const add = (a, b) => { if (!nb.has(a)) nb.set(a, new Set()); nb.get(a).add(b); };
+  for (const k of edges) {
+    const [a, b] = k.split('|').map(Number);
+    add(a, b); add(b, a);
+  }
+
+  const ekey = (a, b) => (a < b ? `${a}|${b}` : `${b}|${a}`);
+  // 말단(차수 1)이면서 보존 대상이 아닌 노드를 계속 떼어낸다
+  const queue = [];
+  for (const [n, s] of nb) if (s.size === 1 && !keepIds.has(n)) queue.push(n);
+
+  while (queue.length) {
+    const n = queue.pop();
+    const s = nb.get(n);
+    if (!s || s.size !== 1 || keepIds.has(n)) continue;
+    const [other] = [...s];
+    edges.delete(ekey(n, other));
+    nb.delete(n);
+    const os = nb.get(other);
+    if (os) {
+      os.delete(n);
+      if (os.size === 1 && !keepIds.has(other)) queue.push(other);
+      else if (os.size === 0) nb.delete(other);
+    }
+  }
+  return edges;
+}
+
 // ── 사용된 간선들을 폴리라인으로 병합 ──
 export function edgesToPolylines(used, coords) {
   const nb = new Map(); // node → Set(node)

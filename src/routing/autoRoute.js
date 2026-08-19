@@ -7,7 +7,7 @@
 import { fromLonLat, toLonLat } from 'ol/proj.js';
 import { getState, addPipe, beginBatch, endBatch } from '../state/store.js';
 import { fetchRoads, ROADS_READY } from './roads.js';
-import { toSegments, buildGraph, buildNetwork, edgesToPolylines } from './graph.js';
+import { toSegments, buildGraph, buildNetwork, edgesToPolylines, pruneLeaves } from './graph.js';
 
 const SUPPLY_DIA = '110A';
 const INLET_DIA = '63A';
@@ -129,7 +129,21 @@ export async function runAutoRoute({ inlet = false } = {}) {
   phase(`최소 연결 경로 계산 중… (수요처 ${targets.length}곳)`, 70, '', t0);
   await tick();
   const { used, unreachable } = buildNetwork(g.adj, srcIds, termIds);
-  const mains = edgesToPolylines(used, g.coords);
+  // 어떤 수요처/공급원에도 닿지 않는 막다른 곁가지 제거
+  const keep = new Set([...termIds, ...srcIds].filter((v) => v >= 0));
+  const mains = edgesToPolylines(pruneLeaves(used, keep), g.coords);
+
+  // 연결 못 한 수요처 번호 (표시용)
+  const idToTargets = new Map();
+  termIds.forEach((id, i) => {
+    if (id < 0) return;
+    if (!idToTargets.has(id)) idToTargets.set(id, []);
+    idToTargets.get(id).push(i + 1);
+  });
+  const missNos = [];
+  termIds.forEach((id, i) => { if (id < 0) missNos.push(i + 1); });
+  for (const id of unreachable) for (const n of idToTargets.get(id) || []) missNos.push(n);
+  missNos.sort((a, b) => a - b);
 
   phase('배관 생성 중…', 90, '', t0);
   await tick();
@@ -174,7 +188,7 @@ export async function runAutoRoute({ inlet = false } = {}) {
   setStatus(
     `완료 — 공급관 ${count}개 · 총 ${Math.round(total).toLocaleString()}m`
     + (inletN ? ` · 인입관 ${inletN}개 ${Math.round(inletLen).toLocaleString()}m (참조용·부정확, 직접 수정 필요)` : '')
-    + (unreachable.length ? ` · 못 이은 수요처 ${unreachable.length}곳` : '')
+    + (missNos.length ? ` · 못 이은 수요처 ${missNos.length}곳(#${missNos.join(', #')})` : '')
     + (srcIds.some((v) => v >= 0) ? '' : ' · 기존관이 없어 최소연결로 생성')
     + ' · Ctrl+Z로 되돌리기'
   );
