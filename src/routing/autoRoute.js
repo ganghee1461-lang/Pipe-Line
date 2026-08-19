@@ -18,6 +18,11 @@ const MAX_SOURCE_PTS = 4000;
 const VERTEX_MERGE = 3.5;   // 결과 꼭짓점 병합 반경(m) — 교차로 점 뭉침 방지
 const EX_ATTACH_MAX = 60;   // 공급관을 기존관에 붙일 최대 거리(m)
 const EX_NEAR_SNAP = 12;    // 기존관 출발점이 아니어도 이 거리 안이면 끝점을 스냅
+const COVER_TOL = 6;        // 기존관과 이 거리 안에서 나란히 가는 구간은 이미 공급된 것으로 보고 안 그림
+
+const INLET_WEIGHT = 5;     // 인입 거리 가중치 (공급관은 수요처 앞 도로를 지나야 한다)
+const SNAP_SLACK = 15;      // 가장 가까운 도로보다 이만큼 더 먼 스냅 후보는 벌점 대상
+const FAR_PENALTY = 5000;   // 먼 후보에 붙이는 벌점 — 다른 길이 없을 때만 쓰이도록
 
 const setStatus = (t) => { const el = document.getElementById('ar-status'); if (el) el.textContent = t; };
 
@@ -61,6 +66,40 @@ function existingPipePoints(pipes) {
     }
   }
   return pts;
+}
+
+// 기존관 구간 목록 (EPSG:3857)
+function existingSegments(pipes) {
+  const out = [];
+  for (const p of pipes) {
+    for (let i = 0; i < p.segs.length; i++) {
+      if (p.segs[i].status !== 'existing') continue;
+      out.push({ pipeId: p.id, seg: i, a: fromLonLat(p.coords[i]), b: fromLonLat(p.coords[i + 1]) });
+    }
+  }
+  return out;
+}
+
+// 점 → 선분 거리
+function distToSeg(m, s) {
+  const vx = s.b[0] - s.a[0], vy = s.b[1] - s.a[1];
+  const l2 = vx * vx + vy * vy;
+  let t = l2 ? ((m[0] - s.a[0]) * vx + (m[1] - s.a[1]) * vy) / l2 : 0;
+  t = Math.max(0, Math.min(1, t));
+  return Math.hypot(m[0] - (s.a[0] + vx * t), m[1] - (s.a[1] + vy * t));
+}
+
+// 이 도로 간선이 기존관과 처음부터 끝까지 나란히 붙어 있나?
+// (그렇다면 이미 그 자리에 관이 있으므로 공급관을 겹쳐 그리면 안 된다)
+function coveredByExisting(a, b, exSegs) {
+  if (!exSegs.length) return false;
+  for (const t of [0, 0.25, 0.5, 0.75, 1]) {
+    const p = [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t];
+    let ok = false;
+    for (const s of exSegs) { if (distToSeg(p, s) <= COVER_TOL) { ok = true; break; } }
+    if (!ok) return false;
+  }
+  return true;
 }
 
 const DEFAULT_ATTR = {
@@ -158,10 +197,23 @@ export async function runAutoRoute({ supply = true, inlet = false } = {}) {
   const markerPts = targets.map((d) => fromLonLat([d.lon, d.lat]));
   const g = buildGraph(segs, [...markerPts, ...sourcePts]);
 
-  // 수요처마다 스냅 후보 여러 곳 → 총 연장이 가장 짧아지는 곳을 알고리즘이 고른다
-  const groups = markerPts.map((_, i) => (g.snapSets[i] || [])
-    .map((s) => ({ id: g.idOf(s.point), extra: s.dist }))
-    .filter((c) => c.id !== undefined));
+  // 수요처마다 스냅 후보 여러 곳 → 총 연장이 가장 짧아지는 곳을 알고리즘이 고른다.
+  // 단, 인입 거리는 공급관 연장보다 훨씬 비싸게 친다. 그러지 않으면 "골목으로 100m 더
+  // 들어가기"보다 "이미 관이 있는 바깥 도로에 50m짜리 인입으로 붙기"가 싸게 계산돼서,
+  // 블록 안쪽 수요처 앞으로 공급관이 아예 들어오지 않는다.
+  // 가장 가까운 도로보다 크게 먼 후보는 큰 벌점을 줘 사실상 배제하되, 그 도로로만 닿는
+  // 수요처가 고립되지 않게 후보 자체는 남겨 둔다.
+  const groups = markerPts.map((_, i) => {
+    const set = (g.snapSets[i] || [])
+      .map((s) => ({ id: g.idOf(s.point), dist: s.dist }))
+      .filter((c) => c.id !== undefined);
+    if (!set.length) return set;
+    const near = Math.min(...set.map((c) => c.dist));
+    return set.map((c) => ({
+      id: c.id,
+      extra: c.dist * INLET_WEIGHT + (c.dist > near + SNAP_SLACK ? FAR_PENALTY : 0),
+    }));
+  });
   const srcIds = sourcePts.map((_, i) => {
     const s = g.snaps[markerPts.length + i];
     const id = s ? g.idOf(s.point) : undefined;
@@ -187,7 +239,17 @@ export async function runAutoRoute({ supply = true, inlet = false } = {}) {
   // 고리(중복 가지) 제거 → 트리로 정리한 뒤, 막다른 곁가지까지 제거
   const keep = new Set([...chosen.filter((v) => v >= 0), ...srcIds.filter((v) => v >= 0)]);
   const tree = treeify(used, srcIds, chosen, g.coords);
-  const mains = edgesToPolylines(pruneLeaves(tree.size ? tree : used, keep), g.coords);
+  let edges = tree.size ? tree : used;
+
+  // 기존관이 이미 깔린 자리를 따라가는 간선은 빼서 관이 겹쳐 그려지지 않게 한다
+  const exSegs = existingSegments(getState().pipes);
+  if (exSegs.length) {
+    edges = new Set([...edges].filter((k) => {
+      const [a, b] = k.split('|').map(Number);
+      return !coveredByExisting(g.coords[a], g.coords[b], exSegs);
+    }));
+  }
+  const mains = edgesToPolylines(pruneLeaves(edges, keep), g.coords);
 
   // 연결 못 한 수요처 번호 (표시용)
   const missNos = [];
@@ -237,14 +299,6 @@ export async function runAutoRoute({ supply = true, inlet = false } = {}) {
   // 어느 쪽이든 기존관에도 같은 좌표를 꼭짓점으로 넣어 접점을 공유하게 한다.
   const exInserts = []; // { pipeId, seg, u, lonlat }
   {
-    const exSegs = [];
-    for (const p of getState().pipes) {
-      for (let i = 0; i < p.segs.length; i++) {
-        if (p.segs[i].status !== 'existing') continue;
-        exSegs.push({ pipeId: p.id, seg: i, a: fromLonLat(p.coords[i]), b: fromLonLat(p.coords[i + 1]) });
-      }
-    }
-
     // 기존관 위 가장 가까운 점 (u = 해당 구간 내 위치 0~1)
     const nearestOnPipe = (m) => {
       let best = null;
