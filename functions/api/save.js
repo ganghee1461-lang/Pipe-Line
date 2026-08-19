@@ -36,7 +36,13 @@ export async function onRequest(context) {
   const { request, env } = context;
   const url = new URL(request.url);
   const token = env.GITHUB_TOKEN;
-  const headers = { 'User-Agent': 'pipe-line-app', Accept: 'application/vnd.github+json' };
+  // GitHub Contents API는 CDN 캐시가 있어 커밋 직후 목록이 옛 상태로 오는 일이 있다.
+  // 캐시를 우회해 이동/저장 결과가 바로 보이게 한다.
+  const headers = {
+    'User-Agent': 'pipe-line-app',
+    Accept: 'application/vnd.github+json',
+    'Cache-Control': 'no-cache',
+  };
   if (token) headers.Authorization = `Bearer ${token}`;
   const base = `https://api.github.com/repos/${OWNER}/${REPO}/contents`;
   const folder = clean(url.searchParams.get('folder'));
@@ -52,7 +58,8 @@ export async function onRequest(context) {
         return new Response(b64decode(j.content), { headers: { 'Content-Type': 'application/json; charset=utf-8' } });
       }
       const listPath = folder ? `save/${folder}` : 'save';
-      const r = await fetch(`${base}/${enc(listPath)}?ref=${BRANCH}`, { headers });
+      // t= 캐시버스터: 방금 커밋한 변경이 즉시 목록에 반영되도록
+      const r = await fetch(`${base}/${enc(listPath)}?ref=${BRANCH}&t=${Date.now()}`, { headers, cf: { cacheTtl: 0 } });
       if (!r.ok) {
         if (r.status === 404) return json({ folders: [], files: [] });
         return json({ error: `목록 실패 HTTP ${r.status}` }, r.status);

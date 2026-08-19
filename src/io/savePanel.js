@@ -8,6 +8,7 @@ import { DASH } from '../config/pipeStyles.js';
 
 let nameInput, statusEl, ghListEl, folderSel;
 let currentFolder = ''; // '' = 루트
+let rootHasFiles = false; // 루트에 파일이 남아있는지 (없으면 루트 칩/옵션 숨김)
 
 // 프로젝트 데이터 + 현재 편집 시점(지도 위치/줌)
 function projectData() {
@@ -54,9 +55,13 @@ async function loadFolders() {
     const r = await fetch('/api/save');
     const j = await r.json().catch(() => ({}));
     const folders = j.folders || [];
+    rootHasFiles = (j.files || []).length > 0; // 루트에 남은 파일이 있을 때만 루트 노출
     folderSel.innerHTML = folders.map((f) => `<option value="${esc(f)}">📁 ${esc(f)}</option>`).join('')
-      + '<option value="">· (루트)</option>';
-    if (folders.length && !folders.includes(currentFolder) && currentFolder !== '') currentFolder = folders[0];
+      + (rootHasFiles || currentFolder === '' ? '<option value="">· (루트)</option>' : '');
+    // 현재 폴더가 사라졌거나, 루트가 비어 숨겨진 경우 첫 폴더로
+    if (folders.length && !folders.includes(currentFolder) && !(currentFolder === '' && rootHasFiles)) {
+      currentFolder = folders[0];
+    }
     folderSel.value = currentFolder;
     renderFolderTargets(folders);
   } catch {
@@ -178,8 +183,9 @@ function bindRowInteractions() {
 function renderFolderTargets(folders) {
   const wrap = document.getElementById('folder-targets');
   if (!wrap) return;
+  // 루트는 정리 완료 후 숨김 — 루트에 남은 파일이 있을 때만 칩을 보여준다.
   wrap.innerHTML = folders.map((f) => `<button class="fd-target ${f === currentFolder ? 'cur' : ''}" data-t="${esc(f)}">📁 ${esc(f)}</button>`).join('')
-    + `<button class="fd-target ${currentFolder === '' ? 'cur' : ''}" data-t="">· 루트</button>`;
+    + (rootHasFiles || currentFolder === '' ? `<button class="fd-target ${currentFolder === '' ? 'cur' : ''}" data-t="">· 루트</button>` : '');
 
   wrap.querySelectorAll('.fd-target').forEach((btn) => {
     const to = btn.dataset.t;
@@ -199,6 +205,11 @@ function renderFolderTargets(folders) {
 
 async function moveFile(file, fromFolder, toFolder) {
   if ((fromFolder || '') === (toFolder || '')) return;
+  // 낙관적 갱신: GitHub 목록 API는 커밋 직후 캐시 때문에 몇 초 지연되므로
+  // 화면에서 먼저 행을 지우고(즉시 반응), 서버 반영은 뒤이어 확인한다.
+  const row = ghListEl.querySelector(`.sv-row[data-f="${cssEsc(file)}"]`);
+  if (row) row.remove();
+  if (!ghListEl.querySelector('.sv-row')) ghListEl.innerHTML = '<li class="sv-empty">이 폴더에 저장 파일 없음</li>';
   status(`이동 중… ${file}`);
   try {
     const r = await fetch(`/api/save${fromFolder ? `?folder=${encodeURIComponent(fromFolder)}` : ''}`, {
@@ -212,8 +223,12 @@ async function moveFile(file, fromFolder, toFolder) {
     listGithub();
   } catch (err) {
     status(`이동 실패: ${err.message}`, true);
+    listGithub(); // 실패 시 화면을 실제 상태로 되돌림
   }
 }
+
+// querySelector용 속성값 이스케이프
+function cssEsc(s) { return String(s).replace(/["\\]/g, '\\$&'); }
 
 // Ctrl+X 잘라내기 / Ctrl+V 현재 폴더에 붙여넣기
 function initClipboard() {
