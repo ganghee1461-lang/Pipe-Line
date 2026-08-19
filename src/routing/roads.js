@@ -2,14 +2,15 @@
 // 국토교통부 도로명주소 전자지도에서 뽑아 R2에 올린 시군구별 GeoJSON을 읽는다.
 // 도로명이 부여된 실제 통행로만 담겨 있어(복개천 포함, 열린 하천 제외) OSM보다 정확하다.
 //
-// 준비: tools/extract-roads.sh 로 추출 → R2 업로드 → .env 의 VITE_ROADS_URL 에 공개 URL
+// 준비: tools/extract-roads.sh 로 추출 → R2(road-data) 업로드
 // 구성: manifest.json { entries:[{ code(시군구), bbox:[minLon,minLat,maxLon,maxLat] }] }
 //       + {code}.json (GeoJSON LineString/MultiLineString)
 // 반환: [[ [lon,lat], ... ], ...]
 
-// 기본값 = 이 프로젝트용 R2 공개 버킷(road-data). 다른 곳을 쓰려면 VITE_ROADS_URL로 덮어쓴다.
-const DEFAULT_ROADS_URL = 'https://pub-e3ded0c9aba24c7d8513e0b7a266b91a.r2.dev';
-const BASE = (import.meta.env.VITE_ROADS_URL || DEFAULT_ROADS_URL).replace(/\/+$/, '');
+// 기본은 같은 출처의 프록시(/roads) — 교차 출처가 아니라 CORS 문제가 생기지 않는다.
+//   운영: functions/roads/[[path]].js,  개발: vite.config.js의 /roads 프록시
+// R2를 직접 부르고 싶으면 VITE_ROADS_URL 로 덮어쓴다.
+const BASE = (import.meta.env.VITE_ROADS_URL || '/roads').replace(/\/+$/, '');
 export const ROADS_READY = !!BASE;
 
 let manifestPromise = null;
