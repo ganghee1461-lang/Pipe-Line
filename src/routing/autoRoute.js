@@ -5,7 +5,7 @@
 // 옵션을 켜면 스냅점→마커 직선을 '참조용'으로 그린다(필지 경계 미반영 → 부정확).
 // 전체가 히스토리 한 칸이라 Ctrl+Z 한 번에 되돌아간다.
 import { fromLonLat, toLonLat } from 'ol/proj.js';
-import { getState, addPipe, beginBatch, endBatch } from '../state/store.js';
+import { getState, addPipe, insertVertex, beginBatch, endBatch } from '../state/store.js';
 import { fetchRoads, ROADS_READY } from './roads.js';
 import { toSegments, buildGraph, buildNetwork, edgesToPolylines, pruneLeaves } from './graph.js';
 
@@ -15,6 +15,8 @@ const MARGIN = 300; // 마커/기존관 bbox 여유(m)
 
 const SOURCE_STEP = 8;    // 기존관 위 분기 가능 지점 간격(m)
 const MAX_SOURCE_PTS = 4000;
+const VERTEX_MERGE = 3.5;   // 결과 꼭짓점 병합 반경(m) — 교차로 점 뭉침 방지
+const EX_ATTACH_MAX = 60;   // 공급관을 기존관에 붙일 최대 거리(m)
 
 const setStatus = (t) => { const el = document.getElementById('ar-status'); if (el) el.textContent = t; };
 
@@ -195,22 +197,72 @@ export async function runAutoRoute({ supply = true, inlet = false } = {}) {
 
   // ── 공급관 폴리라인 확정 ──
   const tol = inlet ? 1.5 : 4.0;
-  const supplyLines = [];
+  let supplyLines = [];
   if (supply) {
     for (const raw of mains) {
       if (raw.length < 2) continue;
-      let line = simplify(raw, tol);
-      // 양 끝이 기존관 접점이면 기존관 좌표까지 이어 붙여 같은 점을 공유하게 한다
-      const head = srcAnchor.get(g.idOf(line[0]));
-      if (head && head.d > 0.2) line = [head.pt, ...line];
-      const tailA = srcAnchor.get(g.idOf(line[line.length - 1]));
-      if (tailA && tailA.d > 0.2) line = [...line, tailA.pt];
-      supplyLines.push(line);
+      supplyLines.push(simplify(raw, tol));
     }
   }
 
-  // ── 인입관: 공급관에 수직으로 내리고, 그 발점을 공급관에 삽입해 접점을 공유 ──
-  // 붙일 대상: 이번에 만든 공급관 + 이미 그려둔 공급관/기존관
+  // ── 결과 전체에 걸쳐 가까운 꼭짓점 병합 ──
+  // 교차로에서는 도로 선분이 여러 개라 선분별 병합만으로는 점이 뭉쳐 남는다.
+  // 생성된 모든 폴리라인의 꼭짓점을 한꺼번에 묶어 대표점 하나로 통일한다.
+  {
+    const reps = [];                       // 대표점 목록
+    const repOf = (pt) => {
+      for (const r of reps) {
+        if (Math.hypot(r[0] - pt[0], r[1] - pt[1]) <= VERTEX_MERGE) return r;
+      }
+      reps.push(pt);
+      return pt;
+    };
+    supplyLines = supplyLines.map((line) => {
+      const out = [];
+      for (const pt of line) {
+        const r = repOf(pt);
+        const last = out[out.length - 1];
+        if (last && Math.hypot(last[0] - r[0], last[1] - r[1]) < 0.05) continue; // 중복 제거
+        out.push(r);
+      }
+      return out;
+    }).filter((l) => l.length >= 2 && lenOf(l) > 1); // 길이 없는 토막 제거
+  }
+
+  // ── 기존관과 접점 공유 ──
+  // 공급관 끝점을 기존관 위 정확한 지점으로 맞추고, 기존관에도 그 점을 꼭짓점으로 넣는다.
+  const exInserts = []; // { pipeId, seg, lonlat }
+  {
+    const exPipes = getState().pipes.filter((p) => p.segs.some((sg) => sg.status === 'existing'));
+    const nearestOnPipe = (m) => {
+      let best = null;
+      for (const p of exPipes) {
+        for (let i = 0; i < p.segs.length; i++) {
+          if (p.segs[i].status !== 'existing') continue;
+          const a = fromLonLat(p.coords[i]), b = fromLonLat(p.coords[i + 1]);
+          const vx = b[0] - a[0], vy = b[1] - a[1];
+          const l2 = vx * vx + vy * vy;
+          let t = l2 ? ((m[0] - a[0]) * vx + (m[1] - a[1]) * vy) / l2 : 0;
+          t = Math.max(0, Math.min(1, t));
+          const q = [a[0] + vx * t, a[1] + vy * t];
+          const d = Math.hypot(m[0] - q[0], m[1] - q[1]);
+          if (!best || d < best.d) best = { pipeId: p.id, seg: i, point: q, d };
+        }
+      }
+      return best;
+    };
+    for (const line of supplyLines) {
+      for (const endIdx of [0, line.length - 1]) {
+        if (!srcAnchor.has(g.idOf(line[endIdx]))) continue; // 기존관에서 나온 끝점만
+        const hit = nearestOnPipe(line[endIdx]);
+        if (!hit || hit.d > EX_ATTACH_MAX) continue;
+        line[endIdx] = hit.point;                       // 끝점을 기존관 위로 정확히
+        exInserts.push({ ...hit, lonlat: toLonLat(hit.point) });
+      }
+    }
+  }
+
+  // ── 인입관: 공급관에 수직으로 내리고, 발점을 공급관 꼭짓점으로 삽입 ──
   const attachTargets = supplyLines.map((line) => ({ line, insert: [] }));
   const drawnBase = attachTargets.length;
   if (inlet) {
@@ -234,7 +286,7 @@ export async function runAutoRoute({ supply = true, inlet = false } = {}) {
       t = Math.max(0, Math.min(1, t));
       const q = [a[0] + vx * t, a[1] + vy * t];
       const d = Math.hypot(m[0] - q[0], m[1] - q[1]);
-      if (!best || d < best.d) best = { seg: i, t, point: q, d };
+      if (!best || d < best.d) best = { seg: i, point: q, d };
     }
     return best;
   };
@@ -250,17 +302,16 @@ export async function runAutoRoute({ supply = true, inlet = false } = {}) {
       });
       if (!best || best.d < 0.5) return;
       inlets.push({ i, from: best.point, to: m, d: best.d });
-      // 새로 만든 공급관이면 발점을 꼭짓점으로 삽입해 접점을 공유하게 한다
       const tg = attachTargets[bestIdx];
       if (tg.insert) tg.insert.push({ seg: best.seg, point: best.point });
     });
-    // 뒤쪽 구간부터 삽입해야 인덱스가 밀리지 않는다
     for (const tg of attachTargets) {
       if (!tg.insert || !tg.insert.length) continue;
       tg.insert.sort((a, b) => b.seg - a.seg);
       for (const ins of tg.insert) {
         const at = ins.seg + 1;
         const prev = tg.line[at - 1], next = tg.line[at];
+        if (!prev || !next) continue;
         if (Math.hypot(prev[0] - ins.point[0], prev[1] - ins.point[1]) < 0.2) continue;
         if (Math.hypot(next[0] - ins.point[0], next[1] - ins.point[1]) < 0.2) continue;
         tg.line.splice(at, 0, ins.point);
@@ -272,6 +323,10 @@ export async function runAutoRoute({ supply = true, inlet = false } = {}) {
   beginBatch();
   let total = 0, count = 0, inletN = 0, inletLen = 0;
   try {
+    // 기존관에 접점 꼭짓점 삽입 (뒤 구간부터 넣어야 인덱스가 밀리지 않음)
+    exInserts.sort((a, b) => b.pipeId - a.pipeId || b.seg - a.seg);
+    for (const ins of exInserts) insertVertex(ins.pipeId, ins.seg, ins.lonlat);
+
     for (let k = 0; k < drawnBase; k++) {
       const line = attachTargets[k].line;
       if (line.length < 2) continue;
@@ -287,7 +342,7 @@ export async function runAutoRoute({ supply = true, inlet = false } = {}) {
       inletLen += it.d;
       inletN++;
       addPipe({
-        coords: [toLonLat(it.from), toLonLat(it.to)], // 공급관 → 마커 (수직)
+        coords: [toLonLat(it.from), toLonLat(it.to)],
         segs: [{ ...DEFAULT_ATTR, use: 'inlet', diameter: INLET_DIA, markerNo: String(it.i + 1) }],
       });
     }
