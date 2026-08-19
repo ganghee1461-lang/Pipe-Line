@@ -65,12 +65,20 @@ const DEFAULT_ATTR = {
   status: 'planned', review: 'target', pavement: 'asphalt', section: 1, markerNo: '',
 };
 
+const ptKey = (p) => `${p[0].toFixed(1)},${p[1].toFixed(1)}`;
+
 // 도로 형상을 따라온 폴리라인의 불필요한 꼭짓점 제거 (Douglas-Peucker).
 // 갈래는 별도 폴리라인으로 나뉘어 있어 분기점(양 끝)은 항상 보존된다.
-function simplify(pts, tol) {
+function simplify(pts, tol, protectedKeys = null) {
   if (pts.length < 3) return pts;
   const keep = new Uint8Array(pts.length);
   keep[0] = keep[pts.length - 1] = 1;
+  // 인입관이 붙는 접점 등은 지우면 안 된다 (지우면 인입관이 공급관에서 떨어진다)
+  if (protectedKeys) {
+    for (let i = 0; i < pts.length; i++) {
+      if (protectedKeys.has(ptKey(pts[i]))) keep[i] = 1;
+    }
+  }
   const stack = [[0, pts.length - 1]];
   while (stack.length) {
     const [i, j] = stack.pop();
@@ -161,6 +169,18 @@ export async function runAutoRoute({ supply = true, inlet = false } = {}) {
   await tick();
   const { used, unreachable, chosen } = buildNetwork(g.adj, srcIds, groups);
 
+  // 기존관 스냅점 → 실제 기존관 좌표 (공급관이 기존관에 맞물리도록 잇는 데 사용)
+  const srcAnchor = new Map();
+  sourcePts.forEach((pt, i) => {
+    const sn = g.snaps[markerPts.length + i];
+    if (!sn) return;
+    const id = g.idOf(sn.point);
+    if (id === undefined) return;
+    const d = Math.hypot(pt[0] - sn.point[0], pt[1] - sn.point[1]);
+    const cur = srcAnchor.get(id);
+    if (!cur || d < cur.d) srcAnchor.set(id, { pt, d });
+  });
+
   // 어떤 수요처/공급원에도 닿지 않는 막다른 곁가지 제거
   const keep = new Set([...chosen.filter((v) => v >= 0), ...srcIds.filter((v) => v >= 0)]);
   const mains = edgesToPolylines(pruneLeaves(used, keep), g.coords);
@@ -173,15 +193,88 @@ export async function runAutoRoute({ supply = true, inlet = false } = {}) {
   phase('배관 생성 중…', 90, '', t0);
   await tick();
 
-  // 공급관 + (선택)참조용 인입관 생성 — 전체를 히스토리 한 칸으로
+  // ── 공급관 폴리라인 확정 ──
+  const tol = inlet ? 1.5 : 4.0;
+  const supplyLines = [];
+  if (supply) {
+    for (const raw of mains) {
+      if (raw.length < 2) continue;
+      let line = simplify(raw, tol);
+      // 양 끝이 기존관 접점이면 기존관 좌표까지 이어 붙여 같은 점을 공유하게 한다
+      const head = srcAnchor.get(g.idOf(line[0]));
+      if (head && head.d > 0.2) line = [head.pt, ...line];
+      const tailA = srcAnchor.get(g.idOf(line[line.length - 1]));
+      if (tailA && tailA.d > 0.2) line = [...line, tailA.pt];
+      supplyLines.push(line);
+    }
+  }
+
+  // ── 인입관: 공급관에 수직으로 내리고, 그 발점을 공급관에 삽입해 접점을 공유 ──
+  // 붙일 대상: 이번에 만든 공급관 + 이미 그려둔 공급관/기존관
+  const attachTargets = supplyLines.map((line) => ({ line, insert: [] }));
+  const drawnBase = attachTargets.length;
+  if (inlet) {
+    for (const p of getState().pipes) {
+      let run = null;
+      for (let i = 0; i < p.segs.length; i++) {
+        if (p.segs[i].use !== 'supply' && p.segs[i].status !== 'existing') { run = null; continue; }
+        if (!run) { run = [fromLonLat(p.coords[i])]; attachTargets.push({ line: run, insert: null }); }
+        run.push(fromLonLat(p.coords[i + 1]));
+      }
+    }
+  }
+
+  const footOn = (line, m) => {
+    let best = null;
+    for (let i = 0; i < line.length - 1; i++) {
+      const a = line[i], b = line[i + 1];
+      const vx = b[0] - a[0], vy = b[1] - a[1];
+      const l2 = vx * vx + vy * vy;
+      let t = l2 ? ((m[0] - a[0]) * vx + (m[1] - a[1]) * vy) / l2 : 0;
+      t = Math.max(0, Math.min(1, t));
+      const q = [a[0] + vx * t, a[1] + vy * t];
+      const d = Math.hypot(m[0] - q[0], m[1] - q[1]);
+      if (!best || d < best.d) best = { seg: i, t, point: q, d };
+    }
+    return best;
+  };
+
+  const inlets = [];
+  if (inlet && attachTargets.length) {
+    markerPts.forEach((m, i) => {
+      let best = null, bestIdx = -1;
+      attachTargets.forEach((tg, ti) => {
+        if (tg.line.length < 2) return;
+        const f = footOn(tg.line, m);
+        if (f && (!best || f.d < best.d)) { best = f; bestIdx = ti; }
+      });
+      if (!best || best.d < 0.5) return;
+      inlets.push({ i, from: best.point, to: m, d: best.d });
+      // 새로 만든 공급관이면 발점을 꼭짓점으로 삽입해 접점을 공유하게 한다
+      const tg = attachTargets[bestIdx];
+      if (tg.insert) tg.insert.push({ seg: best.seg, point: best.point });
+    });
+    // 뒤쪽 구간부터 삽입해야 인덱스가 밀리지 않는다
+    for (const tg of attachTargets) {
+      if (!tg.insert || !tg.insert.length) continue;
+      tg.insert.sort((a, b) => b.seg - a.seg);
+      for (const ins of tg.insert) {
+        const at = ins.seg + 1;
+        const prev = tg.line[at - 1], next = tg.line[at];
+        if (Math.hypot(prev[0] - ins.point[0], prev[1] - ins.point[1]) < 0.2) continue;
+        if (Math.hypot(next[0] - ins.point[0], next[1] - ins.point[1]) < 0.2) continue;
+        tg.line.splice(at, 0, ins.point);
+      }
+    }
+  }
+
+  // ── 생성 (전체를 히스토리 한 칸으로) ──
   beginBatch();
   let total = 0, count = 0, inletN = 0, inletLen = 0;
   try {
-    // 인입관을 쓸 땐 분기 지점이 필요해 촘촘히, 공급관만이면 꼭짓점을 줄여 깔끔하게
-    const tol = inlet ? 1.0 : 4.0;
-    for (const raw of (supply ? mains : [])) {
-      if (raw.length < 2) continue;
-      const line = simplify(raw, tol);
+    for (let k = 0; k < drawnBase; k++) {
+      const line = attachTargets[k].line;
+      if (line.length < 2) continue;
       total += lenOf(line);
       count++;
       const coords = line.map((c) => toLonLat(c));
@@ -190,24 +283,12 @@ export async function runAutoRoute({ supply = true, inlet = false } = {}) {
         segs: Array.from({ length: coords.length - 1 }, () => ({ ...DEFAULT_ATTR, use: 'supply', diameter: SUPPLY_DIA })),
       });
     }
-
-    // 참조용 인입관: 도로 스냅점 → 마커 직선. 필지 경계를 보지 않으므로 위치는 부정확하다.
-    // 실제 인입 위치를 잡을 때 눈대중 기준으로만 쓰고, 반드시 직접 수정해야 한다.
-    if (inlet) {
-      targets.forEach((d, i) => {
-        // 실제로 연결된 후보 지점에서 인입 (가장 가까운 곳이 아닐 수 있음)
-        const pick = (g.snapSets[i] || []).find((s) => g.idOf(s.point) === chosen[i]) || g.snaps[i];
-        if (!pick) return;
-        const snap = pick;
-        const p = markerPts[i];
-        const dist = Math.hypot(p[0] - snap.point[0], p[1] - snap.point[1]);
-        if (dist < 0.5) return;
-        inletLen += dist;
-        inletN++;
-        addPipe({
-          coords: [toLonLat(snap.point), toLonLat(p)], // 공급관 → 마커 방향
-          segs: [{ ...DEFAULT_ATTR, use: 'inlet', diameter: INLET_DIA, markerNo: String(i + 1) }],
-        });
+    for (const it of inlets) {
+      inletLen += it.d;
+      inletN++;
+      addPipe({
+        coords: [toLonLat(it.from), toLonLat(it.to)], // 공급관 → 마커 (수직)
+        segs: [{ ...DEFAULT_ATTR, use: 'inlet', diameter: INLET_DIA, markerNo: String(it.i + 1) }],
       });
     }
   } finally {

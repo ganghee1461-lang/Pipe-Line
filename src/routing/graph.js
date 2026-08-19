@@ -107,10 +107,23 @@ function nearestSegs(p, segs, index, k = 3, maxDist = 80) {
 // points: [[x,y], ...] 연결 대상(마커/기존관). 반환: { adj, nodes, snaps }
 const WELD_TOL = 3;    // 끊어진 도로 끝점을 이어 붙일 허용 오차(m)
 const CANDIDATES = 3;  // 마커당 스냅 후보 도로 수
+const MERGE_TOL = 2.5; // 이 거리 안의 분할점은 하나로 합침(노드 뭉침 방지)
 
 export function buildGraph(segs, points) {
   const index = buildIndex(segs);
   const splits = new Map(); // segIdx → [{t, point}]
+
+  // 분할점 추가. 같은 선분에 이미 아주 가까운 분할점이 있으면 그것을 재사용한다.
+  // (교차로에서 여러 마커가 조금씩 다른 지점에 스냅되어 노드가 뭉치는 것을 막음)
+  const addCut = (segIdx, t, point) => {
+    let arr = splits.get(segIdx);
+    if (!arr) { arr = []; splits.set(segIdx, arr); }
+    for (const c of arr) {
+      if (Math.hypot(c.point[0] - point[0], c.point[1] - point[1]) <= MERGE_TOL) return c.point;
+    }
+    arr.push({ t, point });
+    return point;
+  };
 
   // ── 노딩(교차점 이어붙이기) ──
   // 도로명주소 도로구간은 T자 교차에서 끝점을 공유하지 않는 경우가 있어,
@@ -132,9 +145,7 @@ export function buildGraph(segs, points) {
       const near = nearestSeg(pt, segs, index, i); // 자기 선분 제외
       if (!near || near.dist > WELD_TOL) continue;
       if (near.t <= 0.001 || near.t >= 0.999) continue; // 끝점끼리면 좌표만 맞추면 됨
-      if (!splits.has(near.segIdx)) splits.set(near.segIdx, []);
-      splits.get(near.segIdx).push({ t: near.t, point: near.point });
-      remap.set(k, near.point);
+      remap.set(k, addCut(near.segIdx, near.t, near.point));
     }
   });
   const fix = (pt) => remap.get(nkey(pt[0], pt[1])) || pt;
@@ -147,11 +158,10 @@ export function buildGraph(segs, points) {
       if (!s) return [];
       list.push(s);
     }
-    for (const s of list) {
-      if (!splits.has(s.segIdx)) splits.set(s.segIdx, []);
-      splits.get(s.segIdx).push({ t: s.t, point: s.point });
-    }
-    return list.map((s) => ({ point: s.point, dist: s.dist }));
+    return list.map((s) => {
+      const pt = addCut(s.segIdx, s.t, s.point);   // 병합된 지점을 사용
+      return { point: pt, dist: Math.hypot(p[0] - pt[0], p[1] - pt[1]) };
+    });
   });
   const snaps = snapSets.map((l) => l[0] || null); // 기존 호환(가장 가까운 곳)
 
