@@ -241,11 +241,15 @@ export async function runAutoRoute({ supply = true, inlet = false } = {}) {
   const tree = treeify(used, srcIds, chosen, g.coords);
   let edges = tree.size ? tree : used;
 
-  // 기존관이 이미 깔린 자리를 따라가는 간선은 빼서 관이 겹쳐 그려지지 않게 한다
+  // 기존관 위에 관을 겹쳐 그리지 않도록 중복 구간만 뺀다.
+  // 단, 양 끝이 '기존관 스냅점'인 간선만 뺀다 — 그래야 잘린 자리에서 갈래가
+  // 기존관에 그대로 물려서 연결이 끊기지 않는다. (전부 빼면 망이 조각난다)
   const exSegs = existingSegments(getState().pipes);
   if (exSegs.length) {
+    const srcSet = new Set(srcIds.filter((v) => v >= 0));
     edges = new Set([...edges].filter((k) => {
       const [a, b] = k.split('|').map(Number);
+      if (!srcSet.has(a) || !srcSet.has(b)) return true;
       return !coveredByExisting(g.coords[a], g.coords[b], exSegs);
     }));
   }
