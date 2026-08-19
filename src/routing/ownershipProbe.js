@@ -6,12 +6,35 @@
 //       → getPossession으로 소유구분 조회 → 단계별 소요시간 보고
 // 측정 중에는 오버레이로 조작을 막고 진행률을 표시한다.
 
-import { toLonLat } from 'ol/proj.js';
+import { fromLonLat, toLonLat } from 'ol/proj.js';
 import { map } from '../map/map.js';
+import { getState } from '../state/store.js';
 import { getParcel, getPossession, isPublicLand } from '../api/vworld.js';
 
 const CONCURRENCY = 6;
-const GRID = 12; // 12×12 = 144 지점 샘플링
+const GRID = 12;        // 격자 한 변 (12×12 = 144 지점)
+const MARGIN = 120;     // 마커 bbox 여유 (m)
+const MAX_SAMPLES = 400; // 안전 상한
+
+// 측정 영역: 수요처 마커를 감싸는 범위(+여유). 마커가 없을 때만 화면 기준.
+// 화면 확대/이동에 신경 쓰지 않고 버튼만 누르면 되도록.
+function probeExtent() {
+  const pts = getState().demands
+    .filter((d) => Number.isFinite(d.lon) && Number.isFinite(d.lat))
+    .map((d) => fromLonLat([d.lon, d.lat]));
+  if (!pts.length) return { ext: map.getView().calculateExtent(map.getSize()), byMarkers: false, n: 0 };
+  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+  for (const [x, y] of pts) {
+    minX = Math.min(minX, x); maxX = Math.max(maxX, x);
+    minY = Math.min(minY, y); maxY = Math.max(maxY, y);
+  }
+  return {
+    ext: [minX - MARGIN, minY - MARGIN, maxX + MARGIN, maxY + MARGIN],
+    byMarkers: true,
+    n: pts.length,
+    markerPts: pts,
+  };
+}
 
 let cancelled = false;
 
@@ -67,16 +90,21 @@ export async function runOwnershipProbe() {
   openOverlay();
   const t0 = performance.now();
   try {
-    // 1) 화면에 격자점 생성
-    const ext = map.getView().calculateExtent(map.getSize());
+    // 1) 표본 지점: 마커 위치 자체 + 마커를 감싸는 범위의 격자
+    const area = probeExtent();
+    const ext = area.ext;
     const pts = [];
+    if (area.markerPts) for (const p of area.markerPts) pts.push(toLonLat(p)); // 마커 필지는 반드시 포함
     for (let i = 0; i < GRID; i++) {
       for (let j = 0; j < GRID; j++) {
         const x = ext[0] + ((ext[2] - ext[0]) * (i + 0.5)) / GRID;
         const y = ext[1] + ((ext[3] - ext[1]) * (j + 0.5)) / GRID;
         pts.push(toLonLat([x, y]));
+        if (pts.length >= MAX_SAMPLES) break;
       }
+      if (pts.length >= MAX_SAMPLES) break;
     }
+    setPhase(area.byMarkers ? `수요처 ${area.n}곳 주변 조사 중…` : '현재 화면 조사 중…');
 
     // 2) 필지(PNU) 수집
     setPhase('필지 조회 중 (getParcel)');
@@ -115,9 +143,10 @@ export async function runOwnershipProbe() {
     // 4) 보고
     const perCall = ownMs / Math.max(1, done);
     const est300 = (perCall * 300) / 1000;
+    const where = area.byMarkers ? `수요처 ${area.n}곳 주변` : '현재 화면';
     setStatus(
-      `측정 완료 — 필지 ${pnus.length}개 (${(parcelMs / 1000).toFixed(1)}초) · `
-      + `소유구분 ${done}개 ${(ownMs / 1000).toFixed(1)}초 (건당 ${perCall.toFixed(0)}ms, 동시 ${CONCURRENCY}) · `
+      `측정 완료 (${where}) — 필지 ${pnus.length}개 (${(parcelMs / 1000).toFixed(1)}초) · `
+      + `소유구분 ${done}개 ${(ownMs / 1000).toFixed(1)}초 (평균 ${perCall.toFixed(0)}ms/건, 동시 ${CONCURRENCY}) · `
       + `공유 ${pub}/사유 ${priv}/미확인 ${unknown} · 300필지 예상 ${est300.toFixed(0)}초`
       + (cancelled ? ' [중단됨]' : '')
     );
