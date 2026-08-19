@@ -18,6 +18,7 @@ import { initModePanel } from './pipes/modePanel.js';
 import { initLegend } from './pipes/legend.js';
 import { initSectionLabels } from './pipes/sectionLabels.js';
 import { initSavePanel } from './io/savePanel.js';
+import { initAutoRoute } from './routing/autoRoute.js';
 import { initTabs } from './ui/tabs.js';
 import { initMarkerStyle } from './demands/markerStyle.js';
 
@@ -40,6 +41,7 @@ initModePanel();
 initLegend();
 initSectionLabels();
 initSavePanel();
+initAutoRoute();
 
 // 환경 안내 (키 유무)
 const note = document.getElementById('env-note');

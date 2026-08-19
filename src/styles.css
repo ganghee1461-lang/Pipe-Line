@@ -377,3 +377,6 @@ button { font-family: inherit; cursor: pointer; border: none; border-radius: 6px
 .sv-save { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border-soft); }
 #save-status { margin-top: 7px; font-size: 11px; color: var(--muted); line-height: 1.4; }
 #save-status.err { color: var(--error); }
+
+/* 도로 따라 자동 연결 */
+.ar-src { display: flex; gap: 14px; }

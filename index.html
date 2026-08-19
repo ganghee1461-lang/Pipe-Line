@@ -89,6 +89,16 @@
             <button id="meter-toggle" class="meter-toggle" aria-expanded="false">▸ 구간별 계량기 정보 보기</button>
             <div id="meter-agg" class="meter-agg hidden"></div>
           </section>
+
+          <section class="panel">
+            <div class="panel-label">도로 따라 자동 연결</div>
+            <div class="ar-src">
+              <label class="check-row" style="margin:0"><input type="radio" name="ar-src" value="osm" checked /> OSM</label>
+              <label class="check-row" style="margin:0"><input type="radio" name="ar-src" value="vworld" /> VWorld</label>
+            </div>
+            <button id="ar-run" class="btn-primary" style="width:100%;margin-top:8px">수요처 자동 연결</button>
+            <div id="ar-status" class="hint-text">기존관을 공급원으로, 도로를 따라 모든 수요처를 최소 연장으로 잇습니다. 기존관이 없으면 서로 잇기만 합니다.</div>
+          </section>
         </div>
 
         <!-- 디자인 탭 (마커 스타일 + 레이어) -->
