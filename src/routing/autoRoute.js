@@ -1,7 +1,8 @@
 // ── 도로 따라 공급관 자동 연결 ──
 // 도로명주소 도로구간(중심선) 위에서, 기존관을 공급원으로 삼아 모든 수요처의
 // '집 앞 도로'까지 최소 연장으로 잇는 공급관을 만든다.
-// 인입관(도로↔건물)은 현장 판단이 필요해 자동 생성하지 않는다 — 직접 그리면 된다.
+// 인입관(도로↔건물)은 현장 판단이 필요해 기본은 생성하지 않는다.
+// 옵션을 켜면 스냅점→마커 직선을 '참조용'으로 그린다(필지 경계 미반영 → 부정확).
 // 전체가 히스토리 한 칸이라 Ctrl+Z 한 번에 되돌아간다.
 import { fromLonLat, toLonLat } from 'ol/proj.js';
 import { getState, addPipe, beginBatch, endBatch } from '../state/store.js';
@@ -9,6 +10,7 @@ import { fetchRoads, ROADS_READY } from './roads.js';
 import { toSegments, buildGraph, buildNetwork, edgesToPolylines } from './graph.js';
 
 const SUPPLY_DIA = '110A';
+const INLET_DIA = '63A';
 const MARGIN = 300; // 마커/기존관 bbox 여유(m)
 
 const setStatus = (t) => { const el = document.getElementById('ar-status'); if (el) el.textContent = t; };
@@ -37,7 +39,7 @@ function dataBBox(targets) {
   return [lo[0], lo[1], hi[0], hi[1]];
 }
 
-export async function runAutoRoute() {
+export async function runAutoRoute({ inlet = false } = {}) {
   const { demands, pipes } = getState();
   const targets = demands.filter((d) => Number.isFinite(d.lon) && Number.isFinite(d.lat));
   if (!targets.length) { setStatus('연결할 수요처가 없습니다.'); return; }
@@ -82,9 +84,9 @@ export async function runAutoRoute() {
   const { used, unreachable } = buildNetwork(g.adj, srcIds, termIds);
   const mains = edgesToPolylines(used, g.coords);
 
-  // 공급관 생성 (전체를 히스토리 한 칸으로)
+  // 공급관 + (선택)참조용 인입관 생성 — 전체를 히스토리 한 칸으로
   beginBatch();
-  let total = 0, count = 0;
+  let total = 0, count = 0, inletN = 0, inletLen = 0;
   try {
     for (const line of mains) {
       if (line.length < 2) continue;
@@ -96,15 +98,34 @@ export async function runAutoRoute() {
         segs: Array.from({ length: coords.length - 1 }, () => ({ ...DEFAULT_ATTR, use: 'supply', diameter: SUPPLY_DIA })),
       });
     }
+
+    // 참조용 인입관: 도로 스냅점 → 마커 직선. 필지 경계를 보지 않으므로 위치는 부정확하다.
+    // 실제 인입 위치를 잡을 때 눈대중 기준으로만 쓰고, 반드시 직접 수정해야 한다.
+    if (inlet) {
+      targets.forEach((d, i) => {
+        const snap = g.snaps[i];
+        if (!snap) return;
+        const p = markerPts[i];
+        const dist = Math.hypot(p[0] - snap.point[0], p[1] - snap.point[1]);
+        if (dist < 0.5) return;
+        inletLen += dist;
+        inletN++;
+        addPipe({
+          coords: [toLonLat(snap.point), toLonLat(p)], // 공급관 → 마커 방향
+          segs: [{ ...DEFAULT_ATTR, use: 'inlet', diameter: INLET_DIA, markerNo: String(i + 1) }],
+        });
+      });
+    }
   } finally {
     endBatch();
   }
 
   setStatus(
     `완료 — 공급관 ${count}개 · 총 ${Math.round(total).toLocaleString()}m`
+    + (inletN ? ` · 인입관 ${inletN}개 ${Math.round(inletLen).toLocaleString()}m (참조용·부정확, 직접 수정 필요)` : '')
     + (unreachable.length ? ` · 못 이은 수요처 ${unreachable.length}곳` : '')
     + (srcIds.some((v) => v >= 0) ? '' : ' · 기존관이 없어 최소연결로 생성')
-    + ' · 인입관은 직접 그리세요 · Ctrl+Z로 되돌리기'
+    + ' · Ctrl+Z로 되돌리기'
   );
 }
 
@@ -113,7 +134,8 @@ export function initAutoRoute() {
   if (!btn) return;
   btn.addEventListener('click', async () => {
     btn.disabled = true;
-    try { await runAutoRoute(); }
+    const inlet = document.getElementById('ar-inlet')?.checked === true;
+    try { await runAutoRoute({ inlet }); }
     catch (err) { setStatus(`실패: ${err.message}`); }
     finally { btn.disabled = false; }
   });
