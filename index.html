@@ -143,25 +143,21 @@
         <!-- 저장 탭 -->
         <div class="tab-pane hidden" data-tab="io">
           <section class="panel">
-            <div class="panel-label">GitHub 저장</div>
-            <div class="row" style="margin-top:0">
-              <select id="save-folder" class="di-sort" style="flex:1"></select>
-              <button id="folder-new" class="btn-ghost" title="새 폴더 만들기">+폴더</button>
-              <button id="folder-del" class="btn-ghost" title="선택 폴더 삭제">🗑</button>
+            <!-- 탐색기: 경로 + 폴더/파일 목록 + 저장 -->
+            <div class="sv-head">
+              <span id="sv-path" class="sv-path"></span>
+              <span class="sv-head-btns">
+                <button id="folder-new" class="sv-mini" title="새 폴더 만들기">+ 폴더</button>
+                <button id="folder-del" class="sv-mini" title="현재 폴더 삭제">🗑</button>
+                <button id="gh-list-btn" class="sv-mini" title="새로고침">↻</button>
+              </span>
             </div>
-            <div class="row">
+            <ul id="gh-list" class="sv-list"></ul>
+            <div class="row sv-save">
               <input type="text" id="save-name" placeholder="파일 이름" />
               <button id="save-btn" class="btn-primary">저장</button>
             </div>
             <div id="save-status"></div>
-          </section>
-
-          <section class="panel">
-            <div class="panel-label">불러오기 <span id="gh-folder-label"></span></div>
-            <div id="folder-targets" class="fd-targets"></div>
-            <button id="gh-list-btn" class="btn-ghost" style="width:100%">목록 새로고침</button>
-            <ul id="gh-list"></ul>
-            <div class="hint-text">파일을 위 폴더로 <b>드래그</b>하거나, 파일 클릭 후 <b>Ctrl+X</b> → 폴더 이동 → <b>Ctrl+V</b> 로 옮길 수 있어요.</div>
           </section>
 
           <section class="panel">
@@ -174,10 +170,10 @@
           </section>
 
           <section class="panel">
-            <div class="panel-label">지도 이미지 내보내기</div>
+            <div class="panel-label">사진 저장</div>
             <label class="check-row" style="margin:0 0 6px"><input type="checkbox" id="export-legend" checked /> 범례 포함</label>
-            <button id="export-img-btn" class="btn-ghost" style="width:100%">지금 화면 그대로 PNG 저장</button>
-            <div id="export-img-status" class="hint-text">보이는 화면 그대로 저장됩니다(패널·팝업 제외). 구도는 지도를 직접 이동/확대해 잡으세요. (소유지적도·도시계획 레이어가 켜져 있으면 보안 제한으로 실패할 수 있어요)</div>
+            <button id="export-img-btn" class="btn-ghost" style="width:100%">사진 저장</button>
+            <div id="export-img-status" class="hint-text"></div>
           </section>
         </div>
       </div>

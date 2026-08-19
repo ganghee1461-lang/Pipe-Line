@@ -6,9 +6,10 @@ import { getViewState, setViewState, exportMapImage } from '../map/map.js';
 import { legendEntries } from '../pipes/legend.js';
 import { DASH } from '../config/pipeStyles.js';
 
-let nameInput, statusEl, ghListEl, folderSel;
-let currentFolder = ''; // '' = 루트
-let rootHasFiles = false; // 루트에 파일이 남아있는지 (없으면 루트 칩/옵션 숨김)
+let nameInput, statusEl, ghListEl, pathEl;
+let currentFolder = '';   // '' = save 루트
+let folders = [];         // 루트의 폴더 목록
+let files = [];           // 현재 위치의 파일 목록
 
 // 프로젝트 데이터 + 현재 편집 시점(지도 위치/줌)
 function projectData() {
@@ -19,13 +20,12 @@ export function initSavePanel() {
   nameInput = document.getElementById('save-name');
   statusEl = document.getElementById('save-status');
   ghListEl = document.getElementById('gh-list');
-  folderSel = document.getElementById('save-folder');
+  pathEl = document.getElementById('sv-path');
 
   document.getElementById('save-btn').addEventListener('click', saveToGithub);
-  document.getElementById('gh-list-btn').addEventListener('click', listGithub);
+  document.getElementById('gh-list-btn').addEventListener('click', refresh);
   document.getElementById('folder-new').addEventListener('click', newFolder);
   document.getElementById('folder-del').addEventListener('click', delFolder);
-  folderSel.addEventListener('change', () => { currentFolder = folderSel.value; listGithub(); });
   document.getElementById('export-btn').addEventListener('click', exportFile);
   const importFile = document.getElementById('import-file');
   document.getElementById('import-btn').addEventListener('click', () => importFile.click());
@@ -41,7 +41,7 @@ export function initSavePanel() {
   });
 
   initClipboard();
-  loadFolders();
+  refresh();
 }
 
 function status(msg, isErr = false) {
@@ -49,27 +49,83 @@ function status(msg, isErr = false) {
   statusEl.classList.toggle('err', isErr);
 }
 
-// 폴더 목록을 받아 드롭다운 채우고 현재 폴더의 파일 목록 표시
-async function loadFolders() {
+// ── 탐색기: 현재 위치의 폴더/파일을 읽어 렌더 ──
+async function refresh() {
+  ghListEl.innerHTML = '<li class="sv-empty">불러오는 중…</li>';
   try {
-    const r = await fetch('/api/save');
-    const j = await r.json().catch(() => ({}));
-    const folders = j.folders || [];
-    rootHasFiles = (j.files || []).length > 0; // 루트에 남은 파일이 있을 때만 루트 노출
-    folderSel.innerHTML = folders.map((f) => `<option value="${esc(f)}">📁 ${esc(f)}</option>`).join('')
-      + (rootHasFiles || currentFolder === '' ? '<option value="">· (루트)</option>' : '');
-    // 현재 폴더가 사라졌거나, 루트가 비어 숨겨진 경우 첫 폴더로
-    if (folders.length && !folders.includes(currentFolder) && !(currentFolder === '' && rootHasFiles)) {
-      currentFolder = folders[0];
+    // 폴더 목록은 항상 루트에서 (한 단계 구조)
+    const rootRes = await fetch('/api/save');
+    const rootJson = await rootRes.json().catch(() => ({}));
+    if (!rootRes.ok) throw new Error(rootJson.error || `HTTP ${rootRes.status}`);
+    folders = rootJson.folders || [];
+    if (currentFolder && !folders.includes(currentFolder)) currentFolder = ''; // 삭제된 폴더 방어
+
+    if (currentFolder) {
+      const r = await fetch(`/api/save?folder=${encodeURIComponent(currentFolder)}`);
+      const j = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(j.error || `HTTP ${r.status}`);
+      files = j.files || [];
+    } else {
+      files = rootJson.files || [];
     }
-    folderSel.value = currentFolder;
-    renderFolderTargets(folders);
-  } catch {
-    folderSel.innerHTML = '<option value="">· (루트)</option>';
-    currentFolder = '';
-    renderFolderTargets([]);
+    render();
+  } catch (err) {
+    ghListEl.innerHTML = `<li class="sv-empty">목록 실패 (${esc(String(err.message || err))})</li>`;
   }
-  listGithub();
+}
+
+function render() {
+  // 경로 표시 (save / 폴더)
+  pathEl.innerHTML = currentFolder
+    ? `<button class="sv-crumb" data-up="1">save</button><span class="sv-sep">/</span><b>${esc(currentFolder)}</b>`
+    : '<b>save</b>';
+  const up = pathEl.querySelector('[data-up]');
+  if (up) up.onclick = () => { currentFolder = ''; refresh(); };
+
+  const rows = [];
+  // 상위로 (폴더 안일 때)
+  if (currentFolder) {
+    rows.push('<li class="sv-row sv-up" data-up="1"><span class="sv-ico">↰</span><span class="sv-name">상위 폴더로</span></li>');
+  }
+  // 폴더 (루트에서만 — 한 단계 구조)
+  if (!currentFolder) {
+    for (const f of folders) {
+      rows.push(`<li class="sv-row sv-dir" data-dir="${esc(f)}">
+        <span class="sv-ico">📁</span>
+        <span class="sv-name" title="${esc(f)}">${esc(f)}</span>
+      </li>`);
+    }
+  }
+  // 파일
+  for (const f of files) {
+    rows.push(`<li class="sv-row sv-file" draggable="true" data-f="${esc(f)}">
+      <span class="sv-ico">📄</span>
+      <span class="sv-name" title="${esc(f)}">${esc(f.replace(/\.json$/i, ''))}</span>
+      <button class="gh-load" data-f="${esc(f)}">열기</button>
+      <button class="gh-del" data-f="${esc(f)}" title="삭제">🗑</button>
+    </li>`);
+  }
+  if (!rows.length) rows.push('<li class="sv-empty">비어 있음 — 아래에서 저장해 보세요</li>');
+  ghListEl.innerHTML = rows.join('');
+
+  // 상위로 / 폴더 진입
+  ghListEl.querySelectorAll('[data-up]').forEach((el) => {
+    el.onclick = () => { currentFolder = ''; refresh(); };
+  });
+  ghListEl.querySelectorAll('.sv-dir').forEach((el) => {
+    el.onclick = () => { currentFolder = el.dataset.dir; refresh(); };
+  });
+  ghListEl.querySelectorAll('.gh-load').forEach((b) => {
+    b.onclick = (e) => { e.stopPropagation(); loadGithub(b.dataset.f); };
+  });
+  ghListEl.querySelectorAll('.gh-del').forEach((b) => {
+    b.onclick = (e) => { e.stopPropagation(); deleteGithub(b.dataset.f); };
+  });
+  bindRowInteractions();
+
+  // 저장 위치 안내 (입력창 placeholder)
+  nameInput.placeholder = currentFolder ? `${currentFolder} 에 저장할 파일 이름` : '파일 이름';
+  document.getElementById('folder-del').disabled = !currentFolder;
 }
 
 async function newFolder() {
@@ -83,17 +139,16 @@ async function newFolder() {
     });
     const j = await r.json().catch(() => ({}));
     if (!r.ok) throw new Error(j.error || `HTTP ${r.status}`);
-    currentFolder = j.folder || name;
-    status(`폴더 생성됨: ${currentFolder}`);
-    await loadFolders();
-    folderSel.value = currentFolder;
+    status(`폴더 생성됨: ${j.folder || name}`);
+    currentFolder = '';
+    refresh();
   } catch (err) {
     status(`폴더 생성 실패: ${err.message}`, true);
   }
 }
 
 async function delFolder() {
-  if (!currentFolder) { status('루트(기타)는 삭제할 수 없어요.', true); return; }
+  if (!currentFolder) return;
   if (!confirm(`'${currentFolder}' 폴더와 그 안의 저장 파일을 모두 삭제할까요?`)) return;
   status('폴더 삭제 중…');
   try {
@@ -102,7 +157,7 @@ async function delFolder() {
     if (!r.ok) throw new Error(j.error || `HTTP ${r.status}`);
     status(`폴더 삭제됨: ${currentFolder}`);
     currentFolder = '';
-    await loadFolders();
+    refresh();
   } catch (err) {
     status(`폴더 삭제 실패: ${err.message}`, true);
   }
@@ -125,34 +180,9 @@ async function saveToGithub() {
     const j = await r.json().catch(() => ({}));
     if (!r.ok) throw new Error(j.error || `HTTP ${r.status}`);
     status(`저장됨: ${j.path}`);
-    listGithub();
+    refresh();
   } catch (err) {
     status(`저장 실패: ${err.message}`, true);
-  }
-}
-
-async function listGithub() {
-  const label = document.getElementById('gh-folder-label');
-  if (label) label.textContent = currentFolder ? `(${currentFolder})` : '(루트)';
-  ghListEl.innerHTML = '<li class="sv-empty">불러오는 중…</li>';
-  try {
-    const r = await fetch(`/api/save${folderQuery('?')}`);
-    const j = await r.json().catch(() => ({}));
-    if (!r.ok) throw new Error(j.error || `HTTP ${r.status}`);
-    const files = j.files || [];
-    if (!files.length) { ghListEl.innerHTML = '<li class="sv-empty">이 폴더에 저장 파일 없음</li>'; return; }
-    ghListEl.innerHTML = files
-      .map((f) => `<li class="sv-row" draggable="true" data-f="${esc(f)}">
-        <span class="sv-name" title="${esc(f)}">${esc(f)}</span>
-        <button class="gh-load" data-f="${esc(f)}">열기</button>
-        <button class="gh-del" data-f="${esc(f)}" title="삭제">🗑</button>
-      </li>`)
-      .join('');
-    ghListEl.querySelectorAll('.gh-load').forEach((b) => { b.onclick = () => loadGithub(b.dataset.f); });
-    ghListEl.querySelectorAll('.gh-del').forEach((b) => { b.onclick = () => deleteGithub(b.dataset.f); });
-    bindRowInteractions();
-  } catch (err) {
-    ghListEl.innerHTML = `<li class="sv-empty">목록 실패 (${esc(String(err.message || err))})</li>`;
   }
 }
 
@@ -161,9 +191,9 @@ let clipboard = null;   // { file, folder } 잘라낸 파일
 let selectedRow = null; // 선택된 파일명 (Ctrl+X 대상)
 
 function bindRowInteractions() {
-  ghListEl.querySelectorAll('.sv-row').forEach((row) => {
+  // 파일 행: 선택 / 드래그 시작
+  ghListEl.querySelectorAll('.sv-file').forEach((row) => {
     const f = row.dataset.f;
-    // 행 클릭 = 선택 (Ctrl+X 대상 지정)
     row.addEventListener('click', (e) => {
       if (e.target.closest('button')) return;
       ghListEl.querySelectorAll('.sv-row').forEach((r) => r.classList.remove('sel'));
@@ -177,24 +207,15 @@ function bindRowInteractions() {
     });
     row.addEventListener('dragend', () => row.classList.remove('dragging'));
   });
-}
 
-// 폴더 목록(드롭 대상) 렌더 — 드래그해서 폴더 위에 놓으면 이동
-function renderFolderTargets(folders) {
-  const wrap = document.getElementById('folder-targets');
-  if (!wrap) return;
-  // 루트는 정리 완료 후 숨김 — 루트에 남은 파일이 있을 때만 칩을 보여준다.
-  wrap.innerHTML = folders.map((f) => `<button class="fd-target ${f === currentFolder ? 'cur' : ''}" data-t="${esc(f)}">📁 ${esc(f)}</button>`).join('')
-    + (rootHasFiles || currentFolder === '' ? `<button class="fd-target ${currentFolder === '' ? 'cur' : ''}" data-t="">· 루트</button>` : '');
-
-  wrap.querySelectorAll('.fd-target').forEach((btn) => {
-    const to = btn.dataset.t;
-    btn.addEventListener('click', () => { currentFolder = to; folderSel.value = to; loadFolders(); });
-    btn.addEventListener('dragover', (e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; btn.classList.add('over'); });
-    btn.addEventListener('dragleave', () => btn.classList.remove('over'));
-    btn.addEventListener('drop', async (e) => {
+  // 폴더 행 / '상위 폴더로' 행 = 드롭 대상
+  ghListEl.querySelectorAll('.sv-dir, .sv-up').forEach((el) => {
+    const to = el.classList.contains('sv-up') ? '' : el.dataset.dir;
+    el.addEventListener('dragover', (e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; el.classList.add('over'); });
+    el.addEventListener('dragleave', () => el.classList.remove('over'));
+    el.addEventListener('drop', async (e) => {
       e.preventDefault();
-      btn.classList.remove('over');
+      el.classList.remove('over');
       try {
         const { file, folder } = JSON.parse(e.dataTransfer.getData('text/plain') || '{}');
         if (file) await moveFile(file, folder, to);
@@ -205,11 +226,9 @@ function renderFolderTargets(folders) {
 
 async function moveFile(file, fromFolder, toFolder) {
   if ((fromFolder || '') === (toFolder || '')) return;
-  // 낙관적 갱신: GitHub 목록 API는 커밋 직후 캐시 때문에 몇 초 지연되므로
-  // 화면에서 먼저 행을 지우고(즉시 반응), 서버 반영은 뒤이어 확인한다.
-  const row = ghListEl.querySelector(`.sv-row[data-f="${cssEsc(file)}"]`);
+  // 낙관적 갱신: GitHub 목록 API는 커밋 직후 캐시로 지연될 수 있어 화면을 먼저 정리한다.
+  const row = ghListEl.querySelector(`.sv-file[data-f="${cssEsc(file)}"]`);
   if (row) row.remove();
-  if (!ghListEl.querySelector('.sv-row')) ghListEl.innerHTML = '<li class="sv-empty">이 폴더에 저장 파일 없음</li>';
   status(`이동 중… ${file}`);
   try {
     const r = await fetch(`/api/save${fromFolder ? `?folder=${encodeURIComponent(fromFolder)}` : ''}`, {
@@ -220,11 +239,10 @@ async function moveFile(file, fromFolder, toFolder) {
     const j = await r.json().catch(() => ({}));
     if (!r.ok) throw new Error(j.error || `HTTP ${r.status}`);
     status(`이동됨: ${j.path}`);
-    listGithub();
   } catch (err) {
     status(`이동 실패: ${err.message}`, true);
-    listGithub(); // 실패 시 화면을 실제 상태로 되돌림
   }
+  refresh();
 }
 
 // querySelector용 속성값 이스케이프
@@ -240,7 +258,7 @@ function initClipboard() {
       if (!selectedRow) return;
       e.preventDefault();
       clipboard = { file: selectedRow, folder: currentFolder };
-      status(`잘라냄: ${clipboard.file} — 폴더 이동 후 Ctrl+V`);
+      status(`잘라냄: ${clipboard.file} — 폴더로 이동 후 Ctrl+V`);
     } else if (e.key === 'v' || e.key === 'V') {
       if (!clipboard) return;
       e.preventDefault();
@@ -250,7 +268,6 @@ function initClipboard() {
     }
   });
 }
-
 async function loadGithub(file) {
   if (!confirm(`'${file}' 을(를) 불러올까요?\n현재 작업 내용이 대체됩니다.`)) return;
   try {
@@ -273,7 +290,7 @@ async function deleteGithub(file) {
     const j = await r.json().catch(() => ({}));
     if (!r.ok) throw new Error(j.error || `HTTP ${r.status}`);
     status(`삭제됨: ${file}`);
-    listGithub();
+    refresh();
   } catch (err) {
     status(`삭제 실패: ${err.message}`, true);
   }

@@ -353,17 +353,28 @@ button { font-family: inherit; cursor: pointer; border: none; border-radius: 6px
 .sv-row .gh-del { padding: 3px 6px; }
 .sv-empty { font-size: 11px; color: var(--muted); padding: 8px 2px; }
 
-/* 저장 파일 이동 (드래그 / 잘라내기·붙여넣기) */
-.sv-row { cursor: default; border-radius: 5px; }
-.sv-row.sel { background: var(--surface-3); box-shadow: inset 2px 0 0 var(--accent); }
+/* ── 저장 탐색기 (경로 + 폴더/파일 목록) ── */
+.sv-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
+.sv-path { font-size: 12px; color: var(--text-2); display: flex; align-items: center; gap: 4px; min-width: 0; }
+.sv-path b { color: var(--text); font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sv-crumb { background: transparent; padding: 0; font-size: 12px; color: var(--muted); font-weight: 500; }
+.sv-crumb:hover { color: var(--accent); text-decoration: underline; }
+.sv-sep { color: var(--muted); }
+.sv-head-btns { display: flex; gap: 4px; flex-shrink: 0; }
+.sv-mini { background: var(--surface-2); border: 1px solid var(--border-soft); border-radius: 5px; padding: 3px 8px; font-size: 11px; color: var(--text-2); }
+.sv-mini:hover { background: var(--surface-3); color: var(--text); }
+.sv-mini:disabled { opacity: 0.4; cursor: default; }
+.sv-list { list-style: none; }
+.sv-ico { flex-shrink: 0; font-size: 12px; }
+.sv-row { cursor: default; border-radius: 5px; padding-left: 4px; padding-right: 4px; }
+.sv-row.sel { background: var(--surface-3); }
 .sv-row.dragging { opacity: 0.45; }
-.fd-targets { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 9px; }
-.fd-target {
-  background: var(--surface-2); border: 1px solid var(--border-soft); border-radius: 6px;
-  padding: 4px 9px; font-size: 11.5px; color: var(--text-2); font-weight: 500;
-}
-.fd-target:hover { background: var(--surface-3); }
-.fd-target.cur { border-color: var(--accent); color: var(--accent); }
-.fd-target.over { background: var(--accent); color: #fff; border-color: var(--accent); }
+.sv-dir, .sv-up { cursor: pointer; }
+.sv-dir:hover, .sv-up:hover { background: var(--surface-2); }
+.sv-dir .sv-name { font-weight: 600; }
+.sv-up .sv-name { color: var(--muted); }
+.sv-row.over { background: var(--accent); color: #fff; }
+.sv-row.over .sv-name { color: #fff; }
+.sv-save { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border-soft); }
 #save-status { margin-top: 7px; font-size: 11px; color: var(--muted); line-height: 1.4; }
 #save-status.err { color: var(--error); }
