@@ -41,26 +41,23 @@ function phase(text, pct, count, t0) {
 }
 const tick = () => new Promise((r) => setTimeout(r));
 
-// 기존관을 연속 구간(폴리라인)으로 뽑고, 도로와의 연결 지점을 늘리려 촘촘히 나눈다.
-// 기존관 자체가 그래프 간선이 되므로 도로 데이터와 어긋나도 그대로 활용된다.
-function existingPipeLines(pipes) {
-  const out = [];
+// 기존관 위를 일정 간격으로 촘촘히 샘플링 → 기존관 '아무 지점'에서도 분기 가능
+function existingPipePoints(pipes) {
+  const pts = [];
   for (const p of pipes) {
-    let run = null;
     for (let i = 0; i < p.segs.length; i++) {
-      if (p.segs[i].status !== 'existing') { run = null; continue; }
+      if (p.segs[i].status !== 'existing') continue;
       const a = fromLonLat(p.coords[i]);
       const b = fromLonLat(p.coords[i + 1]);
-      if (!run) { run = [a]; out.push(run); }
-      // 8m 간격으로 잘게 나눠 도로와 붙을 지점을 확보
       const len = Math.hypot(b[0] - a[0], b[1] - a[1]);
       const n = Math.max(1, Math.ceil(len / SOURCE_STEP));
-      for (let k = 1; k <= n; k++) {
-        run.push([a[0] + ((b[0] - a[0]) * k) / n, a[1] + ((b[1] - a[1]) * k) / n]);
+      for (let k = 0; k <= n; k++) {
+        pts.push([a[0] + ((b[0] - a[0]) * k) / n, a[1] + ((b[1] - a[1]) * k) / n]);
+        if (pts.length >= MAX_SOURCE_PTS) return pts;
       }
     }
   }
-  return out.filter((l) => l.length >= 2);
+  return pts;
 }
 
 const DEFAULT_ATTR = {
@@ -120,8 +117,8 @@ export async function runAutoRoute({ supply = true, inlet = false } = {}) {
     return;
   }
 
-  // 공급원: 기존관 자체를 그래프에 편입 (아래 buildGraph에 전달)
-  const existingLines = existingPipeLines(pipes);
+  // 공급원: 기존관을 일정 간격으로 샘플링 → 기존관 어느 지점에서든 분기 가능
+  const sourcePts = existingPipePoints(pipes);
 
   const t0 = openOverlay('자동 연결');
   phase('도로 데이터 불러오는 중…', 10, '', t0);
@@ -148,13 +145,17 @@ export async function runAutoRoute({ supply = true, inlet = false } = {}) {
   // 도로망 그래프 + 마커/기존관 스냅 → 최소 연결망
   const segs = toSegments(lines.map((ln) => ln.map((c) => fromLonLat(c))));
   const markerPts = targets.map((d) => fromLonLat([d.lon, d.lat]));
-  const g = buildGraph(segs, markerPts, existingLines);
+  const g = buildGraph(segs, [...markerPts, ...sourcePts]);
 
   // 수요처마다 스냅 후보 여러 곳 → 총 연장이 가장 짧아지는 곳을 알고리즘이 고른다
   const groups = markerPts.map((_, i) => (g.snapSets[i] || [])
     .map((s) => ({ id: g.idOf(s.point), extra: s.dist }))
     .filter((c) => c.id !== undefined));
-  const srcIds = g.sourceIds; // 기존관 위 노드들
+  const srcIds = sourcePts.map((_, i) => {
+    const s = g.snaps[markerPts.length + i];
+    const id = s ? g.idOf(s.point) : undefined;
+    return id === undefined ? -1 : id;
+  });
 
   phase(`최소 연결 경로 계산 중… (수요처 ${targets.length}곳)`, 70, '', t0);
   await tick();
@@ -162,9 +163,7 @@ export async function runAutoRoute({ supply = true, inlet = false } = {}) {
 
   // 어떤 수요처/공급원에도 닿지 않는 막다른 곁가지 제거
   const keep = new Set([...chosen.filter((v) => v >= 0), ...srcIds.filter((v) => v >= 0)]);
-  const pruned = pruneLeaves(used, keep);
-  for (const e of g.freeEdges) pruned.delete(e); // 이미 있는 기존관은 다시 그리지 않음
-  const mains = edgesToPolylines(pruned, g.coords);
+  const mains = edgesToPolylines(pruneLeaves(used, keep), g.coords);
 
   // 연결 못 한 수요처 번호 (표시용)
   const missNos = [];
