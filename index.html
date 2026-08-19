@@ -91,10 +91,13 @@
           </section>
 
           <section class="panel">
-            <div class="panel-label">공급관 자동 연결</div>
-            <label class="check-row" style="margin:0 0 8px"><input type="checkbox" id="ar-inlet" /> 인입관도 생성 <b style="color:var(--amber)">(참조용 · 부정확)</b></label>
-            <button id="ar-run" class="btn-primary" style="width:100%">공급관 자동 연결</button>
-            <div id="ar-status" class="hint-text">도로명주소 도로구간을 따라, 기존관에서 출발해 모든 수요처의 집 앞까지 최소 연장으로 잇습니다. 인입관은 직접 그리세요. Ctrl+Z로 한 번에 되돌립니다.</div>
+            <div class="panel-label">자동 연결</div>
+            <div class="ar-src">
+              <label class="check-row" style="margin:0"><input type="checkbox" id="ar-supply" checked /> 공급관</label>
+              <label class="check-row" style="margin:0"><input type="checkbox" id="ar-inlet" /> 인입관 <b style="color:var(--amber)">(참조용)</b></label>
+            </div>
+            <button id="ar-run" class="btn-primary" style="width:100%;margin-top:8px">자동 연결</button>
+            <div id="ar-status" class="hint-text">도로를 따라 기존관에서 출발해 최소 연장으로 잇습니다. 인입관은 참조용(부정확)이니 직접 수정하세요. Ctrl+Z로 한 번에 되돌립니다.</div>
           </section>
         </div>
 

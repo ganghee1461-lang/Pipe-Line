@@ -84,10 +84,11 @@ function dataBBox(targets) {
   return [lo[0], lo[1], hi[0], hi[1]];
 }
 
-export async function runAutoRoute({ inlet = false } = {}) {
+export async function runAutoRoute({ supply = true, inlet = false } = {}) {
   const { demands, pipes } = getState();
   const targets = demands.filter((d) => Number.isFinite(d.lon) && Number.isFinite(d.lat));
   if (!targets.length) { setStatus('연결할 수요처가 없습니다.'); return; }
+  if (!supply && !inlet) { setStatus('공급관·인입관 중 하나는 켜야 합니다.'); return; }
   if (!ROADS_READY) {
     setStatus('도로 데이터 주소가 설정되지 않았습니다 — Cloudflare 환경변수 VITE_ROADS_URL 확인');
     return;
@@ -96,7 +97,7 @@ export async function runAutoRoute({ inlet = false } = {}) {
   // 공급원: 기존관을 일정 간격으로 샘플링 → 기존관 어느 지점에서든 분기 가능
   const sourcePts = existingPipePoints(pipes);
 
-  const t0 = openOverlay('공급관 자동 연결');
+  const t0 = openOverlay('자동 연결');
   phase('도로 데이터 불러오는 중…', 10, '', t0);
   await tick();
   setStatus('도로 데이터 불러오는 중…');
@@ -122,27 +123,28 @@ export async function runAutoRoute({ inlet = false } = {}) {
   const segs = toSegments(lines.map((ln) => ln.map((c) => fromLonLat(c))));
   const markerPts = targets.map((d) => fromLonLat([d.lon, d.lat]));
   const g = buildGraph(segs, [...markerPts, ...sourcePts]);
-  const idAt = (i) => { const s = g.snaps[i]; return s ? g.idOf(s.point) : undefined; };
-  const termIds = markerPts.map((_, i) => idAt(i)).map((v) => (v === undefined ? -1 : v));
-  const srcIds = sourcePts.map((_, i) => idAt(markerPts.length + i)).map((v) => (v === undefined ? -1 : v));
+
+  // 수요처마다 스냅 후보 여러 곳 → 총 연장이 가장 짧아지는 곳을 알고리즘이 고른다
+  const groups = markerPts.map((_, i) => (g.snapSets[i] || [])
+    .map((s) => ({ id: g.idOf(s.point), extra: s.dist }))
+    .filter((c) => c.id !== undefined));
+  const srcIds = sourcePts.map((_, i) => {
+    const s = g.snaps[markerPts.length + i];
+    const id = s ? g.idOf(s.point) : undefined;
+    return id === undefined ? -1 : id;
+  });
 
   phase(`최소 연결 경로 계산 중… (수요처 ${targets.length}곳)`, 70, '', t0);
   await tick();
-  const { used, unreachable } = buildNetwork(g.adj, srcIds, termIds);
+  const { used, unreachable, chosen } = buildNetwork(g.adj, srcIds, groups);
+
   // 어떤 수요처/공급원에도 닿지 않는 막다른 곁가지 제거
-  const keep = new Set([...termIds, ...srcIds].filter((v) => v >= 0));
+  const keep = new Set([...chosen.filter((v) => v >= 0), ...srcIds.filter((v) => v >= 0)]);
   const mains = edgesToPolylines(pruneLeaves(used, keep), g.coords);
 
   // 연결 못 한 수요처 번호 (표시용)
-  const idToTargets = new Map();
-  termIds.forEach((id, i) => {
-    if (id < 0) return;
-    if (!idToTargets.has(id)) idToTargets.set(id, []);
-    idToTargets.get(id).push(i + 1);
-  });
   const missNos = [];
-  termIds.forEach((id, i) => { if (id < 0) missNos.push(i + 1); });
-  for (const id of unreachable) for (const n of idToTargets.get(id) || []) missNos.push(n);
+  chosen.forEach((id, i) => { if (id < 0) missNos.push(i + 1); });
   missNos.sort((a, b) => a - b);
 
   phase('배관 생성 중…', 90, '', t0);
@@ -152,7 +154,7 @@ export async function runAutoRoute({ inlet = false } = {}) {
   beginBatch();
   let total = 0, count = 0, inletN = 0, inletLen = 0;
   try {
-    for (const line of mains) {
+    for (const line of (supply ? mains : [])) {
       if (line.length < 2) continue;
       total += lenOf(line);
       count++;
@@ -167,8 +169,10 @@ export async function runAutoRoute({ inlet = false } = {}) {
     // 실제 인입 위치를 잡을 때 눈대중 기준으로만 쓰고, 반드시 직접 수정해야 한다.
     if (inlet) {
       targets.forEach((d, i) => {
-        const snap = g.snaps[i];
-        if (!snap) return;
+        // 실제로 연결된 후보 지점에서 인입 (가장 가까운 곳이 아닐 수 있음)
+        const pick = (g.snapSets[i] || []).find((s) => g.idOf(s.point) === chosen[i]) || g.snaps[i];
+        if (!pick) return;
+        const snap = pick;
         const p = markerPts[i];
         const dist = Math.hypot(p[0] - snap.point[0], p[1] - snap.point[1]);
         if (dist < 0.5) return;
@@ -186,7 +190,7 @@ export async function runAutoRoute({ inlet = false } = {}) {
   }
 
   setStatus(
-    `완료 — 공급관 ${count}개 · 총 ${Math.round(total).toLocaleString()}m`
+    `완료 — ${supply ? `공급관 ${count}개 · ${Math.round(total).toLocaleString()}m` : '공급관 생략'}`
     + (inletN ? ` · 인입관 ${inletN}개 ${Math.round(inletLen).toLocaleString()}m (참조용·부정확, 직접 수정 필요)` : '')
     + (missNos.length ? ` · 못 이은 수요처 ${missNos.length}곳(#${missNos.join(', #')})` : '')
     + (srcIds.some((v) => v >= 0) ? '' : ' · 기존관이 없어 최소연결로 생성')
@@ -199,8 +203,9 @@ export function initAutoRoute() {
   if (!btn) return;
   btn.addEventListener('click', async () => {
     btn.disabled = true;
+    const supply = document.getElementById('ar-supply')?.checked !== false;
     const inlet = document.getElementById('ar-inlet')?.checked === true;
-    try { await runAutoRoute({ inlet }); }
+    try { await runAutoRoute({ supply, inlet }); }
     catch (err) { closeOverlay(); setStatus(`실패: ${err.message}`); }
     finally { closeOverlay(); btn.disabled = false; }
   });

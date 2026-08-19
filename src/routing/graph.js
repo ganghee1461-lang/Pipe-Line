@@ -50,7 +50,7 @@ function project(p, a, b) {
 }
 
 // 가장 가까운 선분 찾기 (반경을 넓혀가며 탐색)
-function nearestSeg(p, segs, index) {
+function nearestSeg(p, segs, index, skipIdx = -1) {
   const { grid, cell } = index;
   const cx0 = Math.floor(p[0] / cell), cy0 = Math.floor(p[1] / cell);
   let best = null;
@@ -61,6 +61,7 @@ function nearestSeg(p, segs, index) {
         const arr = grid.get(`${cx},${cy}`);
         if (!arr) continue;
         for (const i of arr) {
+          if (i === skipIdx) continue;
           const pr = project(p, segs[i].a, segs[i].b);
           if (!best || pr.dist < best.dist) best = { segIdx: i, ...pr };
         }
@@ -72,18 +73,87 @@ function nearestSeg(p, segs, index) {
   return best;
 }
 
+// 가까운 선분 여러 개 (서로 다른 도로 후보). 투영점이 서로 떨어진 것만 남긴다.
+function nearestSegs(p, segs, index, k = 3, maxDist = 80) {
+  const { grid, cell } = index;
+  const cx0 = Math.floor(p[0] / cell), cy0 = Math.floor(p[1] / cell);
+  const rings = Math.ceil(maxDist / cell) + 1;
+  const cand = [];
+  const seen = new Set();
+  for (let cx = cx0 - rings; cx <= cx0 + rings; cx++) {
+    for (let cy = cy0 - rings; cy <= cy0 + rings; cy++) {
+      const arr = grid.get(`${cx},${cy}`);
+      if (!arr) continue;
+      for (const i of arr) {
+        if (seen.has(i)) continue;
+        seen.add(i);
+        const pr = project(p, segs[i].a, segs[i].b);
+        if (pr.dist <= maxDist) cand.push({ segIdx: i, ...pr });
+      }
+    }
+  }
+  cand.sort((a, b) => a.dist - b.dist);
+  const out = [];
+  for (const c of cand) {
+    // 이미 고른 후보와 거의 같은 지점이면 건너뜀 (같은 도로의 다른 조각)
+    if (out.some((o) => Math.hypot(o.point[0] - c.point[0], o.point[1] - c.point[1]) < 12)) continue;
+    out.push(c);
+    if (out.length >= k) break;
+  }
+  return out;
+}
+
 // ── 그래프 구성 (스냅점에서 선분을 쪼개 노드로 편입) ──
 // points: [[x,y], ...] 연결 대상(마커/기존관). 반환: { adj, nodes, snaps }
+const WELD_TOL = 3;    // 끊어진 도로 끝점을 이어 붙일 허용 오차(m)
+const CANDIDATES = 3;  // 마커당 스냅 후보 도로 수
+
 export function buildGraph(segs, points) {
   const index = buildIndex(segs);
   const splits = new Map(); // segIdx → [{t, point}]
-  const snaps = points.map((p) => {
-    const s = nearestSeg(p, segs, index);
-    if (!s) return null;
-    if (!splits.has(s.segIdx)) splits.set(s.segIdx, []);
-    splits.get(s.segIdx).push({ t: s.t, point: s.point });
-    return { point: s.point, dist: s.dist };
+
+  // ── 노딩(교차점 이어붙이기) ──
+  // 도로명주소 도로구간은 T자 교차에서 끝점을 공유하지 않는 경우가 있어,
+  // 그대로 쓰면 도로망이 조각조각 끊긴다(고립된 마커·이상한 우회의 원인).
+  // 다른 선분 위에 얹혀 있는 '매달린 끝점'을 그 선분에 투영해 붙인다.
+  const endCount = new Map();
+  const bump = (pt) => {
+    const k = nkey(pt[0], pt[1]);
+    endCount.set(k, (endCount.get(k) || 0) + 1);
+  };
+  segs.forEach((s) => { bump(s.a); bump(s.b); });
+
+  const remap = new Map(); // 원래 끝점 key → 이어붙일 좌표
+  segs.forEach((s, i) => {
+    for (const pt of [s.a, s.b]) {
+      const k = nkey(pt[0], pt[1]);
+      if (endCount.get(k) !== 1) continue;        // 이미 다른 선과 만나는 점
+      if (remap.has(k)) continue;
+      const near = nearestSeg(pt, segs, index, i); // 자기 선분 제외
+      if (!near || near.dist > WELD_TOL) continue;
+      if (near.t <= 0.001 || near.t >= 0.999) continue; // 끝점끼리면 좌표만 맞추면 됨
+      if (!splits.has(near.segIdx)) splits.set(near.segIdx, []);
+      splits.get(near.segIdx).push({ t: near.t, point: near.point });
+      remap.set(k, near.point);
+    }
   });
+  const fix = (pt) => remap.get(nkey(pt[0], pt[1])) || pt;
+
+  // 점마다 후보 도로 여러 곳에 스냅 → 나중에 총 연장이 가장 짧아지는 곳을 고른다
+  const snapSets = points.map((p) => {
+    const list = nearestSegs(p, segs, index, CANDIDATES);
+    if (!list.length) {
+      const s = nearestSeg(p, segs, index);
+      if (!s) return [];
+      list.push(s);
+    }
+    for (const s of list) {
+      if (!splits.has(s.segIdx)) splits.set(s.segIdx, []);
+      splits.get(s.segIdx).push({ t: s.t, point: s.point });
+    }
+    return list.map((s) => ({ point: s.point, dist: s.dist }));
+  });
+  const snaps = snapSets.map((l) => l[0] || null); // 기존 호환(가장 가까운 곳)
 
   const nodes = new Map(); // key → id
   const coords = [];       // id → [x,y]
@@ -102,10 +172,11 @@ export function buildGraph(segs, points) {
   };
 
   segs.forEach((s, i) => {
+    const a = fix(s.a), b = fix(s.b); // 이어붙인 끝점 반영
     const cuts = splits.get(i);
-    if (!cuts || !cuts.length) { link(nodeId(s.a), nodeId(s.b)); return; }
+    if (!cuts || !cuts.length) { link(nodeId(a), nodeId(b)); return; }
     // 선분 위 스냅점들을 t 순서로 정렬해 연속 분할
-    const pts = [{ t: 0, point: s.a }, ...cuts.sort((x, y) => x.t - y.t), { t: 1, point: s.b }];
+    const pts = [{ t: 0, point: a }, ...cuts.sort((x, y) => x.t - y.t), { t: 1, point: b }];
     for (let k = 0; k < pts.length - 1; k++) link(nodeId(pts[k].point), nodeId(pts[k + 1].point));
   });
 
@@ -113,7 +184,8 @@ export function buildGraph(segs, points) {
     adj,
     coords,
     idOf: (pt) => nodes.get(nkey(pt[0], pt[1])),
-    snaps, // points와 같은 순서
+    snaps,    // points와 같은 순서 (가장 가까운 후보)
+    snapSets, // points와 같은 순서, 후보 목록
   };
 }
 
@@ -161,35 +233,50 @@ function pathTo(prev, target) {
   return out.reverse();
 }
 
-// ── 공급원(sources)에서 모든 터미널을 잇는 최소 연결망 ──
-// Prim 방식: 이미 연결된 집합에서 가장 가까운 터미널을 하나씩 흡수하며
-// 그 최단경로의 도로 간선을 결과에 누적한다(경로 재사용 → 총 연장 최소화).
-export function buildNetwork(adj, sourceIds, terminalIds) {
-  const used = new Set();          // "a|b" 간선 집합
+// ── 공급원(sources)에서 모든 수요처를 잇는 최소 연결망 ──
+// 수요처마다 스냅 후보가 여러 곳이라, 그중 '도로 경로 + 인입 거리'의 합이
+// 가장 작은 후보를 골라 연결한다. 이미 관이 지나는 도로가 있으면 그쪽이 선택돼
+// 뒷골목까지 뻗는 불필요한 곁가지가 생기지 않는다.
+// groups[i] = [{ id, extra }]  extra = 마커→스냅점 거리(인입 연장)
+export function buildNetwork(adj, sourceIds, groups) {
+  const used = new Set();
   const connected = new Set(sourceIds.filter((v) => v >= 0));
-  const remaining = new Set(terminalIds.filter((v) => v >= 0 && !connected.has(v)));
+  const chosen = new Array(groups.length).fill(-1); // 그룹별 선택된 노드
+  const pending = new Set();
+  groups.forEach((g, i) => { if (g && g.length) pending.add(i); });
   const unreachable = [];
-  if (!connected.size) { // 공급원이 없으면 첫 터미널을 시작점으로
-    const first = remaining.values().next().value;
-    if (first === undefined) return { used, unreachable };
-    connected.add(first); remaining.delete(first);
+
+  if (!connected.size) {
+    // 공급원이 없으면 첫 수요처의 가장 가까운 후보를 시작점으로
+    const first = pending.values().next().value;
+    if (first === undefined) return { used, unreachable, chosen };
+    const c = groups[first][0];
+    connected.add(c.id); chosen[first] = c.id; pending.delete(first);
   }
 
-  while (remaining.size) {
+  while (pending.size) {
     const { dist, prev } = dijkstra(adj, [...connected]);
-    let best = -1, bestD = Infinity;
-    for (const t of remaining) if (dist[t] < bestD) { bestD = dist[t]; best = t; }
-    if (best < 0 || !Number.isFinite(bestD)) { unreachable.push(...remaining); break; }
-    const path = pathTo(prev, best);
+    let bestGroup = -1, bestNode = -1, bestCost = Infinity;
+    for (const gi of pending) {
+      for (const c of groups[gi]) {
+        if (c.id < 0) continue;
+        const cost = dist[c.id] + (c.extra || 0); // 도로 경로 + 인입 거리
+        if (cost < bestCost) { bestCost = cost; bestGroup = gi; bestNode = c.id; }
+      }
+    }
+    if (bestGroup < 0 || !Number.isFinite(bestCost)) { unreachable.push(...pending); break; }
+
+    const path = pathTo(prev, bestNode);
     for (let i = 0; i < path.length - 1; i++) {
       const a = path[i], b = path[i + 1];
       used.add(a < b ? `${a}|${b}` : `${b}|${a}`);
       connected.add(a); connected.add(b);
     }
-    connected.add(best);
-    remaining.delete(best);
+    connected.add(bestNode);
+    chosen[bestGroup] = bestNode;
+    pending.delete(bestGroup);
   }
-  return { used, unreachable };
+  return { used, unreachable, chosen };
 }
 
 // ── 막다른 가지 치기 ──
