@@ -7,7 +7,9 @@
 //       + {code}.json (GeoJSON LineString/MultiLineString)
 // 반환: [[ [lon,lat], ... ], ...]
 
-const BASE = (import.meta.env.VITE_ROADS_URL || '').replace(/\/+$/, '');
+// 기본값 = 이 프로젝트용 R2 공개 버킷(road-data). 다른 곳을 쓰려면 VITE_ROADS_URL로 덮어쓴다.
+const DEFAULT_ROADS_URL = 'https://pub-e3ded0c9aba24c7d8513e0b7a266b91a.r2.dev';
+const BASE = (import.meta.env.VITE_ROADS_URL || DEFAULT_ROADS_URL).replace(/\/+$/, '');
 export const ROADS_READY = !!BASE;
 
 let manifestPromise = null;
