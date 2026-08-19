@@ -289,6 +289,37 @@ export function buildNetwork(adj, sourceIds, groups) {
   return { used, unreachable, chosen };
 }
 
+// ── 고리 제거: 사용된 간선들을 트리로 정리 ──
+// 여러 최단경로를 합치면 부분적으로 겹쳐 고리가 남을 수 있다(불필요한 중복 가지).
+// 사용된 간선만으로 이루어진 부분그래프에서 공급원 기준 최단경로 트리를 만들어
+// 각 수요처까지의 경로만 남기면 고리가 사라진다.
+export function treeify(used, sourceIds, terminalIds, coords) {
+  const nb = new Map();
+  const add = (a, b, w) => { if (!nb.has(a)) nb.set(a, []); nb.get(a).push({ to: b, w }); };
+  for (const k of used) {
+    const [a, b] = k.split('|').map(Number);
+    const w = Math.hypot(coords[a][0] - coords[b][0], coords[a][1] - coords[b][1]);
+    add(a, b, w); add(b, a, w);
+  }
+  const subAdj = [];
+  for (let i = 0; i < coords.length; i++) subAdj.push(nb.get(i) || []);
+
+  const starts = sourceIds.filter((v) => v >= 0 && nb.has(v));
+  const seeds = starts.length ? starts : terminalIds.filter((v) => v >= 0 && nb.has(v)).slice(0, 1);
+  if (!seeds.length) return new Set();
+
+  const { prev } = dijkstra(subAdj, seeds);
+  const out = new Set();
+  for (const t of terminalIds) {
+    if (t < 0 || !nb.has(t)) continue;
+    for (let v = t; v !== -1 && prev[v] !== -1; v = prev[v]) {
+      const a = v, b = prev[v];
+      out.add(a < b ? `${a}|${b}` : `${b}|${a}`);
+    }
+  }
+  return out;
+}
+
 // ── 막다른 가지 치기 ──
 // 어떤 수요처/공급원에도 닿지 않는 말단 간선을 반복적으로 제거한다.
 // (경로를 합치는 과정에서 생기는, 아무도 쓰지 않는 곁가지 제거)

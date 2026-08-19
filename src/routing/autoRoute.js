@@ -7,7 +7,7 @@
 import { fromLonLat, toLonLat } from 'ol/proj.js';
 import { getState, addPipe, insertVertex, beginBatch, endBatch } from '../state/store.js';
 import { fetchRoads, ROADS_READY } from './roads.js';
-import { toSegments, buildGraph, buildNetwork, edgesToPolylines, pruneLeaves } from './graph.js';
+import { toSegments, buildGraph, buildNetwork, edgesToPolylines, pruneLeaves, treeify } from './graph.js';
 
 const SUPPLY_DIA = '110A';
 const INLET_DIA = '63A';
@@ -17,6 +17,7 @@ const SOURCE_STEP = 8;    // 기존관 위 분기 가능 지점 간격(m)
 const MAX_SOURCE_PTS = 4000;
 const VERTEX_MERGE = 3.5;   // 결과 꼭짓점 병합 반경(m) — 교차로 점 뭉침 방지
 const EX_ATTACH_MAX = 60;   // 공급관을 기존관에 붙일 최대 거리(m)
+const EX_NEAR_SNAP = 12;    // 기존관 출발점이 아니어도 이 거리 안이면 끝점을 스냅
 
 const setStatus = (t) => { const el = document.getElementById('ar-status'); if (el) el.textContent = t; };
 
@@ -183,9 +184,10 @@ export async function runAutoRoute({ supply = true, inlet = false } = {}) {
     if (!cur || d < cur.d) srcAnchor.set(id, { pt, d });
   });
 
-  // 어떤 수요처/공급원에도 닿지 않는 막다른 곁가지 제거
+  // 고리(중복 가지) 제거 → 트리로 정리한 뒤, 막다른 곁가지까지 제거
   const keep = new Set([...chosen.filter((v) => v >= 0), ...srcIds.filter((v) => v >= 0)]);
-  const mains = edgesToPolylines(pruneLeaves(used, keep), g.coords);
+  const tree = treeify(used, srcIds, chosen, g.coords);
+  const mains = edgesToPolylines(pruneLeaves(tree.size ? tree : used, keep), g.coords);
 
   // 연결 못 한 수요처 번호 (표시용)
   const missNos = [];
@@ -230,35 +232,82 @@ export async function runAutoRoute({ supply = true, inlet = false } = {}) {
   }
 
   // ── 기존관과 접점 공유 ──
-  // 공급관 끝점을 기존관 위 정확한 지점으로 맞추고, 기존관에도 그 점을 꼭짓점으로 넣는다.
-  const exInserts = []; // { pipeId, seg, lonlat }
+  // (1) 공급관 끝점이 기존관에서 출발한 경우 → 끝점을 기존관 위 정확한 지점으로 맞춤
+  // (2) 공급관이 기존관을 '가로질러' 지나가는 경우 → 교차점을 양쪽 모두의 꼭짓점으로 삽입
+  // 어느 쪽이든 기존관에도 같은 좌표를 꼭짓점으로 넣어 접점을 공유하게 한다.
+  const exInserts = []; // { pipeId, seg, u, lonlat }
   {
-    const exPipes = getState().pipes.filter((p) => p.segs.some((sg) => sg.status === 'existing'));
+    const exSegs = [];
+    for (const p of getState().pipes) {
+      for (let i = 0; i < p.segs.length; i++) {
+        if (p.segs[i].status !== 'existing') continue;
+        exSegs.push({ pipeId: p.id, seg: i, a: fromLonLat(p.coords[i]), b: fromLonLat(p.coords[i + 1]) });
+      }
+    }
+
+    // 기존관 위 가장 가까운 점 (u = 해당 구간 내 위치 0~1)
     const nearestOnPipe = (m) => {
       let best = null;
-      for (const p of exPipes) {
-        for (let i = 0; i < p.segs.length; i++) {
-          if (p.segs[i].status !== 'existing') continue;
-          const a = fromLonLat(p.coords[i]), b = fromLonLat(p.coords[i + 1]);
-          const vx = b[0] - a[0], vy = b[1] - a[1];
-          const l2 = vx * vx + vy * vy;
-          let t = l2 ? ((m[0] - a[0]) * vx + (m[1] - a[1]) * vy) / l2 : 0;
-          t = Math.max(0, Math.min(1, t));
-          const q = [a[0] + vx * t, a[1] + vy * t];
-          const d = Math.hypot(m[0] - q[0], m[1] - q[1]);
-          if (!best || d < best.d) best = { pipeId: p.id, seg: i, point: q, d };
-        }
+      for (const s of exSegs) {
+        const vx = s.b[0] - s.a[0], vy = s.b[1] - s.a[1];
+        const l2 = vx * vx + vy * vy;
+        let u = l2 ? ((m[0] - s.a[0]) * vx + (m[1] - s.a[1]) * vy) / l2 : 0;
+        u = Math.max(0, Math.min(1, u));
+        const q = [s.a[0] + vx * u, s.a[1] + vy * u];
+        const d = Math.hypot(m[0] - q[0], m[1] - q[1]);
+        if (!best || d < best.d) best = { pipeId: s.pipeId, seg: s.seg, u, point: q, d };
       }
       return best;
     };
+
+    // 선분 교차 (내부에서 만나는 경우만)
+    const crossAt = (p1, p2, p3, p4) => {
+      const rx = p2[0] - p1[0], ry = p2[1] - p1[1];
+      const sx = p4[0] - p3[0], sy = p4[1] - p3[1];
+      const den = rx * sy - ry * sx;
+      if (Math.abs(den) < 1e-9) return null; // 평행
+      const qpx = p3[0] - p1[0], qpy = p3[1] - p1[1];
+      const t = (qpx * sy - qpy * sx) / den;
+      const u = (qpx * ry - qpy * rx) / den;
+      if (t < 0 || t > 1 || u < 0 || u > 1) return null;
+      return { point: [p1[0] + rx * t, p1[1] + ry * t], t, u };
+    };
+
+    const near = (a, b, tol = 0.3) => Math.hypot(a[0] - b[0], a[1] - b[1]) < tol;
+    // 기존관 쪽 꼭짓점 삽입 등록 (구간 끝점과 겹치거나 이미 등록된 점이면 생략)
+    const addExInsert = (hit) => {
+      const s = exSegs.find((x) => x.pipeId === hit.pipeId && x.seg === hit.seg);
+      if (s && (near(hit.point, s.a) || near(hit.point, s.b))) return;
+      if (exInserts.some((x) => x.pipeId === hit.pipeId && near(x.point, hit.point))) return;
+      exInserts.push({ pipeId: hit.pipeId, seg: hit.seg, u: hit.u, point: hit.point, lonlat: toLonLat(hit.point) });
+    };
+
     for (const line of supplyLines) {
+      // (1) 기존관에서 출발한 끝점 맞물림
       for (const endIdx of [0, line.length - 1]) {
-        if (!srcAnchor.has(g.idOf(line[endIdx]))) continue; // 기존관에서 나온 끝점만
         const hit = nearestOnPipe(line[endIdx]);
-        if (!hit || hit.d > EX_ATTACH_MAX) continue;
-        line[endIdx] = hit.point;                       // 끝점을 기존관 위로 정확히
-        exInserts.push({ ...hit, lonlat: toLonLat(hit.point) });
+        if (!hit) continue;
+        // 기존관에서 출발한 끝점은 멀어도 맞물리고, 그 외 끝점은 바짝 붙은 경우만 스냅
+        const limit = srcAnchor.has(g.idOf(line[endIdx])) ? EX_ATTACH_MAX : EX_NEAR_SNAP;
+        if (hit.d > limit) continue;
+        line[endIdx] = hit.point;
+        addExInsert(hit);
       }
+
+      // (2) 가로지르는 교차점 — 공급관에도 꼭짓점을 넣는다
+      const cuts = []; // { at, t, point }
+      for (let i = 0; i < line.length - 1; i++) {
+        for (const s of exSegs) {
+          const x = crossAt(line[i], line[i + 1], s.a, s.b);
+          if (!x) continue;
+          addExInsert({ pipeId: s.pipeId, seg: s.seg, u: x.u, point: x.point });
+          if (near(x.point, line[i]) || near(x.point, line[i + 1])) continue; // 이미 꼭짓점
+          if (cuts.some((c) => near(c.point, x.point))) continue;
+          cuts.push({ at: i, t: x.t, point: x.point });
+        }
+      }
+      cuts.sort((a, b) => b.at - a.at || b.t - a.t); // 뒤에서부터 넣어야 인덱스가 밀리지 않음
+      for (const c of cuts) line.splice(c.at + 1, 0, c.point);
     }
   }
 
@@ -324,7 +373,8 @@ export async function runAutoRoute({ supply = true, inlet = false } = {}) {
   let total = 0, count = 0, inletN = 0, inletLen = 0;
   try {
     // 기존관에 접점 꼭짓점 삽입 (뒤 구간부터 넣어야 인덱스가 밀리지 않음)
-    exInserts.sort((a, b) => b.pipeId - a.pipeId || b.seg - a.seg);
+    // 같은 관에서는 뒤쪽(구간 인덱스·구간 내 위치가 큰 것)부터 넣어야 인덱스가 밀리지 않는다
+    exInserts.sort((a, b) => b.seg - a.seg || b.u - a.u);
     for (const ins of exInserts) insertVertex(ins.pipeId, ins.seg, ins.lonlat);
 
     for (let k = 0; k < drawnBase; k++) {
