@@ -143,10 +143,27 @@ function snapshot() {
 }
 let history = [snapshot()];
 let histIdx = 0;
-function commit() {
+
+// ── 배치(트랜잭션) ──
+// 자동 연결처럼 한 동작이 배관을 수십 개 만들 때, 히스토리에는 한 칸만 쌓아
+// Ctrl+Z 한 번으로 그 동작 전체가 되돌아가게 한다.
+let batchDepth = 0;
+let batchDirty = false;
+export function beginBatch() { batchDepth++; }
+export function endBatch() {
+  if (batchDepth === 0) return;
+  batchDepth--;
+  if (batchDepth === 0 && batchDirty) { batchDirty = false; pushHistory(); }
+}
+
+function pushHistory() {
   history = history.slice(0, histIdx + 1);
   history.push(snapshot());
   histIdx++;
+}
+function commit() {
+  if (batchDepth > 0) { batchDirty = true; return; } // 배치 종료 시 한 번에 기록
+  pushHistory();
 }
 function fixSelection() {
   state.ui.selectedSegs = state.ui.selectedSegs.filter((k) => {

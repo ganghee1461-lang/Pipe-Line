@@ -120,33 +120,6 @@ export async function getPossession(pnu) {
   };
 }
 
-// ── 5. 도로 중심선 (BBOX → LineString 배열) ──
-// 자동 배관 연결의 도로 그래프용. api.vworld.kr는 CORS 헤더가 없어 반드시 call()(JSONP/proxy) 경유.
-const ROAD_LAYERS = ['LT_L_MOCTLINK', 'LT_L_SPRD_MANAGE'];
-
-export async function getRoadLines([minLon, minLat, maxLon, maxLat]) {
-  if (IS_MOCK) return [];
-  for (const layer of ROAD_LAYERS) {
-    const qs = withKey({
-      service: 'data', request: 'GetFeature', data: layer,
-      geomfilter: `BOX(${minLon},${minLat},${maxLon},${maxLat})`,
-      size: '1000', geometry: 'true', attribute: 'false', crs: 'EPSG:4326',
-    });
-    const j = await call(`${base().data}?${qs}`);
-    if (j?.response?.status !== 'OK') continue;
-    const feats = j.response.result?.featureCollection?.features || [];
-    const lines = [];
-    for (const f of feats) {
-      const g = f.geometry;
-      if (!g) continue;
-      if (g.type === 'LineString' && g.coordinates.length >= 2) lines.push(g.coordinates);
-      else if (g.type === 'MultiLineString') for (const c of g.coordinates) if (c.length >= 2) lines.push(c);
-    }
-    if (lines.length) return lines;
-  }
-  return [];
-}
-
 // 국공유/사유 판별 (레거시 로직)
 export function isPublicLand(code, name) {
   const n = String(name || '');
