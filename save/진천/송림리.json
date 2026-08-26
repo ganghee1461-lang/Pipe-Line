@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "savedAt": "2026-07-08T00:50:09.593Z",
+  "savedAt": "2026-08-26T05:20:03.420Z",
   "demands": [
     {
       "id": 1,
@@ -616,6 +616,10 @@
           36.931513678695154
         ],
         [
+          127.42614822737437,
+          36.93148872523878
+        ],
+        [
           127.42621446883166,
           36.93143715144309
         ],
@@ -634,6 +638,10 @@
         [
           127.42659152155424,
           36.93106884425538
+        ],
+        [
+          127.42658236191052,
+          36.93101701079759
         ],
         [
           127.42655949780419,
@@ -741,9 +749,31 @@
           "use": "supply",
           "pressure": "저압",
           "status": "planned",
+          "review": "none",
+          "pavement": "asphalt",
+          "section": 1,
+          "markerNo": ""
+        },
+        {
+          "material": "PE",
+          "diameter": "90A",
+          "use": "supply",
+          "pressure": "저압",
+          "status": "planned",
           "review": "target",
           "pavement": "asphalt",
           "section": 1,
+          "markerNo": ""
+        },
+        {
+          "material": "PE",
+          "diameter": "90A",
+          "use": "supply",
+          "pressure": "저압",
+          "status": "planned",
+          "review": "target",
+          "pavement": "asphalt",
+          "section": 2,
           "markerNo": ""
         },
         {
@@ -1422,32 +1452,6 @@
       ]
     },
     {
-      "id": 24,
-      "coords": [
-        [
-          127.42655949780419,
-          36.930887625077546
-        ],
-        [
-          127.42648761055587,
-          36.93089460501038
-        ]
-      ],
-      "segs": [
-        {
-          "material": "PE",
-          "diameter": "63A",
-          "use": "inlet",
-          "pressure": "저압",
-          "status": "planned",
-          "review": "target",
-          "pavement": "asphalt",
-          "section": 2,
-          "markerNo": 5
-        }
-      ]
-    },
-    {
       "id": 25,
       "coords": [
         [
@@ -1578,32 +1582,6 @@
       ]
     },
     {
-      "id": 30,
-      "coords": [
-        [
-          127.42609060885437,
-          36.931533585421775
-        ],
-        [
-          127.42610788418229,
-          36.93154564400571
-        ]
-      ],
-      "segs": [
-        {
-          "material": "PE",
-          "diameter": "63A",
-          "use": "inlet",
-          "pressure": "저압",
-          "status": "planned",
-          "review": "none",
-          "pavement": "asphalt",
-          "section": 1,
-          "markerNo": 1
-        }
-      ]
-    },
-    {
       "id": 32,
       "coords": [
         [
@@ -1680,6 +1658,58 @@
           "markerNo": ""
         }
       ]
+    },
+    {
+      "id": 46,
+      "coords": [
+        [
+          127.42658236191052,
+          36.93101701079759
+        ],
+        [
+          127.42651388552703,
+          36.93102263188517
+        ]
+      ],
+      "segs": [
+        {
+          "material": "PE",
+          "diameter": "63A",
+          "use": "inlet",
+          "pressure": "저압",
+          "status": "planned",
+          "review": "target",
+          "pavement": "asphalt",
+          "section": 1,
+          "markerNo": ""
+        }
+      ]
+    },
+    {
+      "id": 47,
+      "coords": [
+        [
+          127.42614822737437,
+          36.93148872523878
+        ],
+        [
+          127.42616081285631,
+          36.93149948038082
+        ]
+      ],
+      "segs": [
+        {
+          "material": "PE",
+          "diameter": "63A",
+          "use": "inlet",
+          "pressure": "저압",
+          "status": "planned",
+          "review": "target",
+          "pavement": "asphalt",
+          "section": 1,
+          "markerNo": ""
+        }
+      ]
     }
   ],
   "terminals": [
@@ -1728,8 +1758,8 @@
     "radius": 10
   },
   "view": {
-    "lon": 127.42639920394772,
-    "lat": 36.93066195019185,
-    "zoom": 20.333333333333336
+    "lon": 127.42645511455848,
+    "lat": 36.93151662543853,
+    "zoom": 21
   }
 }
