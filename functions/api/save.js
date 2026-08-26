@@ -1,11 +1,13 @@
-// ── Cloudflare Pages Function: GitHub save/ 저장·목록·읽기 (폴더 지원) ──
-// GET  /api/save                        → { folders:[...], files:[루트 .json] }
-// GET  /api/save?folder=제천            → { files:[해당 폴더 .json] }
-// GET  /api/save?folder=제천&file=x.json→ 파일 내용(JSON)
-// POST /api/save {folder,name,data}     → save/폴더/NAME.json 커밋
-// POST /api/save {mkdir:"제천"}         → 폴더 생성(.gitkeep 커밋)
-// DELETE /api/save?folder=제천&file=x   → 파일 삭제
-// DELETE /api/save?folder=제천&rmdir=1  → 폴더(내 파일 전부) 삭제
+// ── Cloudflare Pages Function: GitHub save/ 저장·목록·읽기 (다단계 폴더) ──
+// folder 는 'a', 'a/b', 'a/b/c' 처럼 깊이 제한 없는 경로다.
+// GET  /api/save?folder=진천/26년           → { folders:[하위 폴더], files:[.json] }
+// GET  /api/save?folder=진천&file=x.json    → 파일 내용(JSON)
+// POST /api/save {folder,name,data}         → save/<folder>/NAME.json 커밋
+// POST /api/save {folder:부모, mkdir:"26년"} → 보고 있는 폴더 안에 새 폴더 생성
+// POST /api/save {folder:출발, move:{file,to}}      → 파일 이동
+// POST /api/save {move:{folder:'진천/26년', to:'음성'}} → 폴더째 이동(하위 전부)
+// DELETE /api/save?folder=진천&file=x       → 파일 삭제
+// DELETE /api/save?folder=진천&rmdir=1      → 폴더 삭제(하위 전부)
 //
 // 토큰: Cloudflare Pages → Settings → Environment variables 에 GITHUB_TOKEN(repo 쓰기) 추가.
 
@@ -27,10 +29,34 @@ function b64decode(b64) {
   const bytes = Uint8Array.from(bin, (c) => c.charCodeAt(0));
   return new TextDecoder().decode(bytes);
 }
-// 폴더/파일 이름 정리 (경로 구분자·특수문자 제거)
+// 폴더/파일 이름 한 조각 정리 (경로 구분자·특수문자 제거)
 function clean(s) { return String(s || '').replace(/[^\w가-힣 .\-]/g, '').trim(); }
+// 여러 단계 경로 정리: 조각마다 clean, 빈 조각과 '..' 제거
+function cleanPath(s) {
+  return String(s || '').split('/').map(clean)
+    .filter((x) => x && !/^\.+$/.test(x)).join('/');
+}
 // 경로를 세그먼트별로 인코딩('/' 유지)
 function enc(path) { return path.split('/').map(encodeURIComponent).join('/'); }
+const under = (p) => `save/${p ? p + '/' : ''}`;
+
+// 폴더 아래 모든 파일을 재귀로 모은다 → [{ path, sha }]
+async function walkFiles(base, headers, branch, dir) {
+  const out = [];
+  const stack = [dir];
+  while (stack.length) {
+    const d = stack.pop();
+    const r = await fetch(`${base}/${enc(d)}?ref=${branch}`, { headers });
+    if (!r.ok) continue;
+    const items = await r.json();
+    if (!Array.isArray(items)) continue;
+    for (const it of items) {
+      if (it.type === 'dir') stack.push(it.path);
+      else if (it.type === 'file') out.push({ path: it.path, sha: it.sha });
+    }
+  }
+  return out;
+}
 
 export async function onRequest(context) {
   const { request, env } = context;
@@ -45,14 +71,14 @@ export async function onRequest(context) {
   };
   if (token) headers.Authorization = `Bearer ${token}`;
   const base = `https://api.github.com/repos/${OWNER}/${REPO}/contents`;
-  const queryFolder = clean(url.searchParams.get('folder'));
+  const queryFolder = cleanPath(url.searchParams.get('folder'));
   const folder = queryFolder; // GET/DELETE용 (POST는 본문 folder를 우선해 아래서 재정의)
 
   try {
     if (request.method === 'GET') {
       const file = url.searchParams.get('file');
       if (file) {
-        const p = `save/${folder ? folder + '/' : ''}${file}`;
+        const p = `${under(folder)}${file}`;
         const r = await fetch(`${base}/${enc(p)}?ref=${BRANCH}`, { headers });
         if (!r.ok) return json({ error: `읽기 실패 HTTP ${r.status}` }, r.status);
         const j = await r.json();
@@ -66,7 +92,8 @@ export async function onRequest(context) {
         return json({ error: `목록 실패 HTTP ${r.status}` }, r.status);
       }
       const arr = await r.json();
-      const folders = folder ? [] : arr.filter((x) => x.type === 'dir').map((x) => x.name).sort((a, b) => a.localeCompare(b, 'ko'));
+      // 어느 깊이에서든 그 자리의 하위 폴더를 함께 준다
+      const folders = arr.filter((x) => x.type === 'dir').map((x) => x.name).sort((a, b) => a.localeCompare(b, 'ko'));
       const files = arr.filter((x) => x.type === 'file' && x.name.toLowerCase().endsWith('.json')).map((x) => x.name);
       return json({ folders, files });
     }
@@ -75,63 +102,86 @@ export async function onRequest(context) {
       if (!token) return json({ error: 'GITHUB_TOKEN 미설정 — Cloudflare 환경변수에 토큰을 추가하세요.' }, 500);
       const body = await request.json().catch(() => null);
       // 저장 위치는 본문의 folder를 우선(쿼리스트링은 이동 API용 fallback)
-      const folder = body && body.folder != null ? clean(body.folder) : queryFolder;
+      const folder = body && body.folder != null ? cleanPath(body.folder) : queryFolder;
 
-      // 폴더 생성
-      if (body?.mkdir) {
-        const f = clean(body.mkdir);
-        if (!f) return json({ error: '폴더 이름이 필요합니다.' }, 400);
-        const apiUrl = `${base}/${enc(`save/${f}/.gitkeep`)}`;
-        let sha;
-        const g = await fetch(`${apiUrl}?ref=${BRANCH}`, { headers });
-        if (g.ok) return json({ ok: true, folder: f }); // 이미 있음
-        const put = await fetch(apiUrl, {
-          method: 'PUT',
-          headers: { ...headers, 'Content-Type': 'application/json' },
-          body: JSON.stringify({ message: `mkdir: ${f}`, content: b64encode(''), branch: BRANCH, sha }),
-        });
-        if (!put.ok) return json({ error: `폴더 생성 실패 HTTP ${put.status}` }, 502);
-        return json({ ok: true, folder: f });
-      }
-
-      // 파일 이동 (폴더 간): 원본 읽기 → 대상에 쓰기 → 원본 삭제
-      if (body?.move) {
-        const { file, to } = body.move;
-        const f = String(file || '').trim();
-        const dst = clean(to);
-        if (!f) return json({ error: '이동할 파일이 필요합니다.' }, 400);
-        const from = `save/${folder ? folder + '/' : ''}${f}`;
-        const dest = `save/${dst ? dst + '/' : ''}${f}`;
-        if (from === dest) return json({ ok: true, path: dest });
-
+      // 파일 한 개 옮기기 (읽기 → 대상에 쓰기 → 원본 삭제)
+      const moveOne = async (from, dest) => {
         const g = await fetch(`${base}/${enc(from)}?ref=${BRANCH}`, { headers });
-        if (!g.ok) return json({ error: `원본 없음 HTTP ${g.status}` }, g.status);
+        if (!g.ok) return `원본 없음 HTTP ${g.status}`;
         const src = await g.json();
-
-        // 대상에 이미 같은 이름이 있으면 갱신(sha 필요)
-        let dstSha;
+        let dstSha; // 대상에 같은 이름이 있으면 갱신(sha 필요)
         const dg = await fetch(`${base}/${enc(dest)}?ref=${BRANCH}`, { headers });
         if (dg.ok) dstSha = (await dg.json()).sha;
-
         const put = await fetch(`${base}/${enc(dest)}`, {
           method: 'PUT',
           headers: { ...headers, 'Content-Type': 'application/json' },
           body: JSON.stringify({ message: `move: ${from} → ${dest}`, content: src.content.replace(/\s/g, ''), branch: BRANCH, sha: dstSha }),
         });
-        if (!put.ok) return json({ error: `이동 실패(쓰기) HTTP ${put.status}` }, 502);
-
+        if (!put.ok) return `이동 실패(쓰기) HTTP ${put.status}`;
         const del = await fetch(`${base}/${enc(from)}`, {
           method: 'DELETE',
           headers: { ...headers, 'Content-Type': 'application/json' },
           body: JSON.stringify({ message: `move: remove ${from}`, sha: src.sha, branch: BRANCH }),
         });
-        if (!del.ok) return json({ error: `이동 실패(원본 삭제) HTTP ${del.status}` }, 502);
+        if (!del.ok) return `이동 실패(원본 삭제) HTTP ${del.status}`;
+        return null;
+      };
+
+      // 폴더 생성 — 보고 있는 폴더(folder) 안에 만든다
+      if (body?.mkdir) {
+        const nm = clean(body.mkdir);
+        if (!nm) return json({ error: '폴더 이름이 필요합니다.' }, 400);
+        const full = `${folder ? folder + '/' : ''}${nm}`;
+        const apiUrl = `${base}/${enc(`save/${full}/.gitkeep`)}`;
+        const g = await fetch(`${apiUrl}?ref=${BRANCH}`, { headers });
+        if (g.ok) return json({ ok: true, folder: full, name: nm }); // 이미 있음
+        const put = await fetch(apiUrl, {
+          method: 'PUT',
+          headers: { ...headers, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message: `mkdir: ${full}`, content: b64encode(''), branch: BRANCH }),
+        });
+        if (!put.ok) return json({ error: `폴더 생성 실패 HTTP ${put.status}` }, 502);
+        return json({ ok: true, folder: full, name: nm });
+      }
+
+      if (body?.move) {
+        const dst = cleanPath(body.move.to);
+
+        // 폴더째 이동: 하위 파일을 전부 옮긴다
+        if (body.move.folder != null) {
+          const srcDir = cleanPath(body.move.folder);
+          if (!srcDir) return json({ error: '이동할 폴더가 필요합니다.' }, 400);
+          const nm = srcDir.split('/').pop();
+          const destDir = `${dst ? dst + '/' : ''}${nm}`;
+          if (destDir === srcDir) return json({ ok: true, path: destDir });
+          // 자기 자신 안으로는 못 넣는다
+          if (`${destDir}/`.startsWith(`${srcDir}/`)) {
+            return json({ error: '폴더를 자기 하위로는 옮길 수 없습니다.' }, 400);
+          }
+          const items = await walkFiles(base, headers, BRANCH, `save/${srcDir}`);
+          if (!items.length) return json({ error: '폴더가 비어 있거나 찾을 수 없습니다.' }, 404);
+          for (const it of items) {
+            const rel = it.path.slice(`save/${srcDir}/`.length);
+            const err = await moveOne(it.path, `save/${destDir}/${rel}`);
+            if (err) return json({ error: err }, 502);
+          }
+          return json({ ok: true, path: destDir });
+        }
+
+        // 파일 이동
+        const f = String(body.move.file || '').trim();
+        if (!f) return json({ error: '이동할 파일이 필요합니다.' }, 400);
+        const from = `${under(folder)}${f}`;
+        const dest = `${under(dst)}${f}`;
+        if (from === dest) return json({ ok: true, path: dest });
+        const err = await moveOne(from, dest);
+        if (err) return json({ error: err }, 502);
         return json({ ok: true, path: dest });
       }
 
       const name = clean(body?.name);
       if (!name) return json({ error: '파일 이름이 필요합니다.' }, 400);
-      const p = `save/${folder ? folder + '/' : ''}${name}.json`;
+      const p = `${under(folder)}${name}.json`;
       const apiUrl = `${base}/${enc(p)}`;
       let sha;
       const g = await fetch(`${apiUrl}?ref=${BRANCH}`, { headers });
@@ -153,27 +203,23 @@ export async function onRequest(context) {
     if (request.method === 'DELETE') {
       if (!token) return json({ error: 'GITHUB_TOKEN 미설정' }, 500);
 
-      // 폴더 삭제 (내부 파일 전부 삭제)
+      // 폴더 삭제 (하위 폴더·파일 전부)
       if (url.searchParams.get('rmdir')) {
         if (!folder) return json({ error: '폴더 지정 필요' }, 400);
-        const lr = await fetch(`${base}/${enc(`save/${folder}`)}?ref=${BRANCH}`, { headers });
-        if (lr.ok) {
-          const items = await lr.json();
-          for (const it of items) {
-            if (it.type !== 'file') continue;
-            await fetch(`${base}/${enc(it.path)}`, {
-              method: 'DELETE',
-              headers: { ...headers, 'Content-Type': 'application/json' },
-              body: JSON.stringify({ message: `rmdir: ${it.path}`, sha: it.sha, branch: BRANCH }),
-            });
-          }
+        const items = await walkFiles(base, headers, BRANCH, `save/${folder}`);
+        for (const it of items) {
+          await fetch(`${base}/${enc(it.path)}`, {
+            method: 'DELETE',
+            headers: { ...headers, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ message: `rmdir: ${it.path}`, sha: it.sha, branch: BRANCH }),
+          });
         }
         return json({ ok: true });
       }
 
       const file = url.searchParams.get('file');
       if (!file) return json({ error: 'file 파라미터 필요' }, 400);
-      const p = `save/${folder ? folder + '/' : ''}${file}`;
+      const p = `${under(folder)}${file}`;
       const apiUrl = `${base}/${enc(p)}`;
       const g = await fetch(`${apiUrl}?ref=${BRANCH}`, { headers });
       if (!g.ok) return json({ error: `파일 없음 HTTP ${g.status}` }, g.status);
